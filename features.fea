@@ -273,7 +273,7 @@ lookup kaflamalef {
     sub lam.medi by lam.medi.afterkaf;	  
   } kaflamalef.l1;	
 
-  sub  [kaf.init kaf.medi]'lookup  kaflamalef.l1 [alef.fina lam.medi lam.fina lam.medi.laf]'lookup kaflamalef.l1;
+  sub  [kaf.init kaf.medi]'lookup  kaflamalef.l1 [alef.fina lam.medi lam.fina lam.medi.laf lam.medi.beforeheh lam.medi.beforeyeh]'lookup kaflamalef.l1;
 
 } kaflamalef;
 
@@ -631,7 +631,7 @@ lookup basmala.curs {
     lookup basmala.curs.l2 {
          lookupflag IgnoreMarks RightToLeft;
         pos cursive alef.isol <anchor 0 0> <anchor 0 0> ;
-        pos cursive lam.init <anchor 400 100 > <anchor 150 150>;
+        pos cursive lam.init <anchor 480 100 > <anchor 150 150>;
     } basmala.curs.l2;
 
     lookup basmala.curs.l3 {
@@ -714,10 +714,14 @@ lookup isolkern {
 
   lookup isolkern.o2 {			
     pos /^alef.isol/ <100 0 100 0>;
-    pos /^alef.fina/ <100 0 100 0>;
+    pos /^alef.fina/ <100 0 100 0>;    
   } isolkern.o2;
 
-  pos alef.isol' lam.init.lam_hah';
+  pos [alef.fina.laf]' [hah.init]'<0 0 -100 0>;
+
+  pos [alef.fina.lamalef]' [hah.init hah.init.ii]'<0 0 -100 0>;
+
+  pos alef.isol' [lam.init.lam_hah lam.init.allah]';
 
   pos [alef.isol /^alef.fina/]'lookup isolkern.o2 [/^lam.init/ /^alef.isol/];
 

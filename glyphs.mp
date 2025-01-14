@@ -1796,7 +1796,12 @@ defchar(noonshape.fina,-1,-1,-1,-1);
 %%backgroundimage:images/noon.fina.jpg,-35,-943,1,0,0,1
 %%beginparams
 rightVerticalRatioNeg := 100;
+
+%%beginverbatim
+
 righttatweel := righttatweel - 0.5;
+
+%%endverbatim
 
 %%beginpaths
 
@@ -3199,7 +3204,7 @@ defchar(lam.medi.afterkaf,-1,-1,-1,-1);
 %%beginbody
 
 
-lam.medi_(lefttatweel,0.3);
+lam.medi_(lefttatweel,0.1);
 enddefchar;
 defchar(lam.medi.beforeheh,-1,-1,-1,-1);
 %%backgroundimage:images/lam_heh.jpg,-552,-1067.33,1,0,0,1
@@ -6309,9 +6314,9 @@ rightbearing := 50;
 
 enddefchar;
 defchar(kaf.init.beforelam,-1,-1,-1,-1);
-%%backgroundimage:images/kaf_lam.jpg,-624,-1043,1,0,0,1
+%%backgroundimage:images/kaf_lam.jpg,-594.97,-1045.07,1,0,0,1
 %%beginparams
-z4 = (-102,362);
+z4 = (-72.9696,364.074);
 
 %%beginverbatim
 
@@ -6323,22 +6328,22 @@ if not known y.kafpos : y.kafpos := 0; fi
 %%beginpaths
 
 fill
-((426,763) + z.kafpos) {right} .. tension 0.75 and 1 ..
- {down}((436,747) + z.kafpos) .. tension 1 and 2.54535 ..
-((413,671) + z.kafpos) .. tension 9.18768 and 6.92449 ..
+((382.454,727.058) + z.kafpos) {right} .. tension 0.75 and 1 ..
+ {down}((392.454,711.058) + z.kafpos) .. tension 1 and 2.54535 ..
+((369.454,635.058) + z.kafpos) .. tension 9.18768 and 6.92449 ..
  {down}z4 .. tension 8.85555 and 0.75 ..
- {down}(154,151) .. tension 0.857029 and 1 ..
-bldmv ( (85,21), (0,0), (2,-8) ) leftjoin
-bldmv ( (79,103), (0,0), (11,-5) ) .. tension 1 and 1 ..
- {up}(102,140) .. tension 1.67402 and 6.04181 ..
-(-152,273) .. tension 2.28057 and 0.75 ..
- {up}(-173,347) .. tension 2.43753 and 111.847 ..
+ {down}(183.03,153.074) .. tension 0.857029 and 1 ..
+bldmv ( (114.03,23.0736), (0,0), (2,-8) ) leftjoin
+bldmv ( (108.03,105.074), (0,0), (11,-5) ) .. tension 1 and 1 ..
+ {up}(131.03,142.074) .. tension 1.67402 and 6.04181 ..
+(-122.97,275.074) .. tension 2.28057 and 0.75 ..
+ {up}(-143.97,349.074) .. tension 2.43753 and 111.847 ..
  cycle
 ;
 
 %%endpaths
 %%beginbody
-rightbearing := -200; 
+rightbearing := -100; 
 
 enddefchar;
 defchar(kaf.init.iv,-1,-1,-1,-1);
@@ -6614,7 +6619,7 @@ dir_ := diratpoint z4 of (pathpart pic_);
 fill
 (-78,315) .. tension 1 and 1.79826 ..
 z4 {right} .. tension 10000 and 1 ..
-(24,322) .. tension 1 and 1 ..
+(45,325) .. tension 1 and 1 ..
 (222,204) ..
 brdmv ( (329,109), (302,-80), (-56,-12) ) setranchor
 (393,-1) rightjoinii
