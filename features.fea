@@ -725,6 +725,7 @@ lookup isolkern {
 
   pos [alef.isol /^alef.fina/]'lookup isolkern.o2 [/^lam.init/ /^alef.isol/];
 
+  pos [waw.fina]' [dal.isol]' [ain.isol]'<0 -30 0 0>; 
   
   pos /^reh|^waw/';
 

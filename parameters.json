@@ -301,6 +301,12 @@
                     -31,
                     0,
                     0
+                ],
+                "sukun": [
+                    -34,
+                    -11,
+                    0,
+                    0
                 ]
             }
         }
@@ -1507,7 +1513,7 @@
                     ],
                     "behshape.init.beforebeh": [
                         0,
-                        46
+                        80
                     ],
                     "behshape.init.beforehah": [
                         80,
