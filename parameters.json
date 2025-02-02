@@ -127,6 +127,10 @@
         "subtable1": {
             "damma": {
                 "baseparameters": {
+                    "tah.fina": [
+                        400,
+                        -278
+                    ],
                     "tah.init": [
                         104,
                         -324
@@ -186,6 +190,18 @@
                     "tah.medi": [
                         214,
                         -174
+                    ]
+                }
+            }
+        }
+    },
+    "adjustmkmk.l3": {
+        "subtable1": {
+            "damma": {
+                "baseparameters": {
+                    "tah.fina": [
+                        276,
+                        -80
                     ]
                 }
             }
@@ -1004,8 +1020,8 @@
                         -482
                     ],
                     "tah.isol": [
-                        245,
-                        -392
+                        168,
+                        -430
                     ],
                     "tah.medi": [
                         210,
@@ -2365,13 +2381,17 @@
             },
             "idgham": {
                 "baseparameters": {
+                    "tah.fina": [
+                        243,
+                        -81
+                    ],
                     "tah.init": [
                         137,
                         -359
                     ],
                     "tah.isol": [
-                        458,
-                        -347
+                        -4,
+                        -127
                     ],
                     "tah.medi": [
                         263,
@@ -2850,10 +2870,6 @@
                     "seen.fina": [
                         192,
                         -168
-                    ],
-                    "seen.fina.expa": [
-                        0,
-                        -138
                     ],
                     "seen.init.beforereh": [
                         111,
@@ -3496,8 +3512,8 @@
                         -147
                     ],
                     "behshape.init.beforebeh": [
-                        46,
-                        81
+                        11,
+                        88
                     ],
                     "behshape.init.beforehah": [
                         69,
@@ -4183,6 +4199,10 @@
                         -69,
                         11
                     ],
+                    "meem.isol": [
+                        62,
+                        227
+                    ],
                     "noon.isol": [
                         -69,
                         0
@@ -4341,6 +4361,10 @@
                 "behshape.init.beforenoon": [
                     23,
                     -11
+                ],
+                "meem.isol": [
+                    -12,
+                    58
                 ],
                 "reh.isol": [
                     19,

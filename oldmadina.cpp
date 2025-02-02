@@ -985,7 +985,7 @@ Lookup* OldMadina::defaultwaqfmarktobase() {
   lookup->type = Lookup::mark2base;
 
 
-  auto basefunction = [this](QString glyphName, QString className, QPoint adjust, double, double) -> QPoint {
+  auto basefunction = [this](QString glyphName, QString className, QPoint adjust, GlyphParameters parameters) -> QPoint {
     GlyphVis& curr = glyphs[glyphName];
 
     int height = std::max((int)curr.height + 100, 900);
@@ -998,7 +998,7 @@ Lookup* OldMadina::defaultwaqfmarktobase() {
     return QPoint(width, height);
   };
 
-  auto markfunction = [this](QString glyphName, QString className, QPoint adjust, double, double) -> QPoint {
+  auto markfunction = [this](QString glyphName, QString className, QPoint adjust, GlyphParameters parameters) -> QPoint {
     GlyphVis& curr = glyphs[glyphName];
 
     int height = 0;
@@ -1198,7 +1198,7 @@ Lookup* OldMadina::defaultmarkdotmarks() {
   topsubtable->name = "defaultmarkdotmarkstop";
   topsubtable->base = { "topdotmarks" };
 
-  auto basetopfunction = [this, topsubtable](QString glyphName, QString className, QPoint adjust, double, double) -> QPoint {
+  auto basetopfunction = [this, topsubtable](QString glyphName, QString className, QPoint adjust, GlyphParameters parameters) -> QPoint {
     GlyphVis& curr = glyphs[glyphName];
 
 
@@ -1239,7 +1239,7 @@ Lookup* OldMadina::defaultmarkdotmarks() {
   bottomsubtable->name = "defaultmarkdotmarksbottom";
   bottomsubtable->base = { "downdotmarks" };
 
-  auto basedownfunction = [this, bottomsubtable](QString glyphName, QString className, QPoint adjust, double, double) -> QPoint {
+  auto basedownfunction = [this, bottomsubtable](QString glyphName, QString className, QPoint adjust, GlyphParameters parameters) -> QPoint {
     GlyphVis& curr = glyphs[glyphName];
 
     int depth = -(int)curr.depth + 50;
