@@ -824,6 +824,17 @@ lookup variouskern {
   pos heh.isol' twodotsup' fathatanidgham' waqf.jeem' space' kaf.init'lookup  variouskern.l6; # page 362 line 15 وَٰحِدَةࣰۚ كَذَٰلِكَ
   pos dal.isol' onedotup' sukun' space' kaf.init.beforelam'lookup  variouskern.l6; # page 505 line 11 إِذْ كَانُوا۟
 
+  lookup variouskern.l8 {
+    pos lam.init.lam_hah <0 0 -100 0>;    	
+  } variouskern.l8;
+  pos alef.fina.afterkaf' wasla' lam.init.lam_hah' lookup variouskern.l8; # page 11 line 8 كَٱلْحِجَارَةِ
+  
+  lookup variouskern.l9 {
+    pos hamza.isol <0 0 -200 0>;    	
+  } variouskern.l9;
+  pos alef.fina.lamalef' maddahabove' hamza.isol' lookup variouskern.l9; # page 183 line 9 هَٰٓو͏ٔ͏ُلَا͏ٓءِ
+  
+
   lookup variouskern.l7 {
     pos ain.isol <0 -50 0 0>;    	
   } variouskern.l7;

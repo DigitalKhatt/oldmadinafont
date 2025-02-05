@@ -3461,6 +3461,7 @@ z1 {dir behshape.init.beforehah.dir1} .. tension 1.22088 and 1 ..
 %%endpaths
 %%beginbody
 
+tr_ := tr_ shifted (0,140 );
 leftbearing := -200 ;
 rightbearing := 150;
 setCursiveAnchor(rtlcursive,z1, ExitAnchorRTL);
