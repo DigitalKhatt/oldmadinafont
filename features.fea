@@ -727,7 +727,7 @@ lookup isolkern {
 
   pos [waw.fina]' [dal.isol]' [ain.isol]'<0 -30 0 0>; 
   
-  pos /^reh|^waw/';
+   pos /^reh|^waw/';
 
   pos /^endofaya/'lookup isolkern.o1 rubelhizb;
 
@@ -838,6 +838,19 @@ lookup variouskern {
   lookup variouskern.l7 {
     pos ain.isol <0 -50 0 0>;    	
   } variouskern.l7;
+  
+   lookup variouskern.20 {
+    pos hah.init <0 0 -200 0>;    	
+  } variouskern.20;
+  
+  lookup variouskern.21 {
+    pos smallwaw <0 0 -100 0>;	
+  } variouskern.21;	
+  
+   pos reh.fina' damma' space' hah.init'lookup variouskern.20;
+   pos reh.isol' kasra' space' hah.init'lookup variouskern.20;
+   
+   pos waw.fina' damma' smallwaw'lookup variouskern.21 maddahabove' alef.isol';
 
   pos reh.fina' shadda' fatha' waw.isol' sukun' ain.isol'lookup variouskern.l7; # page 230 line 4 ٱلرَّوْعُ
   pos waw.fina' fatha' alef.isol' ain.isol'lookup variouskern.l7; # page 244 line 3 صُوَاعَ
@@ -1718,18 +1731,18 @@ feature shr1 {
     
   } shrr.alefcursive;
 
-  #lookup shr1.kern {	
+  lookup shr1.kern {	
   
-  #  feature shr1;
+    feature shr1;
 
-  #  lookupflag IgnoreMarks;
+    lookupflag IgnoreMarks;
 
-   # pos [alef.fina alef.isol]  @bases'<0 0 -50 0>;
+    pos [alef.fina alef.isol]  @bases'<0 0 -50 0>;
 
-   # pos /dal.fina/ kaf.init'<0 0 -150 0>;
+    pos /dal.fina/ kaf.init'<0 0 -150 0>;
     
     
-  #} shr1.kern;
+  } shr1.kern;
 
   lookup shr1.dalcursive {	
   
