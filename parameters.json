@@ -116,7 +116,7 @@
             "smalllowmeem": {
                 "baseparameters": {
                     "heh.isol": [
-                        -231,
+                        -215,
                         -318
                     ]
                 }
@@ -427,6 +427,10 @@
                         81,
                         23
                     ],
+                    "feh.fina": [
+                        11,
+                        -34
+                    ],
                     "hah.fina": [
                         24,
                         69
@@ -632,7 +636,7 @@
                         48
                     ],
                     "dammatan": [
-                        -144,
+                        -112,
                         9
                     ],
                     "dammatanidgham": [
@@ -1252,7 +1256,7 @@
                         -51
                     ],
                     "heh.isol": [
-                        -16,
+                        -12,
                         -28
                     ]
                 }
@@ -1302,8 +1306,8 @@
                         -7
                     ],
                     "twodotsup": [
-                        -16,
-                        -15
+                        -27,
+                        -21
                     ]
                 },
                 "markparameters": {
@@ -1436,7 +1440,7 @@
                         -3
                     ],
                     "alef.isol": [
-                        56,
+                        46,
                         66
                     ],
                     "alef.isol.ii": [
@@ -1732,8 +1736,8 @@
                         0
                     ],
                     "noon.fina": [
-                        114,
-                        0
+                        34,
+                        32
                     ],
                     "noon.fina.basmala": [
                         1543,
@@ -2648,8 +2652,8 @@
                         -249
                     ],
                     "kaf.fina.afterlam": [
-                        40,
-                        -128
+                        33,
+                        -149
                     ],
                     "kaf.fina.afterlam.expa": [
                         73,
@@ -2960,7 +2964,7 @@
                         -232
                     ],
                     "waw.fina": [
-                        158,
+                        145,
                         -128
                     ],
                     "waw.isol": [
@@ -3034,8 +3038,8 @@
             "meemiqlab": {
                 "baseparameters": {
                     "damma": [
-                        -140,
-                        -500
+                        -129,
+                        -443
                     ],
                     "fatha": [
                         -101,
@@ -3048,8 +3052,8 @@
             "smalllowmeem": {
                 "baseparameters": {
                     "kasra": [
-                        -28,
-                        80
+                        20,
+                        -35
                     ]
                 }
             }
@@ -3122,8 +3126,8 @@
             "waqfmarks": {
                 "baseparameters": {
                     "alef.fina": [
-                        -96,
-                        58
+                        -107,
+                        -79
                     ],
                     "alef.fina.laf": [
                         -82,
@@ -3133,9 +3137,21 @@
                         -86,
                         0
                     ],
+                    "heh.fina": [
+                        58,
+                        -25
+                    ],
                     "heh.fina.afterlam": [
                         -154,
                         28
+                    ],
+                    "heh.fina.allah": [
+                        0,
+                        -42
+                    ],
+                    "smallyeh": [
+                        89,
+                        -278
                     ]
                 }
             }
@@ -4211,6 +4227,10 @@
                         -46,
                         34
                     ],
+                    "meem.isol": [
+                        84,
+                        210
+                    ],
                     "meem.isol.ii": [
                         -72,
                         67
@@ -4226,6 +4246,10 @@
                     "dal.isol": [
                         -115,
                         34
+                    ],
+                    "hah.isol": [
+                        57,
+                        601
                     ],
                     "hamza.isol": [
                         -77,
@@ -4383,8 +4407,8 @@
         "subtable1": {
             "parameters": {
                 "smalllowmeem": [
-                    -139,
-                    334,
+                    -199,
+                    225,
                     0,
                     0
                 ]
@@ -4395,7 +4419,7 @@
         "rehfina": {
             "entryParameters": {
                 "alef.isol": [
-                    -3,
+                    10,
                     13
                 ],
                 "behshape.init.beforenoon": [

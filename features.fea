@@ -713,7 +713,7 @@ lookup isolkern {
   } isolkern.o1;
 
   lookup isolkern.o2 {			
-    pos /^alef.isol/ <100 0 100 0>;
+    pos /^alef.isol/ <110 0 110 0>;
     pos /^alef.fina/ <100 0 100 0>;    
   } isolkern.o2;
 
@@ -726,6 +726,10 @@ lookup isolkern {
   pos [alef.isol /^alef.fina/]'lookup isolkern.o2 [/^lam.init/ /^alef.isol/];
 
   pos [waw.fina]' [dal.isol]' [ain.isol]'<0 -30 0 0>; 
+
+  pos /^reh|^waw/'<-100 0 -100 0> [smallwaw];
+
+  pos /^reh|^waw/'<-200 0 -200 0> [space] [/^hah.init/];
   
   pos /^reh|^waw/';
 
@@ -746,7 +750,7 @@ lookup variouskern {
     pos /^alef.isol/ <0 0 -100 0 >;
     pos /^dal.isol/ < -100 0 -100 0>;
     pos shadda <-80 -50 0 0>;
-    pos smallwaw <0 0 50 0>;
+    pos smallwaw <50 0 50 0>;
     pos /^lam.init/ <0 0 70 0>;
     pos alef.fina.lamalef <50 0 50 0>;	
   } variouskern.l1;	
@@ -1306,7 +1310,7 @@ lookup adjustmkmk {
   pos [/^alef.isol/ /^alef.fina/]'lookup adjustmkmk.space.1  hamzaabove' [/fatha/ damma]' space' alef.isol' wasla';
   pos [/^heh.isol/ /^hamza.isol/]'lookup adjustmkmk.space.1 (twodotsup?)' (dammatanidgham|(damma meemiqlab))' (@waqfmarks?)' space' [/^lam.init/ /^endofaya/]';
   pos /^reh.fina/' (onedotup?)' fathatan' /^alef.isol/'lookup adjustmkmk.space.1 (@waqfmarks?)' space' /^alef.isol/' /^hamzabelow/';
-  #pos /^alef.fina/'lookup adjustmkmk.space.1 maddahabove' space' /^alef.isol/' /^hamzaabove/;  
+  #pos /^alef.fina/'lookup adjustmkmk.space.1 maddahabove' space' /^alef.isol/' /^hamzaabove/;    
 
   # space alef hamzabelow
 
@@ -1392,7 +1396,17 @@ lookup adjustmkmk {
   pos [alef.isol]' [hamzaabove]'<0 0 0 0> [fatha]' [behshape.init.beforebeh]' ([twodotsdown]?)'[twodotsup shadda]' [fatha damma sukun]'<0 0 0 0>;
 
   pos [tah.isol]' [dammatanidgham]' [waqf.meem]'<0 100 0 0>; 
+
+  pos [shadda twodotsup onedotup] [fathatanidgham fathatan] [alef.fina] @waqfmarks'<0 150 0 0>;
   
+  pos [waw.fina] [maddahabove] [hamza.isol] [kasra] [smalllowmeem]'<0 -100 0 0>;
+  pos [waw.fina] [sukun] [meem.isol] [kasra] [smalllowmeem]'<0 -150 0 0>;
+
+  pos [alefmaksura.isol] [hamzabelow]'<-150 30 0 0> [kasra] [smalllowmeem];
+
+  pos [lam.fina] [damma] [waqf.jeem]'<-180 -200 0 0>;
+
+  pos [heh.fina]' [kasra]' @waqfmarks'<0 -200 0 0> [space] [waw.isol];
 
 } adjustmkmk;
 
