@@ -1198,10 +1198,36 @@ tr_ := identity shifted (0,-ypart llcorner currentpicture);
 savepicture:=1;
 endchar;
 beginchar(smalllowmeem,1773,-1,-1,-1);
+%%backgroundimage:images/alef.isol.jpg,-10495.2,-770.626,1,0,0,1
+
+%%beginpaths
+
+fill
+(110.575,440.885) .. tension 1.69855 and 2.43993 ..
+ {down}(192.504,363.934) .. tension 1 and 1 ..
+(167.174,310.486) .. tension 2.62213 and 2.21235 ..
+(72.6809,292.53) .. tension 1.01003 and 1.94588 ..
+(70.8014,226.653) .. tension 5.89108 and 0.75 ..
+ {down}(86.324,135.378) .. tension 1 and 1.52359 ..
+ {left}(67.3378,78.7515) .. tension 3.72481 and 1 ..
+(36.3639,194.724) .. tension 1 and 1.06711 ..
+ {up}(24.1207,249.815) .. tension 1 and 1.1013 ..
+(50.4981,330.897) .. tension 1 and 1.91173 ..
+ {up}(102.481,370.441) .. tension 1.5443 and 0.75 ..
+ {left}(90.836,376.162) .. tension 0.973124 and 0.930944 ..
+ {left}(63.7462,362.437) .. tension 1 and 1 ..
+ {up}(51.8016,372.74) .. tension 1 and 1.67214 ..
+ {right} cycle
+;
+
+%%endpaths
 %%beginbody
 
-draw meemiqlab.pic;
 leftbearing := 0;
+
+
+tr_ := identity shifted (0,-ypart llcorner currentpicture);
+
 
 
 endchar;
@@ -3754,7 +3780,7 @@ defchar(qaf.isol,1602,-1,-1,-1);
 %%backgroundimage:images/qaf.fina.jpg,3,-1059,1,0,0,1
 %%beginparams
 z1 = (261,-110);
-z11 = (277,483);
+z11 = (289,436);
 z2 = z1 + joinvector;
 
 %%beginpaths

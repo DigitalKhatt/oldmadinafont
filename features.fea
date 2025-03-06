@@ -1408,7 +1408,104 @@ lookup adjustmkmk {
 
   pos [heh.fina]' [kasra]' @waqfmarks'<0 -200 0 0> [space] [waw.isol];
 
+  lookup adjustmkmk.waqfmarks.1 {					
+    pos base  [yehshape.fina.ii] <anchor function defaulbaseanchorfortop> 
+      markClass @waqfmarks <anchor function defaultopmarkanchor> @waqfmarks;
+  } adjustmkmk.waqfmarks.1;
+
+  lookup adjustmkmk.waqfmarks.2 {					
+     pos base  [yehshape.fina.ii] <anchor function defaulbaseanchorfortop> 
+      markClass @waqfmarks <anchor function defaultopmarkanchor> @waqfmarks;
+  } adjustmkmk.waqfmarks.2;
+
+  lookup adjustmkmk.waqfmarks.3 {
+     pos base  [yehshape.fina.ii] <anchor function defaulbaseanchorfortop> 
+      markClass @waqfmarks <anchor function defaultopmarkanchor> @waqfmarks;
+  } adjustmkmk.waqfmarks.3;
+
+  lookup adjustmkmk.waqfmarks.4 {
+     pos base  [yehshape.fina.ii] <anchor function defaulbaseanchorfortop> 
+      markClass @waqfmarks <anchor function defaultopmarkanchor> @waqfmarks;
+  } adjustmkmk.waqfmarks.4;
+
+  pos [twodotsup onedotup ]' [fatha shadda]' [yehshape.fina.ii]' [smallalef.replacement]' ([maddahabove]?)'   @waqfmarks'lookup adjustmkmk.waqfmarks.1; 
+  pos [/^lam.init.beforeyeh/]' (@marks?)' (@marks?)' [yehshape.fina.ii]' (@marks?)' (@marks?)' @waqfmarks'lookup adjustmkmk.waqfmarks.2; 
+  pos [/^lam.medi.beforeyeh/]' [fatha]' [yehshape.fina.ii]' (@marks?)' (@marks?)' @waqfmarks'lookup adjustmkmk.waqfmarks.2; 
+  pos [/^lam.medi.beforeyeh/]' [shadda]' [fatha fathatanidgham]'  [yehshape.fina.ii]' (@marks?)' (@marks?)' @waqfmarks'lookup adjustmkmk.waqfmarks.3;
+  pos [lam.medi.beforeyeh]' [kasra]' [yehshape.fina.ii]' [waqf.sad]'lookup adjustmkmk.waqfmarks.4;
+  pos [yehshape.fina.ii]' [shadda]' [dammatanidgham]' @waqfmarks'lookup adjustmkmk.waqfmarks.1; 
+
+  pos [noon.isol]' [dammatanidgham]' [waqf.jeem]'<0 50 0 0>; 
+
 } adjustmkmk;
+
+# TODO cleanup adjustinterlineoverlap all the waqf marks adjustment
+lookup adjustinterlineoverlap {
+  feature mkmk;
+
+  lookup adjustinterlineoverlap.1 {
+     pos base  [alef.isol hamza.isol smallwaw meem.fina.ii alef.fina.laf lam.isol dal.fina dal.fina.afterlam
+     lam.fina heh.fina] <anchor function defaulbaseanchorfortop> 
+      markClass [waqf.jeem waqf.sad waqf.qaf] <anchor function defaultopmarkanchor> @waqfmarks;
+  } adjustinterlineoverlap.1;
+
+  lookup adjustinterlineoverlap.2 {
+    pos [twodotsup dammatanidgham waqf.qaf waqf.sad] <0 -40 0 0 >;
+  } adjustinterlineoverlap.2;
+
+  lookup adjustinterlineoverlap.3 {
+    pos [waqf.jeem waqf.sad waqf.qaf]' space /^kaf.init/;
+    pos [waqf.jeem waqf.sad waqf.qaf]'lookup adjustinterlineoverlap.1;
+  } adjustinterlineoverlap.3;
+
+  
+  lookup adjustinterlineoverlap.4 {
+    pos [shadda dammatanidgham waqf.qaf] <0 -20 0 0 >;
+  } adjustinterlineoverlap.4;
+
+  lookup adjustinterlineoverlap.5 {
+    pos [twodotsup] <0 -10 0 0 >;
+    pos [fathatanidgham] <0 -80 0 0 >;
+    pos [dammatan] <0 -80 0 0 >;
+    pos [fathatan] <0 -60 0 0 >;
+    pos [waqf.jeem] <0 -40 0 0 >;
+  } adjustinterlineoverlap.5;
+
+  lookup adjustinterlineoverlap.6 {
+     pos base  [alef.isol meem.fina.ii] <anchor function defaulbaseanchorfortop> 
+      markClass [waqf.qaf waqf.jeem] <anchor function defaultopmarkanchor> @waqfmarks;
+  } adjustinterlineoverlap.6;
+
+  lookup adjustinterlineoverlap.7 {
+    pos [onedotup] <0 -30 0 0 >;
+    pos [shadda] <0 -50 0 0 >;
+    pos [fathatanidgham] <0 -30 0 0 >;    
+    pos [waqf.sad] <0 -120 0 0 >;
+  } adjustinterlineoverlap.7;
+
+  pos [heh.fina.afterlam] [damma] [smallwaw] [waqf.jeem]'lookup adjustinterlineoverlap.1 space [fehshape.init];
+  pos [heh.fina.afterlam] ([twodotsup] [dammatanidgham] [waqf.qaf])'lookup adjustinterlineoverlap.2;
+  
+  pos [meem.fina.ii] [sukun] [waqf.jeem waqf.sad]'lookup adjustinterlineoverlap.3;
+  pos [hamza.isol] [kasratanidgham ] [waqf.jeem]'lookup adjustinterlineoverlap.3; 
+  pos [alef.fina] [maddahabove] [hamza.isol] [damma ] [waqf.qaf]'lookup adjustinterlineoverlap.3; 
+  pos [lam.fina]' ([shadda] [dammatanidgham] [waqf.qaf])'lookup adjustinterlineoverlap.4; 
+  pos [lam.medi.laf]' [fathatan]' [alef.fina.laf]' [waqf.qaf]'lookup adjustinterlineoverlap.1;
+  pos [lam.isol] [damma] [waqf.sad]'lookup adjustinterlineoverlap.1;  
+  pos [waw.isol] [alef.isol] [smallhighroundedzero] [waqf.jeem]'lookup adjustinterlineoverlap.1; 
+  pos [heh.fina] ([twodotsup] [fathatanidgham fathatan] [waqf.jeem])'lookup adjustinterlineoverlap.5; 
+  pos [dal.fina] [kasratanidgham] [waqf.sad]'lookup adjustinterlineoverlap.1; 
+  pos [meem.fina.ii] [dammatan] [waqf.jeem]'lookup adjustinterlineoverlap.1;
+  pos [lam.init.beforedal] [fatha] [dal.fina.afterlam] [kasratanidgham] [waqf.sad]'lookup adjustinterlineoverlap.1; 
+  pos [reh.fina.afterbehshape] [fathatanidgham] [alef.isol] [waqf.qaf]'lookup adjustinterlineoverlap.6; 
+  pos [lam.fina] [damma] [waqf.jeem]'lookup adjustinterlineoverlap.3;  
+  pos [meem.fina.ii] [waqf.jeem]'lookup adjustinterlineoverlap.6; 
+  pos [heh.fina] [kasra] [waqf.jeem]'lookup adjustinterlineoverlap.3; 
+  pos [heh.isol]' ([twodotsup] [dammatan] [waqf.jeem])'lookup adjustinterlineoverlap.5;
+  pos [qaf.isol]' ([dammatanidgham] [waqf.sad])'lookup adjustinterlineoverlap.2;
+  pos [fehshape.medi]' ([onedotup] [shadda] [fathatanidgham] [alef.fina] [waqf.sad])'lookup adjustinterlineoverlap.7; 
+
+} adjustinterlineoverlap;
 
 lookup caltmkmk {
 
@@ -1704,6 +1801,7 @@ feature mkmk {
   lookup caltmkmk;
   lookup lowmarkafterwawandreh;  
   lookup adjustmkmk;
+  lookup adjustinterlineoverlap;
 } mkmk;
 
 feature basm {
