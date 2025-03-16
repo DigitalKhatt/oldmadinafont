@@ -653,6 +653,39 @@ lookup basmala.curs {
 
 } basmala.curs ;
 
+lookup basmalafatiha {
+
+  feature bism;
+
+  lookupflag IgnoreMarks;
+
+    
+  sub meem.fina.ii by meem.fina.basmala add 0 0;         
+  sub meem.medi.afterhah  add -0.7 0; 
+  sub noon.fina by noon.fina.basmala add 9 -0.5;
+  sub lam.init  add -0.5 0; 
+  sub reh.fina  add 0 -0.5;  
+  sub behshape.medi add 1 0;
+} basmalafatiha;
+
+lookup basmalafatiha.kern {
+
+  feature bism;
+
+  lookupflag IgnoreMarks;
+
+  pos [meem.fina.basmala] space [alef.isol]'<0 0 -100 0>;
+
+  pos [noon.fina.basmala]'<-1700 0 -1700 0> space' [alef.isol]'; 
+
+  pos [hah.init]'<0 0 -100 0>; 
+
+  pos [hah.init.beforemeem]'<0 0 -50 0>; 
+
+  pos [lam.init]'<0 0 -50 0>;  
+
+} basmalafatiha.kern ;
+
 lookup marks.addwidth {
 
   feature calt;	
@@ -1808,6 +1841,12 @@ feature basm {
   lookup basmala;
   lookup basmala.curs;
 } basm;
+
+feature bism {
+  lookup basmalafatiha;  
+  lookup basmalafatiha.kern;
+} bism;
+
 
 feature cv01 {
   lookup glyphalternates;

@@ -3818,7 +3818,7 @@ fill
 draw two_dots.pic  shifted z11;
 savepicture:=1;
 enddefchar;
-beginchar(feh.isol,1601,-1,-1,-1);
+defchar(feh.isol,1601,-1,-1,-1);
 %%backgroundimage:images/feh.isol.jpg,-104,-1102.27,1,0,0,1
 %%beginparams
 z11 = bldmvi ( (337,519), (829,-1) );
@@ -3865,7 +3865,7 @@ bldmvi ( (704,276), (833,-2) ) .. tension 1.95936 and 1 ..
 draw one_dot.pic  shifted z11;
 savepicture:=1;
 
-endchar;
+enddefchar;
 defchar(qaf.fina,-1,-1,-1,-1);
 %%backgroundimage:images/qaf.fina.2.jpg,23.3403,-932.127,1,0,0,1
 %%beginparams
