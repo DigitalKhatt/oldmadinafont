@@ -510,33 +510,27 @@ OldMadina::OldMadina(OtLayout* layout, Font* font, bool extended) :Automedina{ l
 
 }
 
-CalcAnchor  OldMadina::getanchorCalcFunctions(QString functionName, Subtable* subtable) {
+CalcAnchor OldMadina::getanchorCalcFunctions(QString functionName,
+                                             Subtable *subtable) {
+    CalcAnchor ret;
   if (functionName == "defaultmarkabovemark") {
-    return Defaultmarkabovemark(*this, *(MarkBaseSubtable*)(subtable));
-  }
-  else if (functionName == "defaultopmarkanchor") {
-    return Defaultopmarkanchor(*this, *(MarkBaseSubtable*)(subtable));
-  }
-  else if (functionName == "defaultmarkbelowmark") {
-    return Defaultmarkbelowmark(*this, *(MarkBaseSubtable*)(subtable));
-  }
-  else if (functionName == "defaullowmarkanchor") {
-    return Defaullowmarkanchor(*this, *(MarkBaseSubtable*)(subtable));
-  }  
-  else if (functionName == "defaultbaseanchorforlow") {
-    return Defaulbaseanchorforlow(*this, *(MarkBaseSubtable*)(subtable));
-  }
-  else if (functionName == "defaulbaseanchorfortop") {
-    return Defaulbaseanchorfortop(*this, *(MarkBaseSubtable*)(subtable));
-  }
-
-  else if (functionName == "joinedsmalllettersbaseanchor") {
-    return Joinedsmalllettersbaseanchor(*this, *(MarkBaseSubtable*)(subtable));
+    return Defaultmarkabovemark(*this, *(MarkBaseSubtable *)(subtable));
+  } else if (functionName == "defaultopmarkanchor") {
+    return Defaultopmarkanchor(*this, *(MarkBaseSubtable *)(subtable));
+  } else if (functionName == "defaultmarkbelowmark") {
+    return Defaultmarkbelowmark(*this, *(MarkBaseSubtable *)(subtable));
+  } else if (functionName == "defaullowmarkanchor") {
+    return Defaullowmarkanchor(*this, *(MarkBaseSubtable *)(subtable));
+  } else if (functionName == "defaultbaseanchorforlow") {
+    return Defaulbaseanchorforlow(*this, *(MarkBaseSubtable *)(subtable));
+  } else if (functionName == "defaulbaseanchorfortop") {
+    return Defaulbaseanchorfortop(*this, *(MarkBaseSubtable *)(subtable));
+  } else if (functionName == "joinedsmalllettersbaseanchor") {
+    return Joinedsmalllettersbaseanchor(*this, *(MarkBaseSubtable *)(subtable));
+  } else {
+      return ret;
   }
 }
-
-
-
 
 Lookup* OldMadina::getLookup(QString lookupName) {
 

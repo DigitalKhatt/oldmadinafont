@@ -10,6 +10,7 @@ public:
   Lookup* getLookup(QString lookupName) override;
   CalcAnchor  getanchorCalcFunctions(QString functionName, Subtable* subtable) override;
   void generateSubstEquivGlyphs() override;
+  ~OldMadina(){}
 private:
   Lookup* defaultmarkposition();
   Lookup* defaultwaqfmarktobase();

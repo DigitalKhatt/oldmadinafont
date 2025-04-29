@@ -21,7 +21,11 @@ find_package(visualmetafont REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED ${Source_Files})
 
+target_link_options(${PROJECT_NAME} PRIVATE $<$<CXX_COMPILER_ID:Clang>:-undefined dynamic_lookup>)
+
 set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
+
+target_compile_options(${PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:Clang>:-fdeclspec>)
 
 target_link_libraries(${PROJECT_NAME} Qt5::Gui visualmetafont)
 
