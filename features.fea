@@ -904,6 +904,15 @@ lookup variouskern {
 
   pos [waw.fina]' [alef.isol]'<100 0 0 0> [smallhighroundedzero]';
 
+  pos /^reh|^waw/' [@marks]' [space]' [ain.init seen.init.beforereh kaf.init kaf.init.beforelam seen.init.beforeyeh]' <0 0 -200 0>; #added by zeeshan
+  pos /^reh|^waw/' [onedotup]' [@marks]' [space]' [ain.init hah.init hah.init.ii seen.init.beforereh  kaf.init kaf.init.beforelam]' <0 0 -200 0>; # added by zeeshan
+  pos /^reh|^waw/' [@marks]' [space]' [meem.init.beforehah]' <0 0 -200 0>; # added by zeeshan 
+  pos /^reh|^waw/' [@marks]' [space]' [behshape.init.beforeseen]' <0 0 -200 0> [twodotsup]' [@marks]' ; #added by zeeshan 
+  pos [alef.fina.lamalef]' [space]' [hah.init behshape.init.beforehah heh.init  ain.init.finjani]' <0 0 -150 0>; 
+  
+  pos /^reh|^waw/' [@marks]' [space]' [alef.isol]' <0 0 -200 0> [wasla]' ;
+
+
 } variouskern;
 
 lookup kafsubst {
