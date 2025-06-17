@@ -376,10 +376,10 @@ OldMadina::OldMadina(OtLayout* layout, Font* font, bool extended) :Automedina{ l
   //setAnchorCalcFunctions();
 
 
-  layout->expandableGlyphs["alef.isol"] = { 5,-4,0,0 };
-  layout->expandableGlyphs["alef.fina"] = { 5,-4,20,-0.4 };
+  layout->expandableGlyphs["alef.isol"] = { 20,-2,0,0 };
+  layout->expandableGlyphs["alef.fina"] = { 20,-2,20,-0.4 };
 
-  layout->expandableGlyphs["behshape.isol"] = { 20,-2.5,0,0 };
+  layout->expandableGlyphs["behshape.isol"] = { 3,-2,0,0 };
 
   layout->expandableGlyphs["behshape.init.beforenoon"] = { 20,-0.7,0,0 };
 
@@ -405,9 +405,9 @@ OldMadina::OldMadina(OtLayout* layout, Font* font, bool extended) :Automedina{ l
   layout->expandableGlyphs["qaf.isol.expa"] = { 20,0,0,0 };
   layout->expandableGlyphs["qaf.fina.expa"] = { 20,0,0,0 };
 
-  layout->expandableGlyphs["behshape.init"] = { 20,-1,0,0 };
+  layout->expandableGlyphs["behshape.init"] = { 20,0,0,0 };
   layout->expandableGlyphs["hah.init"] = { 20,-0.5,0,0 };
-  layout->expandableGlyphs["seen.init"] = { 20,-0.7,0,0 };
+  layout->expandableGlyphs["seen.init"] = { 20,-0.5,0,0 };
   layout->expandableGlyphs["sad.init"] = { 20,-0.5,0,0 };
   layout->expandableGlyphs["tah.init"] = { 20,-0.5,0,0 };
   layout->expandableGlyphs["ain.init"] = { 20,-0.7,0,0 };
@@ -425,7 +425,7 @@ OldMadina::OldMadina(OtLayout* layout, Font* font, bool extended) :Automedina{ l
   layout->expandableGlyphs["heh.medi"] = { 20,-0.3,0,0 };
   layout->expandableGlyphs["behshape.medi"] = { 20,-0.5,20,-0.5 };
   layout->expandableGlyphs["behshape.medi.afterbeh"] = { 20,-0.5,0,0 };
-  layout->expandableGlyphs["behshape.medi.beforeseen"] = { 20,-1,20,-1 };
+  layout->expandableGlyphs["behshape.medi.beforeseen"] = { 20,0,20,0 };
   layout->expandableGlyphs["behshape.medi.beforereh"] = { 20,-0.5,20,-0.7 };
   layout->expandableGlyphs["behshape.medi.beforenoon"] = { 20,-0.5,20,-0.7 };
   layout->expandableGlyphs["behshape.medi.beforeyeh"] = { 0,0,20,-1 };
@@ -438,7 +438,7 @@ OldMadina::OldMadina(OtLayout* layout, Font* font, bool extended) :Automedina{ l
   layout->expandableGlyphs["hah.medi.aftermeem"] = { 20,-1,0,0 };
   layout->expandableGlyphs["hah.medi.afterfeh"] = { 20,-1,0,0 };
   layout->expandableGlyphs["hah.medi.ii"] = { 0,0,20,-0.5 };
-  layout->expandableGlyphs["seen.medi"] = { 20,-0.5,20,-0.5 };
+  layout->expandableGlyphs["seen.medi"] = { 20,-0.2,20,-0.2 };
   layout->expandableGlyphs["seen.medi.afterbeh"] = { 20,-0.5,20,-0.5 };
   layout->expandableGlyphs["seen.medi.beforereh"] = { 0,0,20,-0.5 };
   layout->expandableGlyphs["seen.medi.beforeyeh"] = { 0,0,20,-0.5 };
@@ -446,7 +446,7 @@ OldMadina::OldMadina(OtLayout* layout, Font* font, bool extended) :Automedina{ l
   layout->expandableGlyphs["tah.medi"] = { 20,-0.5,20,-0.5 };
   layout->expandableGlyphs["ain.medi"] = { 20,-0.5,20,-0.5 };
   layout->expandableGlyphs["ain.medi.beforeyeh"] = { 0,0,20,-0.5 };
-  layout->expandableGlyphs["fehshape.medi"] = { 20,-0.5,20,-0.5 };
+  layout->expandableGlyphs["fehshape.medi"] = { 20,-0.1,20,-0.1 };
   layout->expandableGlyphs["fehshape.medi.beforeyeh"] = { 0,0,20,-0.5 };
 
   layout->expandableGlyphs["kaf.medi"] = { 20,-1.5,20,-1.5 };
@@ -476,13 +476,13 @@ OldMadina::OldMadina(OtLayout* layout, Font* font, bool extended) :Automedina{ l
   layout->expandableGlyphs["feh.fina"] = { 0.0,0.0,20,-0.5 };
   layout->expandableGlyphs["meem.fina"] = { 0.0,0.0,20,-0.7 };
   layout->expandableGlyphs["meem.fina.ii"] = { 0.0,0.0,20,-0.7 };
-  layout->expandableGlyphs["behshape.fina"] = { 0.0,0.0,20,-0.5 };
+  layout->expandableGlyphs["behshape.fina"] = { 2.0,-1.0,20,-0.1 };
   layout->expandableGlyphs["qaf.fina"] = { 0.0,0.0,20,-0.5 };
   layout->expandableGlyphs["lam.fina"] = { 0.0,0.0,20,-0.5 };
   layout->expandableGlyphs["kaf.fina"] = { 0.0,0.0,20,-1 };
-  layout->expandableGlyphs["noon.fina"] = { 0.0,0.0,20,-0.5 };
+  layout->expandableGlyphs["noon.fina"] = { 0.0,0.0,20,-0.1 };
   layout->expandableGlyphs["noon.fina.basmala"] = { 20,0.0,0,-0.5 };
-  layout->expandableGlyphs["reh.fina"] = { 0.0,0.0,20,-0.5 };
+  layout->expandableGlyphs["reh.fina"] = { 0.0,0.0,20,0 };
   layout->expandableGlyphs["ain.fina"] = { 0.0,0.0,20,-0.5 };
 
   layout->expandableGlyphs["fatha"] = { 20,-1.0,0,0 };

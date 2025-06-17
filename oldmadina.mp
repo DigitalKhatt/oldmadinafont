@@ -5,8 +5,8 @@
 
 nametable.familyName := "DigitalKhatt Old Madina";
 nametable.copyright := "Copyright (c) 2023-2024 Amine Anane, Copyright © 2024 Tarteel Inc.";
-lineheight := 88;
-penwidth := 85;
+lineheight := 98;
+penwidth := 98;
 joinvector := ljoinvector := rjoinvector := (16,lineheight);
 nuqta := 1.4penwidth;
 defAxis("scaleX","SCLX",50,100,200,"params100");

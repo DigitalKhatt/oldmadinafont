@@ -405,7 +405,7 @@ lookup requiredligature {
     sub seen.medi by seen.medi.beforeyeh;
     sub sad.init by sad.init.beforeyeh;
     sub sad.medi by sad.medi.beforeyeh;
-  } substyehshapefinaafterbeh;	
+  } substyehshapefinaafterbeh;	  
 
   sub (lam.init lam.medi heh.fina)'lookup requiredligature.l1;
   sub (lam.init alef.fina)'lookup requiredligature.l2;	
@@ -425,7 +425,12 @@ lookup requiredligature {
   sub (behshape.medi reh.fina)'lookup requiredligature.l13;
   sub ([behshape.medi seen.init seen.medi sad.init sad.medi] yehshape.fina)'lookup substyehshapefinaafterbeh;
 
-  
+  lookup requiredligature.l14 {
+    sub lam.init by lam.init.beforebeh;
+    sub behshape.medi by behshape.medi.afterbeh;  
+  } requiredligature.l14;
+
+  sub [lam.init]'lookup requiredligature.l14   [behshape.medi]'lookup requiredligature.l14;  
   
 } requiredligature;
 
@@ -528,7 +533,7 @@ lookup leftexpand {
     } forwawfea.l1;
 
     lookup forwawfea.l4 {
-      sub @haslefttatweel add 2.5 0;
+      sub @haslefttatweel add 1.75 0;
     } forwawfea.l4;
 
     lookup forwawfea.add1 {
@@ -1672,3 +1677,71 @@ feature bism {
 feature cv01 {
   lookup glyphalternates;
 } cv01;
+
+lookup shrink1.l1 {
+    sub /init/ add -0.1 0;
+    sub /medi/ add -0.1 -0.1;
+    sub /fina/ add 0 -0.1;
+    sub behshape.isol add -0.2 0;
+    sub behshape.fina add -0.2 0;
+  } shrink1.l1;
+
+lookup shrink1 {
+
+  feature sk01;
+
+  lookupflag IgnoreMarks;
+  
+  sub @bases'lookup shrink1.l1;
+
+} shrink1;
+
+lookup shrink2 {
+
+  feature sk01;
+
+  lookupflag IgnoreMarks;
+  
+  sub @bases'lookup shrink1.l1;
+
+} shrink2;
+
+lookup shrink3 {
+
+  feature sk01;
+
+  lookupflag IgnoreMarks;
+  
+  sub @bases'lookup shrink1.l1;
+
+} shrink3;
+
+lookup shrink4 {
+
+  feature sk01;
+
+  lookupflag IgnoreMarks;
+  
+  sub @bases'lookup shrink1.l1;
+
+} shrink4;
+
+lookup shrink5 {
+
+  feature sk01;
+
+  lookupflag IgnoreMarks;
+  
+  sub @bases'lookup shrink1.l1;
+
+} shrink5;
+
+
+
+feature sk01 {
+  lookup shrink1;
+  lookup shrink2;
+  lookup shrink3;
+  lookup shrink4;
+  lookup shrink5;
+} sk01;

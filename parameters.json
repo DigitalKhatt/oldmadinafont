@@ -980,8 +980,8 @@
                         0
                     ],
                     "behshape.init": [
-                        16,
-                        -40
+                        -31,
+                        -2
                     ],
                     "behshape.init.beforebeh": [
                         -38,
@@ -2261,6 +2261,10 @@
                         333,
                         -41
                     ],
+                    "seen.medi.beforereh": [
+                        160,
+                        -40
+                    ],
                     "seen.medi.pluslt_100": [
                         79,
                         11
@@ -2514,7 +2518,7 @@
                         -314
                     ],
                     "tah.medi": [
-                        225,
+                        258,
                         -467
                     ]
                 }
@@ -4885,36 +4889,6 @@
                 "yehshape.isol.expa": [
                     22,
                     -22
-                ]
-            }
-        }
-    },
-    "shr1.cursive.l1": {
-        "subtable1": {
-            "entryParameters": {
-                "waw.isol": [
-                    304,
-                    -28
-                ]
-            }
-        }
-    },
-    "shr1.cursive.l2": {
-        "subtable1": {
-            "entryParameters": {
-                "heh.init": [
-                    415,
-                    0
-                ]
-            }
-        }
-    },
-    "shr1.dalcursive": {
-        "subtable1": {
-            "entryParameters": {
-                "behshape.init.beforenoon": [
-                    111,
-                    -199
                 ]
             }
         }
