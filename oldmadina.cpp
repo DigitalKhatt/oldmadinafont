@@ -409,7 +409,7 @@ OldMadina::OldMadina(OtLayout* layout, Font* font, bool extended) :Automedina{ l
   layout->expandableGlyphs["hah.init"] = { 20,-0.5,0,0 };
   layout->expandableGlyphs["seen.init"] = { 20,-0.5,0,0 };
   layout->expandableGlyphs["sad.init"] = { 20,-0.5,0,0 };
-  layout->expandableGlyphs["tah.init"] = { 20,-0.5,0,0 };
+  layout->expandableGlyphs["tah.init"] = { 20,0,0,0 };
   layout->expandableGlyphs["ain.init"] = { 20,-0.7,0,0 };
   layout->expandableGlyphs["fehshape.init"] = { 20,-1,0,0 };
   layout->expandableGlyphs["kaf.init"] = { 20,-1.5,0,0 };
@@ -437,6 +437,7 @@ OldMadina::OldMadina(OtLayout* layout, Font* font, bool extended) :Automedina{ l
   layout->expandableGlyphs["hah.medi.lam_hah"] = { 20,-1,0,0 };
   layout->expandableGlyphs["hah.medi.aftermeem"] = { 20,-1,0,0 };
   layout->expandableGlyphs["hah.medi.afterfeh"] = { 20,-1,0,0 };
+  layout->expandableGlyphs["hah.medi.aftersad"] = { 20,-0.5,0,0 };
   layout->expandableGlyphs["hah.medi.ii"] = { 0,0,20,-0.5 };
   layout->expandableGlyphs["seen.medi"] = { 20,-0.2,20,-0.2 };
   layout->expandableGlyphs["seen.medi.afterbeh"] = { 20,-0.5,20,-0.5 };

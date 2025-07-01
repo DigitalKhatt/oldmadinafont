@@ -117,6 +117,14 @@
     },
     "adjustmkmk.hah.1": {
         "subtable1": {
+            "kasra": {
+                "baseparameters": {
+                    "hah.fina": [
+                        60,
+                        420
+                    ]
+                }
+            },
             "kasratan": {
                 "baseparameters": {
                     "hah.fina": [
@@ -942,8 +950,8 @@
                         -9
                     ],
                     "hah.medi.afterfeh": [
-                        133,
-                        33
+                        -27,
+                        13
                     ],
                     "hah.medi.afterlam.beforeyeh": [
                         205,
@@ -2518,8 +2526,8 @@
                         -314
                     ],
                     "tah.medi": [
-                        258,
-                        -467
+                        178,
+                        -107
                     ]
                 }
             },
@@ -2716,7 +2724,7 @@
                         0
                     ],
                     "hah.medi.afterfeh": [
-                        -145,
+                        -205,
                         -59
                     ],
                     "hah.medi.afterlam.beforeyeh": [
@@ -2726,6 +2734,10 @@
                     "hah.medi.aftermeem": [
                         -124,
                         -38
+                    ],
+                    "hah.medi.aftersad": [
+                        -40,
+                        -20
                     ],
                     "hah.medi.ii": [
                         -57,
@@ -2867,6 +2879,10 @@
                         -175,
                         -57
                     ],
+                    "lam.init.beforemeem": [
+                        -111,
+                        0
+                    ],
                     "lam.init.beforeyeh": [
                         -49,
                         -65
@@ -2959,6 +2975,10 @@
                         -39,
                         -50
                     ],
+                    "meem.medi.afterlam": [
+                        -190,
+                        112
+                    ],
                     "noon.fina.expa": [
                         40,
                         -203
@@ -3006,6 +3026,10 @@
                     "sad.init": [
                         152,
                         -138
+                    ],
+                    "sad.init.beforehah": [
+                        160,
+                        40
                     ],
                     "sad.init.beforereh": [
                         111,
@@ -3390,6 +3414,18 @@
                         84
                     ]
                 }
+            }
+        }
+    },
+    "isolkern.o1": {
+        "subtable1": {
+            "parameters": {
+                "fehshape.init.beforehah": [
+                    -120,
+                    -20,
+                    0,
+                    0
+                ]
             }
         }
     },
@@ -4304,8 +4340,8 @@
                         138
                     ],
                     "fehshape.init": [
-                        162,
-                        94
+                        42,
+                        114
                     ],
                     "hah.init": [
                         28,
@@ -4889,6 +4925,20 @@
                 "yehshape.isol.expa": [
                     22,
                     -22
+                ]
+            }
+        }
+    },
+    "shrink.kern1.l1": {
+        "subtable1": {
+            "entryParameters": {
+                "noon.isol": [
+                    300,
+                    -60
+                ],
+                "waw.isol": [
+                    280,
+                    -60
                 ]
             }
         }
