@@ -1,2 +1,4 @@
 # oldmadinafont
  DigitalKhatt font based on the old Madina Mushaf (1995)
+ 
+ This project is sponsored by [@tarteelAI](https://github.com/TarteelAI) [<img src="https://assets-global.website-files.com/6167e862f6dfba5084eb5554/61680717c50ec79defcdb062_logo-group.svg">](https://www.tarteel.ai/)
