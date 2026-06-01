@@ -1,0 +1,8 @@
+# output files
+output
+.vscode
+build
+CMakeUserPresets.json
+*.dylib
+*.cmake
+CMakeLists.txt.user
