@@ -1061,7 +1061,7 @@ lookup defaultmkmkwaqf {
 
   @lowbase = [
     smallwaw smallyeh hamza.isol heh.fina.allah yehshape.fina.ii yehshape.fina.afterbeh /^reh/ /^waw/ meem.fina.ii
-    behshape.fina meem.fina.afterkaf
+    behshape.fina meem.fina.afterkaf sad.isol 
   ];
 
   #lookup defaultmkmkwaqf.mark {    
