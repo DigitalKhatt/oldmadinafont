@@ -4,7 +4,7 @@
 %%
 
 nametable.familyName := "DigitalKhatt Old Madina";
-nametable.copyright := "Copyright (c) 2023-2024 Amine Anane, Copyright © 2024 Tarteel Inc.";
+nametable.copyright := "Copyright (c) 2023-2026 DigitalKhatt contributors";
 lineheight := 98;
 penwidth := 98;
 joinvector := ljoinvector := rjoinvector := (16,lineheight);
