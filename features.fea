@@ -1321,7 +1321,9 @@ lookup lowmarkafterwawandreh {
     <anchor function defaultbaseanchorforlow> markClass [hamzabelow] <anchor function defaullowmarkanchor> @hamzabelow;
   } lowmarkafterwawandreh.hamzabelow.2;
 
-  pos /waw[.]isol|reh[.]isol/ (kasra?) /^behshape.init/ hamzabelow'lookup lowmarkafterwawandreh.hamzabelow.1;
+  
+
+  pos /waw[.]isol|reh[.]isol/ (kasra?) /^behshape.init/ hamzabelow'lookup lowmarkafterwawandreh.hamzabelow.1 [kasra kasratan kasratanidgham]'lookup hamzaabovebelow.l2;
 
   pos /waw[.]fina|reh[.]fina/ (kasra?) /^behshape.init/ hamzabelow'lookup lowmarkafterwawandreh.hamzabelow.2 kasra'lookup lowmarkafterwawandreh.hamzabelow.2;
 
@@ -1366,6 +1368,14 @@ lookup adjustmarks {
     pos base [meem.medi.afterhah hah.init.beforemeem] <anchor function defaulbaseanchorfortop> markClass [damma] <anchor function defaultopmarkanchor> @damma;	
   } adjustmarks.8;
 
+  lookup adjustmarks.9 {
+    pos base [alef.fina] <anchor function defaulbaseanchorfortop> markClass [@waqfmarks] <anchor function defaultopmarkanchor> @waqf;	
+  } adjustmarks.9;
+
+  lookup adjustmarks.10 {
+    pos base [alef.fina] <anchor function defaulbaseanchorfortop> markClass [@waqfmarks] <anchor function defaultopmarkanchor> @waqf;	
+  } adjustmarks.10;
+
   pos [behshape.init]' [onedotup]'lookup adjustmarks.1 [shadda]'lookup adjustmarks.1 [fatha]'lookup adjustmarks.1 [alef.fina]' [hamzaabove maddahabove]';
 
   pos [dal.isol]' [onedotup]' [fatha]'lookup adjustmarks.2 [alef.isol]' [maddahabove]';
@@ -1386,6 +1396,11 @@ lookup adjustmarks {
   pos [reh.fina.afterbehshape]' [fatha]'<0 100 0 0> [alefmaksura.isol.expa]'; 
 
   pos [hah.init.beforemeem]' [onedotup]' [damma]'lookup adjustmarks.8 [meem.medi.afterhah]' [damma]'lookup adjustmarks.8;
+
+  pos [fathatan fathatanidgham meemiqlab ] [alef.fina]' [@waqfmarks ]'lookup adjustmarks.9;
+  pos [behshape.medi] [onedotup] [shadda] [fatha] [alef.fina]' [@waqfmarks ]'lookup adjustmarks.9;
+
+  pos [alef.fina]' [@waqfmarks]'lookup adjustmarks.10 space [kaf.init]; 
 
 } adjustmarks;
 
@@ -1518,6 +1533,8 @@ feature mkmk {
 feature cv01 {
   lookup glyphalternates;
 } cv01;
+
+#if isShrink
 
 lookup shrink.gsub1 {
 
@@ -2386,4 +2403,5 @@ feature sk12 {
 feature sk13 {
   lookup shrink.space.alt2;
 } sk13;
+#endif;
 

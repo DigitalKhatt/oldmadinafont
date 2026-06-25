@@ -41,6 +41,18 @@
             }
         }
     },
+    "adjustmarks.10": {
+        "subtable1": {
+            "waqf": {
+                "baseparameters": {
+                    "alef.fina": [
+                        40,
+                        140
+                    ]
+                }
+            }
+        }
+    },
     "adjustmarks.2": {
         "subtable1": {
             "fatha": {
@@ -134,6 +146,18 @@
                     "meem.medi.afterhah": [
                         -40,
                         -138
+                    ]
+                }
+            }
+        }
+    },
+    "adjustmarks.9": {
+        "subtable1": {
+            "waqf": {
+                "baseparameters": {
+                    "alef.fina": [
+                        24,
+                        216
                     ]
                 }
             }
@@ -2448,8 +2472,8 @@
                         -231
                     ],
                     "kaf.init.short": [
-                        28,
-                        -201
+                        4,
+                        -177
                     ],
                     "kaf.isol": [
                         23,
@@ -2890,8 +2914,8 @@
             "waqfmarks": {
                 "baseparameters": {
                     "alef.fina": [
-                        -159,
-                        90
+                        -87,
+                        -102
                     ],
                     "alef.fina.laf": [
                         -82,
@@ -4375,40 +4399,6 @@
                     281,
                     0,
                     0
-                ]
-            }
-        }
-    },
-    "shrink.kern1.l1": {
-        "subtable1": {
-            "entryParameters": {
-                "noon.isol": [
-                    300,
-                    -60
-                ],
-                "waw.isol": [
-                    280,
-                    -60
-                ]
-            }
-        }
-    },
-    "shrink.kern1.l2": {
-        "subtable1": {
-            "entryParameters": {
-                "alef.isol": [
-                    16,
-                    -164
-                ]
-            }
-        }
-    },
-    "shrink.kern1.l3": {
-        "subtable1": {
-            "entryParameters": {
-                "behshape.init.beforenoon": [
-                    140,
-                    -133
                 ]
             }
         }
