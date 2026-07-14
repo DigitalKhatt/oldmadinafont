@@ -16,6 +16,11 @@ set(Source_Files
 
 
 find_package(Qt5 COMPONENTS Gui  REQUIRED)
+# visualmetafont statically links digitalkhatt_core/digitalkhatt_geometry,
+# whose private Clipper2 dependency must still resolve for any consumer
+# linking those static libs in (CMake requires this even though Clipper2
+# itself is only used internally, never in a public header).
+find_package(Clipper2 CONFIG REQUIRED)
 find_package(visualmetafont REQUIRED)
 
 

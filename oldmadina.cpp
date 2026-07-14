@@ -489,6 +489,7 @@ OldMadina::OldMadina(OtLayout* layout, Font* font, bool extended) : Automedina{l
   layout->expandableGlyphs["hah.medi.aftersad"] = {20, -0.5, 0, 0};
   layout->expandableGlyphs["hah.medi.ii"] = {0, 0, 20, -0.3};
   layout->expandableGlyphs["hah.medi.beforeyeh"] = {0, 0, 20, -0.5};
+  layout->expandableGlyphs["heh.medi.afterbehinit"] = {20, 0, 0, 0};
   layout->expandableGlyphs["seen.medi"] = {20, -0.2, 20, -0.2};
   layout->expandableGlyphs["seen.medi.afterbeh"] = {20, -0.3, 20, -0.3};
   layout->expandableGlyphs["seen.medi.beforereh"] = {0, 0, 20, -0.5};
@@ -2485,19 +2486,6 @@ Lookup* OldMadina::glyphalternates() {
     alternateSubtable->alternates[newglyph->charcode] = alternates;
   }
 
-  /*
-  //cv02
-  alternate = new Lookup(m_layout);
-  alternate->name = QString("cv%1").arg(cvNumber++, 2, 10, QLatin1Char('0'));
-  alternate->feature = alternate->name;
-  alternate->type = Lookup::alternate;
-
-  m_layout->addLookup(alternate);
-
-  alternateSubtable = new AlternateSubtable(alternate);
-  alternate->subtables.append(alternateSubtable);
-  alternateSubtable->name = alternate->name;*/
-
   for (auto& glyph : m_layout->expandableGlyphs) {
     if (!m_layout->glyphCodePerName.contains(glyph.first)) continue;
 
@@ -2542,7 +2530,7 @@ Lookup* OldMadina::glyphalternates() {
   alternate->feature = alternate->name;
   alternate->type = Lookup::alternate;
 
-  m_layout->addLookup(alternate);
+  // m_layout->addLookup(alternate);
 
   alternateSubtable = new AlternateSubtableWithTatweel(alternate);
   alternate->subtables.append(alternateSubtable);
@@ -2577,7 +2565,7 @@ Lookup* OldMadina::glyphalternates() {
   }
 
   // for shrinking
-  alternate = new Lookup(m_layout);
+  /*alternate = new Lookup(m_layout);
   alternate->name = "cv04";
   alternate->feature = alternate->name;
   alternate->type = Lookup::alternate;
@@ -2593,34 +2581,14 @@ Lookup* OldMadina::glyphalternates() {
     auto valueLimits = glyph.second;
 
     QVector<ExtendedGlyph> alternates;
-    /*
-    for (float tatweel = -0.1; tatweel >= std::max(std::min(valueLimits.minLeft,valueLimits.minRight), -0.5F); tatweel += -0.1) {
-      alternates.append({ glyphCode,std::max(tatweel,valueLimits.minLeft),std::max(tatweel,valueLimits.minRight) });
-    }
-      */
+
     for (double tatweel = -0.1; tatweel >= -0.5; tatweel += -0.1) {
       alternates.append({glyphCode, std::max(tatweel, valueLimits.minLeft), std::max(tatweel, valueLimits.minRight)});
     }
     if (alternates.size() > 0) {
       alternateSubtable->alternates[glyphCode] = alternates;
     }
-
-    /*
-    if (valueLimits.minLeft < 0 && valueLimits.minRight < 0) {
-      QVector<ExtendedGlyph> alternates;
-      alternates.append({ glyphCode,std::min(-0.3F,valueLimits.minLeft),std::min(-0.3F,valueLimits.minRight) });
-      alternateSubtable->alternates[glyphCode] = alternates;
-    } else if (valueLimits.minLeft < 0){
-        QVector<ExtendedGlyph> alternates;
-        alternates.append({ glyphCode,std::min(-0.3F,valueLimits.minLeft),0 });
-        alternateSubtable->alternates[glyphCode] = alternates;
-    } else if (valueLimits.minRight < 0){
-        QVector<ExtendedGlyph> alternates;
-        alternates.append({ glyphCode,0,std::min(-0.3F,valueLimits.minRight)});
-        alternateSubtable->alternates[glyphCode] = alternates;
-    }
-    */
-  }
+  }*/
 
   return alternate;
 }

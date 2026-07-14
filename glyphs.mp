@@ -130,6 +130,39 @@ bldmv ( (141.15,133.223), (14,9), (19.4026,-0.482255) ) .. tension 1 and 1.91014
 
 %%endpaths
 enddefchar;
+defchar(behinitheh,-1,-1,6,-1);
+%%backgroundimage:images/behinitheh.jpg,-198,-892,1,0,0,1
+%%beginparams
+z1 = (145,43);
+z2 = (178,-18);
+
+%%beginpaths
+
+fill
+(189.359,211.625) .. tension 2.22 and 0.75 ..
+ {down}(205,194) .. tension 1 and 2.33212 ..
+ {down}(125.883,35.1355) .. tension 0.92639 and 1.44093 ..
+ {right}(133.674,21.0047) .. tension 4.14829 and 1 ..
+z1 .. tension 1 and 1 ..
+(228.713,136.593) .. tension 1 and 1.56913 ..
+ {right}(377.967,191.172) .. tension 2.19457 and 1 ..
+ {down}(435.516,125.118) .. tension 1 and 1.40016 ..
+ {left}(405,71) .. tension 0.901215 and 0.875003 ..
+ {left}(350.913,96.3294) .. tension 1.08647 and 1.69809 ..
+ {down}z2 .. tension 0.75 and 3.61019 ..
+ {down}(194.679,-129.656) .. tension 1.06904 and 2.47521 ..
+ {left}bldmv ( (120.026,-233.994), (10.3935,5.05091), (33.8863,4.45281) ) .. tension 1.85195 and 1.4335 ..
+ {up}(60.6557,-55) .. tension 1 and 1 ..
+ {up}(64.3208,-4.66041) .. tension 1 and 1 ..
+ {left}(55,7) .. tension 1 and 1 ..
+bldmv ( (16.884,0.58704), (-11.3333,9.16667), (85.8089,-3.32754) ) leftjoin
+bldmv ( (60.3822,100.592), (-12,3), (100.614,8.77701) ) .. tension 1 and 1 ..
+bldmv ( (104.15,123.223), (14,9), (19.4026,-0.482255) ) .. tension 1 and 1.91014 ..
+ {right} cycle
+;
+
+%%endpaths
+enddefchar;
 defchar(behbeh.ii,-1,-1,6,-1);
 %%backgroundimage:images/beh.init_beh.ii.jpg,-753.573,-1150.45,1,0,0,1
 %%beginparams
@@ -2006,8 +2039,6 @@ leftbearing := 0;
 endchar;
 defchar(noon.fina,-1,-1,-1,-1);
 %%backgroundimage:images/noon.fina.jpg,38.3255,-1034.99,1,0,0,1
-%%beginparams
-rightVerticalRatioNeg := 100;
 
 %%beginverbatim
 
@@ -2030,7 +2061,7 @@ liii0 ( (248.642,-221.865), (0,0), (44,27) ) .. tension 0.826526 and 0.960362 ..
 (476.389,172.917) .. tension 1 and 1.22255 ..
 liii1 ( (506.617,125.999), (8.7213,-0.969033), (0,0) ) .. tension 1 and 2.84124 ..
 liii1 ( (528.79,104.945), (27.9082,-6.78324), (-17.5712,-24.0202) ) setranchor
-(621.398,-1.67052) rightjoinii
+(621,0) rightjoinii
 liii1 ( (530.058,2.56782), (2.31684,-0.434351), (-6.49804,-0.87773) ) .. tension 3.90213 and 1 ..
  {left}liii1 ( (528.675,2.96036), (0,0), (0,0) ) .. tension 1.13482 and 1.15751 ..
  {down}(525.869,-1.73479) .. tension 1.13331 and 0.956441 ..
@@ -2039,6 +2070,9 @@ liii1 ( (530.058,2.56782), (2.31684,-0.434351), (-6.49804,-0.87773) ) .. tension
 ;
 
 %%endpaths
+%%beginbody
+
+
 enddefchar;
 defchar(hah.medi.afterbeh,-1,-1,-1,-1);
 %%backgroundimage:images/behhah.jpg,-1110.93,-1207.74,1,0,0,1
@@ -2318,7 +2352,7 @@ leii0 ( (160.648,616.491), (-211.408,_tatweel) ) ..
 leii0 ( (174,517), (-211.408,_tatweel) ) --
 (200.157,156.315) .. tension 1 and 1 ..
 liii1 ( (235.583,107.278), (1.44676,-10.6096), (-32.2319,-15.7969) ) setranchor
-(271,-1) rightjoinii
+(271,0) rightjoinii
 liii1 ( (186.028,26), (29.4174,-13.9853), (0.279082,-36.8388) ) .. tension atleast 1 ..
 liii1 ( (158.139,58.6944), (0,0), (9.48878,-28.1872) ) ..
 (139,121) --
@@ -2585,6 +2619,18 @@ defchar(behshape.init.beforebeh,-1,-1,-1,-1);
 
 
 behbeh.ii_(lefttatweel,righttatweel);
+
+cutGlyph(z1,z2,true);
+
+leftanchor := z2;
+
+
+enddefchar;
+defchar(behshape.init.beforeheh,-1,-1,-1,-1);
+%%beginbody
+
+
+behinitheh_(lefttatweel,righttatweel);
 
 cutGlyph(z1,z2,true);
 
@@ -3142,7 +3188,7 @@ liii0 ( (646.942,130.981), (-5,1), (0,0) ) .. tension 1.46476 and 1 ..
  {down}(718.813,139.08) .. tension 1 and 1 ..
 liii1 ( (727.819,114.133), (2.34429,1.67449), (0,0) ) .. tension 1 and 1 ..
 liii1 ( (745.453,102.946), (14.4006,-2.67918), (-13.3959,-18.4194) ) setranchor
-(758.468,-0.803755) rightjoinii
+(758,0) rightjoinii
 liii1 ( (734.922,3.55362), (65.9749,2.34429), (-44.2065,-16.7449) ) .. tension 1 and 1 ..
 liii1 ( (681.475,64.9113), (-1.67449,3.68388), (0,0) ) .. tension 1 and 1 ..
  {left}(675.97,70.8131) .. tension 14.6137 and 1 ..
@@ -3385,7 +3431,7 @@ fill
  {down}(437.917,174.167) .. tension 1 and 1 ..
  {down}(430.083,135.806) .. tension 1 and 1.7669 ..
 liii1 ( (453.042,102.861), (0,0), (-74.3474,-3.6169) ) setranchor
-(462,-1) rightjoinii
+(462,0) rightjoinii
 (386.139,51.3333) {left} .. tension 12.1099 and 0.75 ..
  {left}(300.333,11.6944) .. tension 1.33775 and 1.26325 ..
  {left}(244.972,28.8611) .. tension 2.18145 and 1 ..
@@ -3446,7 +3492,7 @@ fill
  {right}(461.519,203.152) .. tension 1 and 1 ..
  {down}(479.545,180.609) .. tension 1 and 1.7669 ..
 liii1 ( (470.866,135.885), (0,0), (-2.97394,-20.978) ) setranchor
-(529.416,21.7499) rightjoinii
+(529,22) rightjoinii
 liii1 ( (427.671,53.8602), (0,0), (0,0) ) .. tension 1.10912 and 1 ..
  {left}(421.528,57.6389) .. tension 2.05721 and 0.75 ..
  {left}(338.527,11.6944) .. tension 1.33775 and 2.64002 ..
@@ -3575,9 +3621,9 @@ fill
  {down}(313.412,159.134) .. tension 1 and 1 ..
 liii1 ( (318.866,126.736), (0,0), (-11.033,-14.0827) ) .. tension 1 and 1.7669 ..
 liii1 ( (340.899,106.705), (0,0), (-52.7371,-9.09775) ) setranchor
-(363.477,0.578704) rightjoinii
-liii1 ( (340.534,2.25091), (9.69033,9.69033), (-91.8644,-1.16284) ) .. tension 1 and 1 ..
-liii1 ( (261.397,45.8453), (0.775227,0), (-0.58142,-0.58142) ) .. tension 1 and 2.31708 ..
+(363,0) rightjoinii
+liii1 ( (342.945,1.44715), (10.4941,11.6997), (-91.8644,-1.16284) ) .. tension 1 and 1 ..
+liii1 ( (261.397,45.8453), (2.38274,-0.401878), (-0.58142,-0.58142) ) .. tension 1 and 2.31708 ..
  {left}(260.333,46.6944) .. tension 7.07496 and 0.75 ..
  {left}(167.718,-4.92979) .. tension 0.75 and 1.72421 ..
  {left}(99.556,28.3248) .. tension 1 and 4.68961 ..
@@ -3684,7 +3730,6 @@ draw pic_ shifted shift_;
 
 
 pair leftanchor;
-%showAnchors := 1;
 
 
 enddefchar;
@@ -6231,6 +6276,16 @@ liii1 ( (344,24), (77.8,-31.2), (-4.49074,-23.9444) ) ..
 save pic_; picture pic_;pic_:= image(heh.init.beforeyeh_(0,0));
 draw pic_ shifted z.shift1 ;
 setCursiveAnchor(ltrcursive,z2 shifted z.shift1,ExitAnchorRTL);
+enddefchar;
+defchar(heh.medi.afterbehinit,-1,-1,-1,-1);
+%%beginbody
+
+
+behinitheh_(lefttatweel,righttatweel);
+
+cutGlyph(z1,z2,false);
+
+rightanchor := z2;
 enddefchar;
 defchar(heh.fina,-1,-1,-1,-1);
 %%backgroundimage:images/heh.fina.jpg,-108.071,-1394.97,1,0,0,1
