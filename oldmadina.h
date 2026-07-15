@@ -7,8 +7,8 @@
 class OldMadina : public Automedina {
  public:
   OldMadina(OtLayout* layout, Font* font, bool extended);
-  Lookup* getLookup(QString lookupName) override;
-  CalcAnchor getanchorCalcFunctions(QString functionName, Subtable* subtable) override;
+  Lookup* getLookup(std::string lookupName) override;
+  CalcAnchor getanchorCalcFunctions(std::string functionName, Subtable* subtable) override;
   PairAdjustFunc getPairAdjustFunction(std::string functionName, Subtable* subtable) override;
 
   void generateSubstEquivGlyphs() override;
