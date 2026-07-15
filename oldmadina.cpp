@@ -205,11 +205,11 @@ void OldMadina::addEndOfAyas(QString ayaName, bool isColored, int maxWidth) {
       setcolored = QString("coloredglyph:=\"%1.colored%2\"").arg(ayaName).arg(ayaNumber);
     }
     QString data = QString("beginchar(%1%2,-1,-1,2,-1);\n%%beginbody\ngenAyaNumber(%1, %2,%4);%3;endchar;").arg(ayaName).arg(ayaNumber).arg(setcolored).arg(maxWidth);
-    m_layout->font->executeMetaPost(data);
+    m_layout->font->executeMetaPost(data.toLatin1().toStdString());
     addedGlyphs[QString("%1%2").arg(ayaName).arg(ayaNumber).toStdString()] = data.toStdString();
     if (isColored) {
       data = QString("beginchar(%1.colored%2,-1,-1,5,-1);\n%%beginbody\ngenAyaNumber(%1.colored, %2,%3);endchar;").arg(ayaName).arg(ayaNumber).arg(maxWidth);
-      m_layout->font->executeMetaPost(data);
+      m_layout->font->executeMetaPost(data.toLatin1().toStdString());
       addedGlyphs[QString("%1.colored%2").arg(ayaName).arg(ayaNumber).toStdString()] = data.toStdString();
     }
   }
