@@ -17,8 +17,8 @@ using namespace std;
 class DefaultBaseOfWaqfToMark : public AnchorCalc {
  public:
   DefaultBaseOfWaqfToMark(Automedina& y, MarkBaseSubtable& subtable) : _y(y), _subtable(subtable) {}
-  QPoint operator()(QString glyphName, QString className, QPoint adjust, GlyphParameters parameters) override {
-    GlyphVis* curr = &_y.glyphs[glyphName.toStdString()];
+  Point operator()(std::string glyphName, std::string className, Point adjust, GlyphParameters parameters) override {
+    GlyphVis* curr = &_y.glyphs[glyphName];
     curr = curr->getAlternate(parameters);
 
     int width = curr->width * 0.5;
@@ -27,7 +27,7 @@ class DefaultBaseOfWaqfToMark : public AnchorCalc {
     width = width + adjust.x();
     height = height + adjust.y();
 
-    return QPoint(width, height);
+    return Point(width, height);
   };
 
  private:
@@ -38,8 +38,8 @@ class DefaultBaseOfWaqfToMark : public AnchorCalc {
 class DefaultBaseOfWaqfToBase : public AnchorCalc {
  public:
   DefaultBaseOfWaqfToBase(Automedina& y, MarkBaseSubtable& subtable) : _y(y), _subtable(subtable) {}
-  QPoint operator()(QString glyphName, QString className, QPoint adjust, GlyphParameters parameters) override {
-    GlyphVis* curr = &_y.glyphs[glyphName.toStdString()];
+  Point operator()(std::string glyphName, std::string className, Point adjust, GlyphParameters parameters) override {
+    GlyphVis* curr = &_y.glyphs[glyphName];
     curr = curr->getAlternate(parameters);
 
     int height = std::max((int)curr->height + 100, 900);
@@ -48,7 +48,7 @@ class DefaultBaseOfWaqfToBase : public AnchorCalc {
     width += adjust.x();
     height += adjust.y();
 
-    return QPoint(width, height);
+    return Point(width, height);
   };
 
  private:
@@ -59,8 +59,8 @@ class DefaultBaseOfWaqfToBase : public AnchorCalc {
 class DefaultMarkOfWaqfToBase : public AnchorCalc {
  public:
   DefaultMarkOfWaqfToBase(Automedina& y, MarkBaseSubtable& subtable) : _y(y), _subtable(subtable) {}
-  QPoint operator()(QString glyphName, QString className, QPoint adjust, GlyphParameters parameters) override {
-    GlyphVis* curr = &_y.glyphs[glyphName.toStdString()];
+  Point operator()(std::string glyphName, std::string className, Point adjust, GlyphParameters parameters) override {
+    GlyphVis* curr = &_y.glyphs[glyphName];
     curr = curr->getAlternate(parameters);
 
     int height = 0;
@@ -70,7 +70,7 @@ class DefaultMarkOfWaqfToBase : public AnchorCalc {
     width += adjust.x();
     height += adjust.y();
 
-    return QPoint(width, height);
+    return Point(width, height);
   };
 
  private:
@@ -676,8 +676,8 @@ Lookup* OldMadina::rehwawcursivecpp() {
    public:
     CustomCursiveSubtable(Lookup* lookup) : CursiveSubtable(lookup) {}
 
-    virtual QPoint calculateEntry(GlyphVis* originalglyph, GlyphVis* extendedglyph, QPoint defaultEntry) {
-      QPoint entry = entryParameters[originalglyph->charcode];
+    virtual Point calculateEntry(GlyphVis* originalglyph, GlyphVis* extendedglyph, Point defaultEntry) {
+      Point entry = entryParameters[originalglyph->charcode];
 
       entry += QPoint(extendedglyph->width, 0);
 
@@ -1147,8 +1147,8 @@ Lookup* OldMadina::defaultmkmk() {
   subtable->name = "waqfsubtable";
   subtable->base = {"topmarks"};
 
-  auto basefunctionwaqf = [this](QString glyphName, QString className, QPoint adjust, GlyphParameters parameters) -> QPoint {
-    GlyphVis* curr = &glyphs[glyphName.toStdString()];
+  auto basefunctionwaqf = [this](std::string glyphName, std::string className, Point adjust, GlyphParameters parameters) -> Point {
+    GlyphVis* curr = &glyphs[glyphName];
     curr = curr->getAlternate(parameters);
 
     int width = curr->width * 0.5;
@@ -1157,7 +1157,7 @@ Lookup* OldMadina::defaultmkmk() {
     width = width + adjust.x();
     height = height + adjust.y();
 
-    return QPoint(width, height);
+    return Point(width, height);
   };
 
   subtable->classes["waqf"].mark = {"waqfmarks"};
@@ -1200,8 +1200,8 @@ Lookup* OldMadina::defaultmarkdotmarks() {
   topsubtable->name = "defaultmarkdotmarkstop";
   topsubtable->base = {"topdotmarks"};
 
-  auto basetopfunction = [this, topsubtable](QString glyphName, QString className, QPoint adjust, GlyphParameters parameters) -> QPoint {
-    GlyphVis& curr = glyphs[glyphName.toStdString()];
+  auto basetopfunction = [this, topsubtable](std::string glyphName, std::string className, Point adjust, GlyphParameters parameters) -> Point {
+    GlyphVis& curr = glyphs[glyphName];
 
     int width = curr.width * 0.5;
     int height = (int)curr.height + 80;
@@ -1209,7 +1209,7 @@ Lookup* OldMadina::defaultmarkdotmarks() {
     width = width + adjust.x();
     height = height + adjust.y();
 
-    return QPoint(width, height);
+    return Point(width, height);
   };
 
   auto topmarks = classes["topmarks"];
@@ -1238,8 +1238,8 @@ Lookup* OldMadina::defaultmarkdotmarks() {
   bottomsubtable->name = "defaultmarkdotmarksbottom";
   bottomsubtable->base = {"downdotmarks"};
 
-  auto basedownfunction = [this, bottomsubtable](QString glyphName, QString className, QPoint adjust, GlyphParameters parameters) -> QPoint {
-    GlyphVis& curr = glyphs[glyphName.toStdString()];
+  auto basedownfunction = [this, bottomsubtable](std::string glyphName, std::string className, Point adjust, GlyphParameters parameters) -> Point {
+    GlyphVis& curr = glyphs[glyphName];
 
     int depth = -(int)curr.depth + 50;
     int width = curr.width * 0.5;
@@ -1247,7 +1247,7 @@ Lookup* OldMadina::defaultmarkdotmarks() {
     width = width + adjust.x();
     depth = depth - adjust.y();
 
-    return QPoint(width, -depth);
+    return Point(width, -depth);
   };
 
   bottomsubtable->classes["lowmarks"].mark = {"lowmarks"};
