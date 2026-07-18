@@ -6,7 +6,6 @@
 #include "Lookup.h"
 #include "Subtable.h"
 #include "defaultmarkpositions.h"
-#include "font.hpp"
 #include "metafont.h"
 #include "qdebug.h"
 #include "qregularexpression.h"
@@ -113,7 +112,7 @@ void OldMadina::generateSubstEquivGlyphs() {
 }
 
 void OldMadina::generateGlyphs() {
-  auto edgess = font->getEdges();
+  auto edgess = font->edges();
 
   glyphs.clear();
 
@@ -205,17 +204,17 @@ void OldMadina::addEndOfAyas(QString ayaName, bool isColored, int maxWidth) {
       setcolored = QString("coloredglyph:=\"%1.colored%2\"").arg(ayaName).arg(ayaNumber);
     }
     QString data = QString("beginchar(%1%2,-1,-1,2,-1);\n%%beginbody\ngenAyaNumber(%1, %2,%4);%3;endchar;").arg(ayaName).arg(ayaNumber).arg(setcolored).arg(maxWidth);
-    m_layout->font->executeMetaPost(data.toLatin1().toStdString());
+    m_layout->font->execute(data.toLatin1().toStdString());
     addedGlyphs[QString("%1%2").arg(ayaName).arg(ayaNumber).toStdString()] = data.toStdString();
     if (isColored) {
       data = QString("beginchar(%1.colored%2,-1,-1,5,-1);\n%%beginbody\ngenAyaNumber(%1.colored, %2,%3);endchar;").arg(ayaName).arg(ayaNumber).arg(maxWidth);
-      m_layout->font->executeMetaPost(data.toLatin1().toStdString());
+      m_layout->font->execute(data.toLatin1().toStdString());
       addedGlyphs[QString("%1.colored%2").arg(ayaName).arg(ayaNumber).toStdString()] = data.toStdString();
     }
   }
 }
 
-OldMadina::OldMadina(OtLayout* layout, Font* font, bool extended) : Automedina{layout, font, extended} {
+OldMadina::OldMadina(OtLayout* layout, MPFont* font, bool extended) : Automedina{layout, font, extended} {
   // m_metafont = layout->m_font;
   classes["marks"] = {
       "onedotup",
@@ -415,7 +414,7 @@ OldMadina::OldMadina(OtLayout* layout, Font* font, bool extended) : Automedina{l
       //"alefmaksura"
   };
 
-  auto useColoredAya = font->getBoolVariable("useColoredAya");
+  auto useColoredAya = font->boolVariable("useColoredAya");
 
   addEndOfAyas("endofaya", useColoredAya, 630);
 

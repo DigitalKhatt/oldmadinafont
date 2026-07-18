@@ -6,7 +6,7 @@
 
 class OldMadina : public Automedina {
  public:
-  OldMadina(OtLayout* layout, Font* font, bool extended);
+  OldMadina(OtLayout* layout, MPFont* font, bool extended);
   Lookup* getLookup(std::string lookupName) override;
   CalcAnchor getanchorCalcFunctions(std::string functionName, Subtable* subtable) override;
   PairAdjustFunc getPairAdjustFunction(std::string functionName, Subtable* subtable) override;
