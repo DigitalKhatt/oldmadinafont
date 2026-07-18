@@ -27,11 +27,7 @@ endif()
 
 add_library(${FONT_TARGET_NAME} SHARED ${Source_Files})
 
-target_link_options(${FONT_TARGET_NAME} PRIVATE $<$<CXX_COMPILER_ID:Clang>:-undefined dynamic_lookup>)
-
 set_target_properties(${FONT_TARGET_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME} DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
-
-target_compile_options(${FONT_TARGET_NAME} PUBLIC $<$<CXX_COMPILER_ID:Clang>:-fdeclspec>)
 
 target_link_libraries(${FONT_TARGET_NAME} PRIVATE Qt5::Gui digitalkhatt::otlayout)
 
