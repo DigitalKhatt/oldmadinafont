@@ -6,3 +6,4 @@ CMakeUserPresets.json
 *.dylib
 *.cmake
 CMakeLists.txt.user
+liboldmadina*

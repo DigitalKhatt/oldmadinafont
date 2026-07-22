@@ -1,5 +1,6 @@
 #pragma once
-#include <QString>
+#include <string>
+
 #include "GlyphVis.h"
 #include "Lookup.h"
 #include "Subtable.h"
@@ -36,8 +37,8 @@ class OldMadina : public Automedina {
   Lookup* populatecvxx();
   Lookup* glyphalternates();
   // Justification
-  Lookup* shrinkstretchlt(float lt, QString featureName);
+  Lookup* shrinkstretchlt(float lt, std::string featureName);
   Lookup* shrinkstretchlt();
-  void addEndOfAyas(QString ayaName, bool isColored, int maxWidth);
+  void addEndOfAyas(std::string ayaName, bool isColored, int maxWidth);
   void generateGlyphs();
 };
