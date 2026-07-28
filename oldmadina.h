@@ -34,7 +34,6 @@ class OldMadina : public Automedina {
   Lookup* ayanumberskern();
   Lookup* rehwawcursivecpp();
   Lookup* tajweedcolorcpp();
-  Lookup* populatecvxx();
   Lookup* glyphalternates();
   // Justification
   Lookup* shrinkstretchlt(float lt, std::string featureName);
