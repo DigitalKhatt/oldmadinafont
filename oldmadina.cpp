@@ -1,6 +1,7 @@
 #include "oldmadina.h"
 
 #include <algorithm>
+#include <cctype>
 
 #include "GlyphVis.h"
 #include "Lookup.h"
@@ -78,37 +79,135 @@ class DefaultMarkOfWaqfToBase : public AnchorCalc {
 };
 
 void OldMadina::generateSubstEquivGlyphs() {
-  return;
+  auto& lookups = m_layout->lookups;
+  auto& allFeatures = m_layout->allFeatures;
+  auto& lookupsIndexByName = m_layout->lookupsIndexByName;
+  auto& substEquivGlyphs = substEquivGlyphMap();
 
-  GlyphParameters parameters;
+  auto isFamilyTag = [](const std::string& tag) {
+    if (tag.size() != 4) return false;
+    const bool knownPrefix =
+        (tag[0] == 'c' && tag[1] == 'v') ||
+        (tag[0] == 's' && tag[1] == 'k');
+    return knownPrefix && std::isdigit(static_cast<unsigned char>(tag[2])) &&
+           std::isdigit(static_cast<unsigned char>(tag[3]));
+  };
 
-  for (auto& glyph : m_layout->expandableGlyphs) {
-    auto glyphCode = m_layout->glyphCodePerName[glyph.first];
-    auto valueLimits = glyph.second;
-
-    if (valueLimits.maxLeft > 0) {
-      for (double leftTatweel = 0.5; leftTatweel <= valueLimits.maxLeft; leftTatweel += 0.5) {
-        parameters.lefttatweel = leftTatweel;
-        parameters.righttatweel = 0.0;
-        GlyphVis* newglyph = m_layout->getAlternate(glyphCode, parameters, true, true);
+  auto contextualChildrenOf = [](Lookup* parent) {
+    std::vector<std::string> children;
+    std::set<std::string> seen;
+    for (auto* subtable : parent->subtables) {
+      auto* chaining = dynamic_cast<ChainingSubtable*>(subtable);
+      if (chaining == nullptr) continue;
+      for (const auto& record : chaining->compiledRule.lookupRecords) {
+        if (seen.insert(record.lookupName).second)
+          children.push_back(record.lookupName);
       }
-    };
-
-    if (valueLimits.maxRight > 0) {
-      for (double righttatweel = 0.5; righttatweel <= valueLimits.maxRight; righttatweel += 0.5) {
-        parameters.lefttatweel = 0.0;
-        parameters.righttatweel = righttatweel;
-        GlyphVis* newglyph = m_layout->getAlternate(glyphCode, parameters, true, true);
-      }
-    };
-
-    parameters.lefttatweel = valueLimits.minLeft;
-    parameters.righttatweel = valueLimits.minRight;
-
-    if (parameters.lefttatweel != 0 || parameters.righttatweel != 0) {
-      GlyphVis* newglyph = m_layout->getAlternate(glyphCode, parameters, true, true);
     }
+    return children;
+  };
+
+  std::map<std::string, std::set<Lookup*>> familyRoots;
+  for (const auto& [feature, featureLookups] : allFeatures) {
+    if (!isFamilyTag(feature)) continue;
+    const std::string branch =
+        feature.starts_with("cv") ? feature : std::string{"sk"};
+    familyRoots[branch].insert(featureLookups.begin(), featureLookups.end());
   }
+
+  auto addDescendants = [&](auto&& self, Lookup* lookup,
+                            std::set<Lookup*>& members) -> void {
+    if (lookup == nullptr || !members.insert(lookup).second) return;
+    for (const auto& childName : contextualChildrenOf(lookup)) {
+      const auto child = lookupsIndexByName.find(childName);
+      if (child != lookupsIndexByName.end())
+        self(self, lookups.at(child->second), members);
+    }
+  };
+
+  std::map<std::string, std::set<Lookup*>> familyMembers;
+  std::set<Lookup*> allFamilyMembers;
+  for (const auto& [branch, roots] : familyRoots) {
+    auto& members = familyMembers[branch];
+    for (auto* root : roots) addDescendants(addDescendants, root, members);
+    allFamilyMembers.insert(members.begin(), members.end());
+  }
+
+  auto generateLookup = [&](Lookup* lookup, bool convertibleOnly) {
+    if (lookup == nullptr || isLookupDisabled(lookup->name) ||
+        !lookup->isGsubLookup() ||
+        lookup->type == Lookup::SubType::fsmgsub)
+      return;
+    for (auto* subtable : lookup->getSubtables(false)) {
+      if (!convertibleOnly || subtable->isConvertible())
+        subtable->generateSubstEquivGlyphs();
+    }
+  };
+
+  auto generateOrdered = [&](const std::set<Lookup*>& allowed,
+                             const std::set<Lookup*>& roots) {
+    std::set<std::string> contextualChildren;
+    std::map<Lookup*, std::vector<std::string>> childrenByParent;
+    for (auto* parent : lookups) {
+      if (!allowed.contains(parent)) continue;
+      std::set<std::string> seen;
+      for (const auto& childName : contextualChildrenOf(parent)) {
+        const auto child = lookupsIndexByName.find(childName);
+        if (child == lookupsIndexByName.end()) continue;
+        auto* childLookup = lookups.at(child->second);
+        if (!allowed.contains(childLookup)) continue;
+        contextualChildren.insert(childName);
+        if (seen.insert(childName).second)
+          childrenByParent[parent].push_back(childName);
+      }
+    }
+
+    for (auto* lookup : lookups) {
+      if (!allowed.contains(lookup)) continue;
+      const bool contextualOnly =
+          contextualChildren.contains(lookup->name) &&
+          !roots.contains(lookup);
+      if (!contextualOnly) generateLookup(lookup, false);
+
+      const auto children = childrenByParent.find(lookup);
+      if (children == childrenByParent.end()) continue;
+      for (const auto& childName : children->second) {
+        const auto child = lookupsIndexByName.find(childName);
+        if (child != lookupsIndexByName.end())
+          generateLookup(lookups.at(child->second), true);
+      }
+    }
+  };
+
+  std::set<Lookup*> neutralLookups;
+  for (auto* lookup : lookups) {
+    if (!allFamilyMembers.contains(lookup)) neutralLookups.insert(lookup);
+  }
+  generateOrdered(neutralLookups, neutralLookups);
+
+  const SubstEquivGlyphMap neutralStates = substEquivGlyphs;
+  SubstEquivGlyphMap reachableStates = neutralStates;
+  auto mergeReachable = [&](const SubstEquivGlyphMap& branch) {
+    for (const auto& [glyphCode, states] : branch) {
+      auto& destination = reachableStates[glyphCode];
+      destination.insert(states.begin(), states.end());
+    }
+  };
+
+  /*
+   * Each cvXX stretching feature is an alternative branch, while skXX
+   * shrinking steps may accumulate with other skXX steps. A cvXX result must
+   * not feed another cvXX or any skXX lookup, and a shrinking result must not
+   * feed a cvXX lookup. Start every branch from the same neutral/cumulative
+   * state. Physical glyphs remain deduplicated by getAlternate().
+   */
+  for (const auto& [branch, roots] : familyRoots) {
+    substEquivGlyphs = neutralStates;
+    generateOrdered(familyMembers.at(branch), roots);
+    mergeReachable(substEquivGlyphs);
+  }
+
+  substEquivGlyphs = std::move(reachableStates);
 }
 
 void OldMadina::generateGlyphs() {
