@@ -2402,7 +2402,6 @@ Lookup* OldMadina::glyphalternates() {
       }
       alternates.push_back({substcode, 0, 0});
       alternateSubtable->alternates[code] = alternates;
-
     }
   }
 
@@ -2476,7 +2475,6 @@ Lookup* OldMadina::glyphalternates() {
     }
     alternates.push_back({substcode, 0, 0});
     alternateSubtable->alternates[code] = alternates;
-
   }
 
   int cvNumber = 1;
@@ -2566,42 +2564,22 @@ Lookup* OldMadina::glyphalternates() {
     alternateSubtable->alternates[code] = alternates;
   }
 
-  for (auto& glyph : m_layout->expandableGlyphs) {
-    if (!m_layout->glyphCodePerName.contains(glyph.first)) continue;
-
-    if (mappings.find(glyph.first) != mappings.end()) continue;
-
-    if (glyph.first == "kasra") continue;
-
-    auto glyphCode = m_layout->glyphCodePerName[glyph.first];
-    auto valueLimits = glyph.second;
-
-    if (valueLimits.maxLeft > 0) {
-      for (double leftTatweel = 0; leftTatweel <= std::min(valueLimits.maxLeft, 3.0); leftTatweel += 0.5) {
-        std::vector<ExtendedGlyph> alternates;
-        auto newCode = glyphCode;
-        if (leftTatweel != 0) {
-          const GlyphParameters parameters{.lefttatweel = leftTatweel};
-          newCode =
-              m_layout
-                  ->getAlternate(glyphCode, parameters, !isExtended,
-                                 !isExtended)
-                  ->charcode;
-        }
-        auto leftTatweel2 = leftTatweel;
-        for (int i = 1; i <= 6; i++) {
-          leftTatweel2++;
-          if (leftTatweel2 > 6) {
-            leftTatweel2 = 6;
-          }
-          alternates.push_back({glyphCode, leftTatweel2, 0});
-        }
-        /*
-        for (double leftTatweel2 = leftTatweel + 1; leftTatweel2 <= std::min(valueLimits.maxLeft, 6.0F); leftTatweel2 += 1) {
-          alternates.push_back({ glyphCode,leftTatweel2,0 });
-        }*/
-        alternateSubtable->alternates[newCode] = alternates;
+  for (const auto& [glyphName, limits] : m_layout->expandableGlyphs) {
+    const auto glyphIt = m_layout->glyphCodePerName.find(glyphName);
+    if (glyphIt == m_layout->glyphCodePerName.end() || mappings.contains(glyphName) || glyphName == "kasra" || limits.maxLeft <= 0) continue;
+    const auto glyphCode = glyphIt->second;
+    const auto maxInputLeft = std::min(limits.maxLeft, 3.0);
+    for (double inputLeft = 0; inputLeft <= maxInputLeft; inputLeft += 0.5) {
+      auto inputCode = glyphCode;
+      if (inputLeft != 0) {
+        const GlyphParameters parameters{.lefttatweel = inputLeft};
+        inputCode = m_layout->getAlternate(glyphCode, parameters, !isExtended, !isExtended)->charcode;
       }
+      auto& sequence = alternateSubtable->alternates[inputCode];
+      sequence.clear();
+      sequence.reserve(6);
+      for (int increment = 1; increment <= 6; ++increment)
+        sequence.push_back({glyphCode, std::min(inputLeft + increment, 6.0), 0});
     }
   }
 
@@ -2630,20 +2608,14 @@ Lookup* OldMadina::glyphalternates() {
       alternateSubtable->alternates[glyphCode] = alternates;
 
       if (valueLimits.maxLeft > 0) {
-        for (double leftTatweel = 0.5;
-             leftTatweel <= std::min(valueLimits.maxLeft, 6.0);
-             leftTatweel += 0.5) {
+        for (double leftTatweel = 0.5; leftTatweel <= std::min(valueLimits.maxLeft, 6.0); leftTatweel += 0.5) {
           std::vector<ExtendedGlyph> alternates;
           GlyphParameters parameters;
           parameters.lefttatweel = leftTatweel;
           parameters.righttatweel = 0.0;
-          GlyphVis* newglyph = m_layout->getAlternate(
-              glyphCode, parameters, !isExtended, !isExtended);
-          for (double righttatweel = 0.5;
-               righttatweel <= std::min(valueLimits.maxRight, 6.0);
-               righttatweel += 0.5) {
-            alternates.push_back(
-                {glyphCode, leftTatweel, righttatweel});
+          GlyphVis* newglyph = m_layout->getAlternate(glyphCode, parameters, !isExtended, !isExtended);
+          for (double righttatweel = 0.5; righttatweel <= std::min(valueLimits.maxRight, 6.0); righttatweel += 0.5) {
+            alternates.push_back({glyphCode, leftTatweel, righttatweel});
           }
           alternateSubtable->alternates[newglyph->charcode] = alternates;
         }
