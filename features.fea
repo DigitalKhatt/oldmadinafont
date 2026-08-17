@@ -1658,13 +1658,16 @@ lookup shrink.gsub3 {
   lookup shrink.gsub3.l1 {
     sub heh.init  by heh.init.beforemeem.ii;    
     sub meem.fina.ii by meem.fina.afterheh.ii;
-    sub lam.medi by lam.medi.beforemeem;
-    sub meem.fina.ii by meem.fina.afterlam;
+    sub lam.medi by lam.medi.beforemeem;    
   } shrink.gsub3.l1;
+
+  lookup shrink.gsub3.l2 {   
+    sub meem.fina.ii by meem.fina.afterlam;
+  } shrink.gsub3.l2;
 
   sub [heh.init]'lookup shrink.gsub3.l1 [damma]' [meem.fina.ii]'lookup shrink.gsub3.l1 ;
 
-  sub [lam.medi]'lookup shrink.gsub3.l1 [fatha]' [meem.fina.ii]'lookup shrink.gsub3.l1;
+  sub [lam.medi]'lookup shrink.gsub3.l1 [fatha]' [meem.fina.ii]'lookup shrink.gsub3.l2;
 
 } shrink.gsub3;
 
