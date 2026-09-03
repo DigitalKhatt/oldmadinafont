@@ -1552,6 +1552,53 @@ feature mkmk {
   #lookup adjustoverlap;
 } mkmk;
 
+# Justification decomposition, split by the connection being opened. A glyph
+# can be the second component of one ligature and the first of another:
+# applying the union of these maps to both slots opens the wrong connection.
+# Keep these before glyphalternates: decomposition must precede cv01/cv02.
+# The original cv10-cv19 remain available for the regex engine/comparison.
+lookup justify.decompose_left {
+  feature inherited;
+  sub behshape.medi by behshape.medi.expa;
+  sub heh.init.beforemeem by heh.init;
+  sub behshape.init.beforehah by behshape.init;
+  sub meem.init.beforehah by meem.init;
+  sub fehshape.init.beforehah by fehshape.init;
+  sub lam.init.lam_hah by lam.init;
+  sub hah.init.ii by hah.init;
+  sub hah.medi.ii by hah.medi;
+  sub ain.init.finjani by ain.init;
+  sub seen.init.beforereh by seen.init;
+  sub seen.medi.beforereh by seen.medi;
+  sub sad.init.beforereh by sad.init;
+  sub sad.medi.beforereh by sad.medi;
+  sub hah.init.beforemeem by hah.init;
+} justify.decompose_left;
+
+lookup justify.decompose_right {
+  feature inherited;
+  sub meem.fina.afterheh by meem.fina;
+  sub hah.medi.afterbeh by hah.medi;
+  # Preserve the other connection, to yeh.
+  sub hah.medi.afterbeh.beforeyeh by hah.medi.beforeyeh;
+  sub hah.medi.aftermeem by hah.medi;
+  sub hah.medi.afterfeh by hah.medi;
+  sub hah.medi.lam_hah by hah.medi;
+  sub reh.fina.afterseen by reh.fina;
+  sub meem.medi.afterhah by meem.medi;
+} justify.decompose_right;
+
+lookup justify.decompose_lam_dal {
+  feature inherited;
+  sub lam.init.beforedal by lam.init;
+  sub dal.fina.afterlam by dal.fina;
+} justify.decompose_lam_dal;
+
+# Private, boolean feature tags: justification decompose left/right/lam-dal.
+feature jdcl { lookup justify.decompose_left; } jdcl;
+feature jdcr { lookup justify.decompose_right; } jdcr;
+feature jdld { lookup justify.decompose_lam_dal; } jdld;
+
 feature cv01 {
   lookup glyphalternates;
 } cv01;
@@ -2437,3 +2484,242 @@ feature sk13 {
 } sk13;
 #endif;
 
+# External DigitalKhatt justification catalog. This block is declarative: it
+# is compiled by the DigitalKhatt justifier and is never emitted as GSUB/GPOS.
+table(justdfa) oldmadina.experimental2 {
+  pagepolicy {
+    # Include headings in page-size statistics, as in Experimental2.
+    measure [Line Sura Bism];
+    sizing style SameSizeByPage { min_fit 1; }
+    # lower threshold, upper threshold, maximum shrink, maximum stretch
+    sizing style FontSizeXScale { bounded_fit 0.95 1.2 0.02 0.02; }
+    sizing default { fixed_size 1; }
+
+    # First matching line rule wins. Features here affect final shaping only.
+    line type Bism when basm2 { natural; final_features [bism]; }
+    line type Bism { natural; final_features [basm]; }
+    line type Sura { natural; }
+    line default { use_line_policy; }
+
+    render style FontSize { font_scale; normal_output; }
+    render style SCLX { axis_output; }
+    render style XScale { xscale_output; }
+    render default { normal_output; }
+  }
+
+  linepolicy {
+    # Space limits use the engine's 1000-unit measurement em. Steps run in
+    # this order; glyph_actions executes the selections/phases below.
+    stretch {
+      cap_spaces 250 250;
+      glyph_actions;
+      fill_spaces;
+    }
+    # First matching shrink branch wins, including at exact target width.
+    shrink style SCLX { fit_sclx 100; }
+    shrink mode Test {
+      all_features [sk01 sk02 sk03 sk04 sk05 sk06 sk07 sk08 sk09 sk10 sk11 sk12 sk13 sk14 sk15 sk16 sk17 sk18 sk19 sk20];
+    }
+    shrink mode Standard {
+      fit_features [sk01 sk02 sk03 sk04 sk05 sk06 sk07 sk08 sk09 sk10 sk11 sk12 sk13 sk14 sk15 sk16 sk17 sk18 sk19 sk20];
+      balance;
+    }
+    shrink default { scale; }
+  }
+
+  facts {
+    fact BehFirst form medi chars [1576 1578 1579 1606 1610 1587 1588 1589 1590];
+    fact BehSecond form medi chars [1576 1578 1579 1606 1610 1605];
+    fact RightKashida form joins_right chars [1576 1578 1579 1606 1610 1574 1580 1581 1582 1587 1588 1589 1590 1591 1592 1593 1594 1601 1602 1605 1607];
+    fact FinalRightKashida form joins_right chars [1576 1578 1579 1606 1610 1574 1580 1581 1582 1587 1588 1589 1590 1591 1592 1593 1594 1601 1602 1605 1607 1604];
+    fact FinalAscendant form final chars [1570 1575 1583 1584 1649 1571 1573 1603 1604 1607 1577];
+    fact RehOrZay form joins_left chars [1585 1586];
+    fact OtherJoinedLeft form joins_left chars [1574 1576 1578 1579 1606 1610 1580 1581 1582 1591 1592 1593 1594 1601 1602 1577 1604 1605];
+    fact KafRight form joins_right chars [1603];
+    fact JoinedLeft form joins_left;
+    # Noon specifically, for the kaf guard.  This one cannot become a glyph set:
+    # medial noon shares the behshape skeleton with beh/teh/theh/yeh and is
+    # distinguished only by its dot mark, so glyph identity cannot see it.
+    fact Noon chars [1606];
+    # Facts used only by action guards.  These add no DFA predicate, because
+    # only facts referenced from a rule slot become one.
+    fact SubwordFirst position first;
+    fact SubwordLast position last;
+    fact Qaf chars [1602];
+    fact Lam chars [1604];
+    fact Kaf chars [1603];
+    fact TehMarbuta chars [1577];
+    fact Heh chars [1607];
+    fact Dal chars [1583];
+    fact RehZay chars [1585 1586];
+    fact YehGroupRight chars [1574 1576 1578 1579 1606 1610 1609];
+    fact FinalAscendantChar chars [1570 1575 1583 1584 1649 1571 1573 1603 1604 1607 1577];
+    fact Alternate1 form terminal chars [1576 1578 1579 1603 1606];
+    fact Alternate2 form terminal chars [1609 1589 1590 1587 1588 1601 1602 1610 1574];
+  }
+
+  rules {
+    rule BehKashida [BehFirst BehSecond];
+    rule FinalAscendantKashida [FinalRightKashida FinalAscendant];
+    rule OtherRehKashida [RightKashida RehOrZay];
+    rule OtherJoinedKashida [RightKashida OtherJoinedLeft];
+    rule KafAction [KafRight JoinedLeft];
+    rule AlternateGroup1 [Alternate1];
+    rule AlternateGroup2 [Alternate2];
+  }
+
+  attachments {
+    # The fatha this base's stretch scales.  Matched against the shaped glyph
+    # stream; naming "fatha" also covers the alternates justification
+    # substitutes it with, because a glyph set folds in its substitutions.
+    # The character form -- find [1614] skip [1617] -- is verified to select
+    # exactly the same positions across the whole mushaf.
+    attachment Fatha find glyphs [fatha] skip glyphs [shadda] within 2;
+  }
+
+  actions {
+    # Actions only stage feature values; normal shaping applies the GSUB
+    # lookups. cv01/cv02 control stretch, cv03 handles kaf, and jdcl/jdcr/jdld
+    # replace the ligature-specific cv10-cv19 decomposition switches.
+
+    # Declarative replacement for the applyAlternate C++ action.
+    action IncrementAlternate {
+      forbid $self:cv02 > 0;
+      add $self:cv01 1 clamp 12;
+      # Reads the just-staged cv01 above, exactly as the C++ reads the merged
+      # value rather than the value before this action ran.
+      replace $self@Fatha { cv01 = sum(1, floordiv($self:cv01, 3)); }
+    }
+
+    # Declarative replacement for the applyKaf C++ action.
+    action ApplyKafPair {
+      forbid isfact($2, Noon) and $2:cv01 > 0;
+      update $1:cv03 = 1;
+      update $2:cv03 = 1;
+      # Scale the fatha from the first slot, which it is attached to.
+      replace $1@Fatha { cv01 = sum(1, floordiv($1:cv01, 3)); }
+    }
+
+    # The shaped glyphs select the decomposition through lookup coverage;
+    # the action only chooses which connection of each slot to open.
+    action StretchKashidaPair {
+      forbid has($2:cv01);
+      forbid isfact($2, Qaf) and isfact($2, SubwordLast);
+      forbid isfact($1, Lam)
+             and (isfact($2, Kaf) or isfact($2, TehMarbuta)
+                  or (isfact($2, Heh) and isfact($2, SubwordLast)));
+      forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
+             and isfact($2, RehZay);
+
+      add $1:cv01 1 clamp 6;
+
+      update $1:jdcl = 1;
+
+      # The C++ built the second slot's features from scratch.
+      clear $2;
+
+      update $2:jdcr = 1;
+      # Dal and dhal share base glyphs, and dal.fina.afterlam also occurs
+      # after medial lam, but this branch works from characters, not glyphs.
+      when isfact($1, Lam) and isfact($1, SubwordFirst) and isfact($2, Dal) {
+        update $1:jdld = 1;
+        update $2:jdld = 1;
+      }
+
+      update $2:cv02 = select(isfact($2, FinalAscendantChar) and isfact($2, SubwordLast),
+                              $1:cv01, prod(2, $1:cv01));
+    }
+
+    bind BehKashida StretchKashidaPair;
+    bind FinalAscendantKashida StretchKashidaPair;
+    bind OtherRehKashida StretchKashidaPair;
+    bind OtherJoinedKashida StretchKashidaPair;
+    bind KafAction ApplyKafPair;
+    bind AlternateGroup1 IncrementAlternate;
+    bind AlternateGroup2 IncrementAlternate;
+  }
+
+  selections {
+    selection Beh {
+      choose BehKashida first selected_only;
+      traversal last_first;
+      record Beh;
+      forbid_recorded [FinalAscendant OtherKashidas];
+    }
+    selection AlternateGroup1 {
+      choose AlternateGroup1 last selected_only;
+      traversal last_first;
+    }
+    selection FinalAscendant {
+      choose FinalAscendantKashida last selected_only;
+      traversal last_first;
+      record FinalAscendant;
+      forbid_recorded [Beh OtherKashidas];
+    }
+    selection Kaf {
+      choose KafAction last selected_only;
+      traversal last_first;
+      record Kaf;
+    }
+    selection Other {
+      choose OtherRehKashida last selected_only;
+      choose OtherJoinedKashida last selected_only;
+      traversal last_first;
+      record OtherKashidas;
+      forbid_recorded [Beh FinalAscendant];
+    }
+    selection AlternateGroup2 {
+      choose AlternateGroup2 last selected_only;
+      traversal last_first;
+    }
+    selection AlternateAll {
+      choose AlternateGroup1 last selected_only;
+      choose AlternateGroup2 last selected_only;
+      traversal last_first;
+    }
+    selection SecondKashidaDifferentSubword {
+      choose BehKashida last selected_only;
+      choose FinalAscendantKashida last selected_only;
+      choose OtherRehKashida last selected_only;
+      choose OtherJoinedKashida last selected_only;
+      traversal last_first;
+      record SecondKashidaDifferentSubword;
+      different_subword [Beh FinalAscendant OtherKashidas];
+    }
+    selection SecondKashidaSameSubword {
+      choose BehKashida last selected_only;
+      choose FinalAscendantKashida last selected_only;
+      choose OtherRehKashida first all_non_overlapping;
+      choose OtherJoinedKashida first all_non_overlapping;
+      traversal last_first;
+      record SecondKashidaSameSubword;
+      different_position [Beh FinalAscendant OtherKashidas SecondKashidaDifferentSubword];
+    }
+  }
+
+  # Each `stretchpolicy` block is one selectable justification.  They share the
+  # vocabulary above -- and therefore the compiled DFA and every interned id --
+  # so only the schedule below distinguishes them.
+  stretchpolicy standard {
+    phase Beh 2;
+    phase AlternateGroup1 2;
+    phase FinalAscendant 1;
+    phase Kaf 1;
+    phase FinalAscendant 2;
+    phase Other 2;
+    phase AlternateGroup2 2;
+    phase Beh 1;
+    phase AlternateGroup1 1;
+    phase FinalAscendant 1;
+    phase Other 1;
+    phase AlternateGroup2 1;
+    phase AlternateGroup1 2;
+    phase AlternateAll 2;
+    phase Beh 1;
+    phase FinalAscendant 1;
+    phase Other 1;
+    phase AlternateAll 2;
+    phase SecondKashidaDifferentSubword 2;
+    phase SecondKashidaSameSubword 2;
+  }
+};
