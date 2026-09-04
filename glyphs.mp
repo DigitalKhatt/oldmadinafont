@@ -7498,13 +7498,15 @@ enddefchar;
 defchar(kaf.init.ii,-1,-1,-1,-1);
 %%backgroundimage:images/kaf.init.ii.jpg,-990.048,-1097.4,1,0,0,1
 %%beginparams
-leftVerticalRatio := 10;
-leftVerticalRatioNeg := 10;
+leftVerticalRatio := 40;
 
 %%beginverbatim
 
-
-
+minA0 := minLeft; maxA0 := maxLii;
+minA1 := minRight; maxA1 := maxRii;
+minA2 := 0; maxA2 := 20;
+pair kafBodyOffset;
+kafBodyOffset := axisdelta2((20nuqta,0),(0,0));
 numeric _tatweel;
 _tatweel := 20 * nuqta;
 %%endverbatim
@@ -7512,12 +7514,13 @@ _tatweel := 20 * nuqta;
 %%beginpaths
 
 fill
-(1354.56,93.64) .. tension 5.45274 and 4.79831 ..
-bldmv ( (403.84,8.44), (103,-49), (95,10) ) leftjoin
-bldmv ( (432.56,106.52), (47,-49), (72,11) ) .. tension 1 and 1 ..
-(923.52,132.36) .. tension 1 and 9.74258 ..
- {up}(1325.6,187.4) .. tension 1.79167 and 1.32758 ..
- {left}(1203.88,246.32) .. tension 6.7667 and 1 ..
+((1257.79,76.36) + kafBodyOffset) .. tension 9.30411 and 1 ..
+liiiMulti ( (916.912,40.0343), (0,0), (0,0), (0,0), (0,0), (-342.257 + _tatweel,2.72886), (0,0) ) .. tension 1 and 1 ..
+liiiMulti ( (406.72,8.44), (-159.667,-4.7488), (106.52,-4.4), (0,0), (0,0), (490.896,0), (0,0) ) leftjoin
+liiiMulti ( (432.56,102.937), (-159.667,-4.7488), (80.64,-3.4), (0,0), (0,0), (490.896,0), (0,0) ) .. tension 1 and 1 ..
+liiiMulti ( (959.462,135.816), (0,0), (0,0), (0,0), (0,0), (-333.236 + _tatweel,-6.2927), (0,0) ) .. tension 1 and 15.8487 ..
+ {up}((1228.83,170.12) + kafBodyOffset) .. tension 1.79167 and 1.32758 ..
+ {left}((1107.11,229.04) + kafBodyOffset) .. tension 6.7667 and 1 ..
  {left}(415.32,192.96) .. tension 1.31763 and 1.99842 ..
  {up}(21.8,274.24) .. tension 1.47306 and 1.21903 ..
 (157.68,461.64) .. tension 1.59171 and 1.88264 ..
@@ -7526,8 +7529,8 @@ bldmv ( (432.56,106.52), (47,-49), (72,11) ) .. tension 1 and 1 ..
 (254.52,435.8) .. tension 1 and 2.98033 ..
  {down}(127.56,337.44) .. tension 4.01491 and 0.75 ..
  {right}(507.72,285.48) .. tension 0.75 and 4.14509 ..
- {right}(1260.44,339.52) .. tension 0.984281 and 0.892759 ..
- {down}(1405.04,200.08) .. tension 1.45818 and 3.11302 ..
+ {right}((1163.67,322.24) + kafBodyOffset) .. tension 0.984281 and 0.892759 ..
+ {down}((1308.27,182.8) + kafBodyOffset) .. tension 1.45818 and 3.11302 ..
  cycle
 ;
 
@@ -7913,48 +7916,30 @@ draw minikaf.pic  shifted z11;
 enddefchar;
 defchar(kaf.medi.ii,-1,-1,-1,-1);
 %%backgroundimage:images/kaf.medi.ii.jpg,-1494.04,-1047.56,1,0,0,1
+%%beginparams
+leftVerticalRatio := 40;
 
 %%beginverbatim
-%lefttatweel := lefttatweel + 1;
+
+pair kafBodyOffset;
+kafBodyOffset := axisdelta2((20nuqta,0),(0,0));
 %%endverbatim
 
 %%beginpaths
 
 fill
-(1243.02,118.728) .. tension 7.77603 and 0.75 ..
-(371.984,9.488) leftjoin
-(408.864,108.8) .. tension 1 and 2.24587 ..
-(1092.56,180.36) .. tension 1 and 3.85067 ..
- {up}(1212.42,220.128) .. tension 1.40892 and 1.32758 ..
- {left}(1120.42,259.928) .. tension 6.7667 and 1 ..
- {left}(236.616,202.128) .. tension 1.31763 and 1.89524 ..
- {up}(14.936,248.128) .. tension 1.29972 and 1.21903 ..
-(191.616,477.528) .. tension 1.59171 and 1.88264 ..
- {right}(500.216,620.328) .. tension 1.25813 and 3.49094 ..
- {left}(473.016,524.328) .. tension 5.20633 and 1 ..
-(281.016,444.728) .. tension 1 and 7.15252 ..
- {down}(102.216,311.328) .. tension 5.18308 and 0.75 ..
- {right}(422.816,293.728) .. tension 1.02656 and 4.14509 ..
- {right}(1186.22,351.728) .. tension 1.40423 and 1.28104 ..
- {down}(1308.62,246.128) .. tension 1.45818 and 2.68873 ..
- cycle
-;
-fill
-liii1 ( (1239.52,151.395), (-1,11), (0,0) ) .. tension 1.31123 and 1 ..
-liii1 ( (1303.52,101.395), (29,18), (-86,-1) ) setranchor
-(1329,0) rightjoinii
-liii1 ( (1264.69,9.8947), (60,18), (-40,-14) ) .. tension 1 and 1.64216 ..
-liii1 ( (1174.85,135.561), (-28,-19), (0,0) ) --
+(liii1 ( (1331.68,149.955), (-1,11), (0,0) ) + kafBodyOffset) .. tension 1.31123 and 1 ..
+(liii1 ( (1395.68,99.955), (35,10), (-86,-1) ) + kafBodyOffset) setranchor
+((1421.16,-1.44) + kafBodyOffset) rightjoinii
+(liii1 ( (1356.85,8.4547), (60,18), (-40,-14) ) + kafBodyOffset) .. tension 1 and 1.64216 ..
+(liii1 ( (1267.01,134.121), (-28,-19), (0,0) ) + kafBodyOffset) --
  cycle
 ;
 
 %%endpaths
 %%beginbody
 
-
-
-%show leftanchor;
-%show rightanchor;
+kaf.init.ii$(params);
 
 
 enddefchar;
