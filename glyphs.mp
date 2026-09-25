@@ -2603,14 +2603,11 @@ liii0 ( (110.796,22.5833), (0,0), (14.4,-15.6) ) .. tension 1 and 1 ..
 %%beginbody
 
 
-setCursiveAnchor(rtlcursive,leftanchor+ljoinvector, ExitAnchorRTL);
+leftanchor := leftanchor+ljoinvector;
 
 
 
 defAnchor(lowmarkafterwawandreh.dots.l2_2_twodotsdown   ,z.mark1,MarkAnchor);
-
-
-pair leftanchor;
 
 
 enddefchar;
@@ -2831,8 +2828,10 @@ liii0 ( (169.995,39.8287), (-24,-13), (0,0) ) .. tension 1 and 1 ..
 
 ljoinvector := _temp;
 
+leftanchor := leftanchor + (10,0);
 
-setCursiveAnchor(ltrcursive,leftanchor + (10,0), ExitAnchorRTL);
+
+
 enddefchar;
 defchar(behshape.init.beforehah,-1,-1,-1,-1);
 %%backgroundimage:images/behhah.jpg,-1169,-1217,1,0,0,1
@@ -3056,14 +3055,12 @@ liii0 ( (109.4,169.111), (-278.4,-60), (-25.2,-81.6) ) .. tension 1 and 3.59506 
 %%beginbody
 
 
+leftanchor := leftanchor+ljoinvector;
 
-setCursiveAnchor(rtlcursive,leftanchor+ljoinvector, ExitAnchorRTL);
+
 
 tr_ := tr_ shifted (0,-y1);
 
-
-
-pair leftanchor;
 
 
 enddefchar;
@@ -3103,11 +3100,9 @@ liii0 ( (76.7667,123.078), (-18.6801,18.3611), (70.6372,56.285) ) .. tension 1 a
 
 z.mark2 = leftanchor;
 
-pair leftanchor;
-
 tr_ := identity shifted (0,-ypart rightanchor);
 
-setCursiveAnchor(ltrcursive,z.mark2, ExitAnchorRTL);
+
 
 
 
@@ -3986,10 +3981,14 @@ fill
  {up}(80.6111,612.361) .. tension 1.60026 and 2.03022 ..
  {right}(123.472,673.194) .. tension 2.8206 and 1 ..
 (157.639,559.028) .. tension 1.34051 and 2.89286 ..
-liii1 ( (206.25,144.444), (-3.15069,63.5609), (-32.6388,95.1388) ) .. tension 0.81295 and 7.85072 ..
-liii1 ( (270.601,101.406), (-30.2855,53.0318), (-127.655,29.199) ) setranchor
+liii1 ( (206.25,144.444), (-3.15069,63.5609), (-32.6388,95.1388) ) .. tension 0.81295 and 1.30932 ..
+liii1 ( (263.367,99.7985), (-4.16346,32.536), (-95.5048,1.87133) ) setranchor
 (276,0) rightjoinii
-liii0 ( (146.111,74.7222), (0,-14), (0,0) ) leftjoin
+liii1 ( (227.439,6.77559), (30.5427,1.60751), (-63.4967,-6.43004) ) .. tension 1 and 1 ..
+liii1 ( (151.589,70.4113), (-1.20563,1.60751), (-2.00939,-1.20563) ) .. tension 1 and 1.07457 ..
+ {left}lerp02 ( (146,75), (0,0), (0,0), (0,0), (0,0) ) .. tension 2.32113 and 1 ..
+liii0 ( (139.841,68.0376), (-1.60751,-1.60751), (7.2338,3.6169) ) .. tension 1.66421 ..
+liii0 ( (99.9054,28.3015), (-83.1887,-18.4207), (37.3746,-11.2526) ) leftjoin
 liii0 ( (95.9444,114.889), (7.20961,17.21), (8.56626,-21.9777) ) .. tension 1 and 1.51257 ..
  {up} cycle
 ;
@@ -4651,7 +4650,9 @@ z2 = (475,155);
 %%beginbody
 noon.isol_(lefttatweel,rightatweel);
 
-setCursiveAnchor(ltrcursive,z2, EntryAnchorRTL);
+rightanchor := z2;
+
+
 
 tr_ := tr_ shifted (0,-100);
 enddefchar;
@@ -5869,9 +5870,7 @@ z1 .. tension 1.84563 and 1.28405 ..
 %%endpaths
 %%beginbody
 
-
-
-setCursiveAnchor(rtlcursive,z1, EntryAnchorRTL);
+rightanchor := z1;
 enddefchar;
 defchar(reh.fina.afterseen,-1,-1,-1,-1);
 %%backgroundimage:images/seen_medi_reh_fina.jpg,-830,-1091,1,0,0,1
@@ -7514,13 +7513,13 @@ _tatweel := 20 * nuqta;
 %%beginpaths
 
 fill
-((1257.79,76.36) + kafBodyOffset) .. tension 9.30411 and 1 ..
-liiiMulti ( (916.912,40.0343), (0,0), (0,0), (0,0), (0,0), (-342.257 + _tatweel,2.72886), (0,0) ) .. tension 1 and 1 ..
-liiiMulti ( (406.72,8.44), (-159.667,-4.7488), (106.52,-4.4), (0,0), (0,0), (490.896,0), (0,0) ) leftjoin
-liiiMulti ( (432.56,102.937), (-159.667,-4.7488), (80.64,-3.4), (0,0), (0,0), (490.896,0), (0,0) ) .. tension 1 and 1 ..
-liiiMulti ( (959.462,135.816), (0,0), (0,0), (0,0), (0,0), (-333.236 + _tatweel,-6.2927), (0,0) ) .. tension 1 and 15.8487 ..
- {up}((1228.83,170.12) + kafBodyOffset) .. tension 1.79167 and 1.32758 ..
- {left}((1107.11,229.04) + kafBodyOffset) .. tension 6.7667 and 1 ..
+lerp02 ( (1257.79,76.36), (0,0), (0,0), (_tatweel,158.001), (0,0) ) .. tension 9.30411 and 1 ..
+liiiMulti ( (916.912,50.7838), (0,0), (0,0), (0,0), (0,0), (-120.829 + _tatweel,124.006), (0,0) ) .. tension 1 and 1 ..
+liiiMulti ( (406.72,8.44), (-159.667,-4.7488), (106.52,-4.4), (0,0), (0,0), (1501.33,20.7959), (0,0) ) leftjoin
+liiiMulti ( (432.56,102.937), (-159.667,-4.7488), (80.64,-3.4), (0,0), (0,0), (1483.41,20.7959), (0,0) ) .. tension 1 and 1 ..
+liiiMulti ( (959.462,146.566), (0,0), (0,0), (0,0), (0,0), (-135.695 + _tatweel,123.943), (0,0) ) .. tension 1 and 15.8487 ..
+ {up}lerp02 ( (1228.83,170.12), (0,0), (0,0), (_tatweel,158.001), (0,0) ) .. tension 1.79167 and 1.32758 ..
+ {left}lerp02 ( (1107.11,229.04), (0,0), (0,0), (_tatweel,158.001), (0,0) ) .. tension 6.7667 and 1 ..
  {left}(415.32,192.96) .. tension 1.31763 and 1.99842 ..
  {up}(21.8,274.24) .. tension 1.47306 and 1.21903 ..
 (157.68,461.64) .. tension 1.59171 and 1.88264 ..
@@ -7529,8 +7528,8 @@ liiiMulti ( (959.462,135.816), (0,0), (0,0), (0,0), (0,0), (-333.236 + _tatweel,
 (254.52,435.8) .. tension 1 and 2.98033 ..
  {down}(127.56,337.44) .. tension 4.01491 and 0.75 ..
  {right}(507.72,285.48) .. tension 0.75 and 4.14509 ..
- {right}((1163.67,322.24) + kafBodyOffset) .. tension 0.984281 and 0.892759 ..
- {down}((1308.27,182.8) + kafBodyOffset) .. tension 1.45818 and 3.11302 ..
+ {right}lerp02 ( (1163.67,322.24), (0,0), (0,0), (_tatweel,158.001), (0,0) ) .. tension 0.984281 and 0.892759 ..
+ {down}lerp02 ( (1308.27,182.8), (0,0), (0,0), (_tatweel,158.001), (0,0) ) .. tension 1.45818 and 3.11302 ..
  cycle
 ;
 
@@ -7923,16 +7922,18 @@ leftVerticalRatio := 40;
 
 pair kafBodyOffset;
 kafBodyOffset := axisdelta2((20nuqta,0),(0,0));
+numeric _tatweel;
+_tatweel := 20 * nuqta;
 %%endverbatim
 
 %%beginpaths
 
 fill
-(liii1 ( (1331.68,149.955), (-1,11), (0,0) ) + kafBodyOffset) .. tension 1.31123 and 1 ..
-(liii1 ( (1395.68,99.955), (35,10), (-86,-1) ) + kafBodyOffset) setranchor
-((1421.16,-1.44) + kafBodyOffset) rightjoinii
-(liii1 ( (1356.85,8.4547), (60,18), (-40,-14) ) + kafBodyOffset) .. tension 1 and 1.64216 ..
-(liii1 ( (1267.01,134.121), (-28,-19), (0,0) ) + kafBodyOffset) --
+lerp12 ( (1233.68,149.955), (-1,11), (0,0), (-14.9299 + _tatweel,103.944), (0,0) ) .. tension 1.31123 and 1 ..
+(liii1 ( (1297.68,99.955), (120,20), (-86,-1) ) + kafBodyOffset) setranchor
+((1323,0) + kafBodyOffset) rightjoinii
+(liii1 ( (1258.85,8.4547), (120,30), (-40,-14) ) + kafBodyOffset) .. tension 1 and 1.64216 ..
+lerp12 ( (1169.01,135.121), (-7.09811,-10.042), (0,0), (-41.8038 + _tatweel,106.93), (0,0) ) --
  cycle
 ;
 
@@ -8525,8 +8526,10 @@ z.mark1 = (1071,187);
 
 noon.isol.expa_(lefttatweel,0);
 
+rightanchor := z.mark1;
 
-setCursiveAnchor(ltrcursive,z.mark1, EntryAnchorRTL);
+
+%setCursiveAnchor(ltrcursive,z.mark1, EntryAnchorRTL);
 
 tr_ := tr_ shifted (0,-100);
 

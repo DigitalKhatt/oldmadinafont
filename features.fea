@@ -719,8 +719,7 @@ lookup othercalt {
   feature calt;
 
   lookup othercalt.l1 {
-    sub behshape.init by behshape.init.beforereh;
-    sub hamzaabove by hamzaabove.small;    
+    sub behshape.init  add -1 0;
   } othercalt.l1;
 
   lookup othercalt.l2 {
@@ -1564,10 +1563,12 @@ lookup justify.decompose_left {
   sub behshape.init.beforehah by behshape.init;
   sub meem.init.beforehah by meem.init;
   sub fehshape.init.beforehah by fehshape.init;
+  sub sad.init.beforehah by sad.init;
   sub lam.init.lam_hah by lam.init;
   sub hah.init.ii by hah.init;
   sub hah.medi.ii by hah.medi;
   sub ain.init.finjani by ain.init;
+  sub behshape.init.beforereh by behshape.init;
   sub seen.init.beforereh by seen.init;
   sub seen.medi.beforereh by seen.medi;
   sub sad.init.beforereh by sad.init;
@@ -1583,6 +1584,7 @@ lookup justify.decompose_right {
   sub hah.medi.afterbeh.beforeyeh by hah.medi.beforeyeh;
   sub hah.medi.aftermeem by hah.medi;
   sub hah.medi.afterfeh by hah.medi;
+  sub hah.medi.aftersad by hah.medi;
   sub hah.medi.lam_hah by hah.medi;
   sub reh.fina.afterseen by reh.fina;
   sub meem.medi.afterhah by meem.medi;
@@ -1594,6 +1596,70 @@ lookup justify.decompose_lam_dal {
   sub dal.fina.afterlam by dal.fina;
 } justify.decompose_lam_dal;
 
+# Structural substitutions shared by the live native-parameter policies.
+# Their deformation amounts are carried only by native glyph parameters.
+lookup justify.expand_terminal {
+  feature inherited;
+  sub noon.isol by noon.isol.expa;
+  sub behshape.isol by behshape.isol.expa;
+  sub feh.isol by feh.isol.expa;
+  sub qaf.isol by qaf.isol.expa;
+  sub seen.isol by seen.isol.expa;
+  sub sad.isol by sad.isol.expa;
+  sub yehshape.isol by yehshape.isol.expa;
+  sub alefmaksura.isol by alefmaksura.isol.expa;
+  sub noon.fina by noon.fina.expa;
+  sub noon.fina.afterbeh by noon.fina.expa.afterbeh;
+  sub kaf.fina by kaf.fina.expa;
+  sub kaf.fina.afterlam by kaf.fina.afterlam.expa;
+  sub behshape.fina by behshape.fina.expa;
+  sub feh.fina by feh.fina.expa;
+  sub qaf.fina by qaf.fina.expa;
+  sub seen.fina by seen.fina.expa;
+  sub sad.fina by sad.fina.expa;
+  sub yehshape.fina by yehshape.fina.expa;
+  sub yehshape.fina.ii by yehshape.fina.ii.expa;
+  sub yehshape.fina.afterbeh by yehshape.fina.afterbeh.expa;
+} justify.expand_terminal;
+
+lookup justify.prepare_kaf {
+  feature inherited;
+  sub behshape.medi by behshape.medi.expa;
+  sub heh.init.beforemeem by heh.init;
+  sub meem.fina.afterheh by meem.fina;
+  sub behshape.init.beforehah by behshape.init;
+  sub hah.medi.afterbeh by hah.medi;
+  sub meem.init.beforehah by meem.init;
+  sub hah.medi.aftermeem by hah.medi;
+  sub fehshape.init.beforehah by fehshape.init;
+  sub hah.medi.afterfeh by hah.medi;
+  sub hah.medi.afterbeh.beforeyeh by hah.medi;
+  sub lam.init.lam_hah by lam.init;
+  sub hah.medi.lam_hah by hah.medi;
+  sub hah.init.ii by hah.init;
+  sub hah.medi.ii by hah.medi;
+  sub seen.init.beforereh by seen.init;
+  sub reh.fina.afterseen by reh.fina;
+  sub hah.init.beforemeem by hah.init;
+  sub meem.medi.afterhah by meem.medi;
+  sub sad.medi.beforereh by sad.medi;
+  sub sad.init.beforereh by sad.init;
+  sub ain.init.finjani by ain.init;
+  sub kaf.init.beforelam by kaf.init.ii;
+  sub kaf.init.beforelam.ii by kaf.init.ii;
+  sub kaf.medi.beforelam by kaf.medi.ii;
+  sub kaf.medi.beforelam.ii by kaf.medi.ii;
+  sub lam.fina.afterkaf by lam.fina;
+  sub lam.medi.afterkaf by lam.medi;
+  sub alef.fina.afterkaf by alef.fina;
+  sub kaf.init by kaf.init.ii;
+  sub kaf.init.iii by kaf.init.ii;
+  sub kaf.init.short by kaf.init.ii;
+  sub kaf.medi by kaf.medi.ii;
+  sub kaf.medi.beforemeem by kaf.medi.ii;
+  sub meem.fina.afterkaf by meem.fina;
+} justify.prepare_kaf;
+
 # Private, boolean feature tags: justification decompose left/right/lam-dal.
 feature jdcl { lookup justify.decompose_left; } jdcl;
 feature jdcr { lookup justify.decompose_right; } jdcr;
@@ -1602,6 +1668,62 @@ feature jdld { lookup justify.decompose_lam_dal; } jdld;
 feature cv01 {
   lookup glyphalternates;
 } cv01;
+
+# Kaf body deformation. The alternate index is the body-axis value used by
+# the declarative policy, so cv04=1..20 maps directly to third=1..20.
+lookup glyphbodyalternates {
+  feature inherited;
+
+  sub kaf.init.ii from [
+    kaf.init.ii params { third 1; }
+    kaf.init.ii params { third 2; }
+    kaf.init.ii params { third 3; }
+    kaf.init.ii params { third 4; }
+    kaf.init.ii params { third 5; }
+    kaf.init.ii params { third 6; }
+    kaf.init.ii params { third 7; }
+    kaf.init.ii params { third 8; }
+    kaf.init.ii params { third 9; }
+    kaf.init.ii params { third 10; }
+    kaf.init.ii params { third 11; }
+    kaf.init.ii params { third 12; }
+    kaf.init.ii params { third 13; }
+    kaf.init.ii params { third 14; }
+    kaf.init.ii params { third 15; }
+    kaf.init.ii params { third 16; }
+    kaf.init.ii params { third 17; }
+    kaf.init.ii params { third 18; }
+    kaf.init.ii params { third 19; }
+    kaf.init.ii params { third 20; }
+  ];
+
+  sub kaf.medi.ii from [
+    kaf.medi.ii params { third 1; }
+    kaf.medi.ii params { third 2; }
+    kaf.medi.ii params { third 3; }
+    kaf.medi.ii params { third 4; }
+    kaf.medi.ii params { third 5; }
+    kaf.medi.ii params { third 6; }
+    kaf.medi.ii params { third 7; }
+    kaf.medi.ii params { third 8; }
+    kaf.medi.ii params { third 9; }
+    kaf.medi.ii params { third 10; }
+    kaf.medi.ii params { third 11; }
+    kaf.medi.ii params { third 12; }
+    kaf.medi.ii params { third 13; }
+    kaf.medi.ii params { third 14; }
+    kaf.medi.ii params { third 15; }
+    kaf.medi.ii params { third 16; }
+    kaf.medi.ii params { third 17; }
+    kaf.medi.ii params { third 18; }
+    kaf.medi.ii params { third 19; }
+    kaf.medi.ii params { third 20; }
+  ];
+} glyphbodyalternates;
+
+feature cv04 {
+  lookup glyphbodyalternates;
+} cv04;
 
 #if isShrink
 
@@ -2508,64 +2630,123 @@ table(justdfa) oldmadina.experimental2 {
   }
 
   linepolicy {
-    # Space limits use the engine's 1000-unit measurement em. Steps run in
-    # this order; glyph_actions executes the selections/phases below.
-    stretch {
-      cap_spaces 250 250;
-      glyph_actions;
-      fill_spaces;
-    }
-    # First matching shrink branch wins, including at exact target width.
-    shrink style SCLX { fit_sclx 100; }
-    shrink mode Test {
-      all_features [sk01 sk02 sk03 sk04 sk05 sk06 sk07 sk08 sk09 sk10 sk11 sk12 sk13 sk14 sk15 sk16 sk17 sk18 sk19 sk20];
-    }
-    shrink mode Standard {
-      fit_features [sk01 sk02 sk03 sk04 sk05 sk06 sk07 sk08 sk09 sk10 sk11 sk12 sk13 sk14 sk15 sk16 sk17 sk18 sk19 sk20];
-      balance;
-    }
-    shrink default { scale; }
+    # These are the font-declared defaults. Runtime callers may explicitly
+    # override either named policy for comparison.
+    stretch staged_pool;
+    shrink standard;
   }
 
   facts {
-    fact BehFirst form medi chars [1576 1578 1579 1606 1610 1587 1588 1589 1590];
-    fact BehSecond form medi chars [1576 1578 1579 1606 1610 1605];
-    fact RightKashida form joins_right chars [1576 1578 1579 1606 1610 1574 1580 1581 1582 1587 1588 1589 1590 1591 1592 1593 1594 1601 1602 1605 1607];
-    fact FinalRightKashida form joins_right chars [1576 1578 1579 1606 1610 1574 1580 1581 1582 1587 1588 1589 1590 1591 1592 1593 1594 1601 1602 1605 1607 1604];
-    fact FinalAscendant form final chars [1570 1575 1583 1584 1649 1571 1573 1603 1604 1607 1577];
-    fact RehOrZay form joins_left chars [1585 1586];
-    fact OtherJoinedLeft form joins_left chars [1574 1576 1578 1579 1606 1610 1580 1581 1582 1591 1592 1593 1594 1601 1602 1577 1604 1605];
-    fact KafRight form joins_right chars [1603];
+    # Each quoted string contributes its individual characters, not a sequence.
+    fact BehFirst form medi chars ["بتثنيسشصض"];
+    fact BehSecond form medi chars ["بتثنيم"];
+    fact RightKashida form joins_right chars ["بتثنيئجحخسشصضطظعغفقمه"];
+    fact FinalRightKashida form joins_right chars ["بتثنيئجحخسشصضطظعغفقمهل"];
+    fact FinalAscendant form final chars ["آادذٱأإكلهة"];
+    fact RehOrZay form joins_left chars ["رز"];
+    fact OtherJoinedLeft form joins_left chars ["ئبتثنيجحخطظعغفقةلم"];
+    fact KafRight form joins_right chars ["ك"];
+    fact KafBody glyphs [kaf.init.ii kaf.medi.ii];
+    # Keep the compact sinna group intact: neither adjacent connection may stretch.
+    fact PackedSinna glyphs [behshape.medi.beforeseen];
+    # Preserve the compact incoming connection, even when Noon's body expands.
+    # Native ranges must not bypass this glyph's lack of positive cv02 alternates.
+    fact CompactNoon glyphs [noon.fina.afterbeh noon.fina.expa.afterbeh];
+    # Ascendant incoming connection (rightVerticalRatio = 5), despite being
+    # medial rather than subword-last. Never stretch inside its Lam-Alef ligature.
+    fact LamLaf glyphs [lam.medi.laf];
+    # The first/last constraints make this pair a whole two-base-glyph
+    # subword, irrespective of intervening marks. Reh, not Zay.
+    fact ShortRehStart form joins_right position first chars ["بتثنيئجحخسشصضطظعغفقمه"];
+    fact ShortRehEnd form final position last chars ["ر"];
+    # Exact .beforehah suffix: behshape, meem, fehshape and sad. The shared
+    # skeletons also cover their dotted letters, so there is no Yeh/Hah-only
+    # character restriction. .beforehahyeh is a different compound form.
+    fact DecomposableBeforeHah glyphs [/.*[.]beforehah$/];
+    fact DecomposableHah glyphs [hah.medi.afterbeh hah.medi.afterbeh.beforeyeh hah.medi.aftermeem hah.medi.afterfeh hah.medi.aftersad];
+    fact DecomposedBeforeHah glyphs [behshape.init meem.init fehshape.init sad.init];
+    fact DecomposedHah glyphs [hah.medi hah.medi.beforeyeh];
+    fact SadBeforeReh chars ["ص"] glyphs [sad.init.beforereh sad.medi.beforereh];
+    fact RehAfterSad chars ["ر"] glyphs [reh.fina.afterseen];
+    fact DecomposedSad chars ["ص"] glyphs [sad.init sad.medi];
+    fact DecomposedReh chars ["ر"] glyphs [reh.fina];
     fact JoinedLeft form joins_left;
+    fact JoinedRight form joins_right;
     # Noon specifically, for the kaf guard.  This one cannot become a glyph set:
     # medial noon shares the behshape skeleton with beh/teh/theh/yeh and is
     # distinguished only by its dot mark, so glyph identity cannot see it.
-    fact Noon chars [1606];
+    fact Noon chars ["ن"];
     # Facts used only by action guards.  These add no DFA predicate, because
     # only facts referenced from a rule slot become one.
     fact SubwordFirst position first;
     fact SubwordLast position last;
-    fact Qaf chars [1602];
-    fact Lam chars [1604];
-    fact Kaf chars [1603];
-    fact TehMarbuta chars [1577];
-    fact Heh chars [1607];
-    fact Dal chars [1583];
-    fact RehZay chars [1585 1586];
-    fact YehGroupRight chars [1574 1576 1578 1579 1606 1610 1609];
-    fact FinalAscendantChar chars [1570 1575 1583 1584 1649 1571 1573 1603 1604 1607 1577];
-    fact Alternate1 form terminal chars [1576 1578 1579 1603 1606];
-    fact Alternate2 form terminal chars [1609 1589 1590 1587 1588 1601 1602 1610 1574];
+    fact Qaf chars ["ق"];
+    fact Lam chars ["ل"];
+    fact Kaf chars ["ك"];
+    fact TehMarbuta chars ["ة"];
+    fact Heh chars ["ه"];
+    fact Dal chars ["د"];
+    fact RehZay chars ["رز"];
+    fact YehGroupRight chars ["ئبتثنيى"];
+    fact FinalAscendantChar chars ["آادذٱأإكلهة"];
+    fact Alternate1 form terminal chars ["بتثكن"];
+    fact Alternate2 form terminal chars ["ىصضسشفقيئ"];
   }
 
   rules {
+    rule InitialShortJoin [JoinedRight JoinedLeft];
     rule BehKashida [BehFirst BehSecond];
     rule FinalAscendantKashida [FinalRightKashida FinalAscendant];
     rule OtherRehKashida [RightKashida RehOrZay];
     rule OtherJoinedKashida [RightKashida OtherJoinedLeft];
     rule KafAction [KafRight JoinedLeft];
+    rule KafBody [KafBody];
     rule AlternateGroup1 [Alternate1];
     rule AlternateGroup2 [Alternate2];
+
+    # Full-range fallback connections used after the preferred/decomposition
+    # stages. Separate bindings preserve the discrete/OTF comparison baseline.
+    rule CandidateOtherRehKashida [RightKashida RehOrZay];
+    rule CandidateOtherJoinedKashida [RightKashida OtherJoinedLeft];
+
+    # Preparation and body deformation are one optional scored candidate.
+    rule CandidateKaf [KafRight JoinedLeft];
+    rule CandidateBeforeHah [DecomposableBeforeHah DecomposableHah];
+    rule CandidateSadReh [SadBeforeReh RehAfterSad];
+
+    # Separate bindings keep the comparison policies unchanged. Continuation
+    # is ordinary current-state matching, guarded by the existing parameters.
+    rule PreferredAlternateGroup1 [Alternate1];
+    rule PreferredAlternateGroup2 [Alternate2];
+    rule PreferredKaf [KafRight JoinedLeft];
+    rule PreferredBehKashida [BehFirst BehSecond];
+    rule PreferredFinalAscendantKashida [FinalRightKashida FinalAscendant];
+    rule PreferredLamLafKashida [RightKashida LamLaf];
+    rule PreferredRehKashida [RightKashida RehOrZay];
+    rule ContinueAlternateGroup1 [Alternate1];
+    rule ContinueAlternateGroup2 [Alternate2];
+    rule ContinueKaf [KafBody JoinedLeft];
+    rule ContinueBehKashida [BehFirst BehSecond];
+    rule ContinueFinalAscendantKashida [FinalRightKashida FinalAscendant];
+    rule ContinueLamLafKashida [RightKashida LamLaf];
+    rule ContinueRehKashida [RightKashida RehOrZay];
+    rule ContinueBeforeHah [DecomposedBeforeHah DecomposedHah];
+    rule ContinueSadReh [DecomposedSad DecomposedReh];
+    rule ContinueShortReh [ShortRehStart ShortRehEnd];
+    rule KafCompanionReh [RightKashida RehOrZay];
+    rule KafCompanionJoined [RightKashida OtherJoinedLeft];
+
+    # Discrete native-parameter counterparts used by native_fixed_steps. They
+    # duplicate the matching rules so the existing cvXX baseline remains
+    # independently selectable.
+    rule ParameterBehKashida [BehFirst BehSecond];
+    rule ParameterFinalAscendantKashida [FinalRightKashida FinalAscendant];
+    rule ParameterOtherRehKashida [RightKashida RehOrZay];
+    rule ParameterOtherJoinedKashida [RightKashida OtherJoinedLeft];
+    rule ParameterKafAction [KafRight JoinedLeft];
+    rule ParameterKafBody [KafBody];
+    rule ParameterAlternateGroup1 [Alternate1];
+    rule ParameterAlternateGroup2 [Alternate2];
   }
 
   attachments {
@@ -2578,7 +2759,22 @@ table(justdfa) oldmadina.experimental2 {
   }
 
   actions {
-    # Actions only stage feature values; normal shaping applies the GSUB
+    # Baseline spacing, not a selected Horizontal opportunity. Adjacent joins
+    # may share a glyph; the runtime checks both native expansion limits and
+    # fits all endpoints together without decomposing any ligature.
+    action InitialShortKashida {
+      forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
+      forbid isfact($2, CompactNoon);
+      forbid isfact($2, Qaf) and isfact($2, SubwordLast);
+      forbid isfact($1, Lam)
+             and (isfact($2, Kaf) or isfact($2, TehMarbuta)
+                  or (isfact($2, Heh) and isfact($2, SubwordLast)));
+      forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
+             and isfact($2, RehZay);
+      vary $1:lefttatweel to 0.5;
+      vary $2:righttatweel to select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.125, 0.25);
+    }
+    # Feature actions stage values; normal shaping applies the GSUB
     # lookups. cv01/cv02 control stretch, cv03 handles kaf, and jdcl/jdcr/jdld
     # replace the ligature-specific cv10-cv19 decomposition switches.
 
@@ -2589,6 +2785,12 @@ table(justdfa) oldmadina.experimental2 {
       # Reads the just-staged cv01 above, exactly as the C++ reads the merged
       # value rather than the value before this action ran.
       replace $self@Fatha { cv01 = sum(1, floordiv($self:cv01, 3)); }
+    }
+
+    # cv04 carries the body parameter in the extended lookup and selects the
+    # equivalent generated outline in a standard OTF.
+    action StretchKafBody {
+      add $self:cv04 1 clamp 20;
     }
 
     # Declarative replacement for the applyKaf C++ action.
@@ -2603,6 +2805,7 @@ table(justdfa) oldmadina.experimental2 {
     # The shaped glyphs select the decomposition through lookup coverage;
     # the action only chooses which connection of each slot to open.
     action StretchKashidaPair {
+      forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
       forbid has($2:cv01);
       forbid isfact($2, Qaf) and isfact($2, SubwordLast);
       forbid isfact($1, Lam)
@@ -2630,13 +2833,285 @@ table(justdfa) oldmadina.experimental2 {
                               $1:cv01, prod(2, $1:cv01));
     }
 
+    # Full-range candidates used by the final staged-pool pass. Structural
+    # lookups select glyphs; native parameters carry the deformation ranges.
+    # cv02 advances in half-units: equal cv01/cv02 means right = left / 2
+    # for terminal ascendants; doubled cv02 means right = left otherwise.
+    # Preserve that relationship at both ends of each range, including
+    # continuation. These are native coordinates, not feature indices.
+    action CandidateKaf4 {
+      forbid isfact($2, Noon) and $2:lefttatweel > 0;
+      lookup $1 justify.prepare_kaf;
+      lookup $2 justify.prepare_kaf;
+      update $1@Fatha:lefttatweel = 1;
+      update $1:third = 1;
+      vary $1:third to 4;
+    }
+
+    action CandidateKashida4 {
+      forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
+      forbid isfact($2, CompactNoon);
+      forbid has($2:lefttatweel);
+      forbid isfact($2, Qaf) and isfact($2, SubwordLast);
+      forbid isfact($1, Lam)
+             and (isfact($2, Kaf) or isfact($2, TehMarbuta)
+                  or (isfact($2, Heh) and isfact($2, SubwordLast)));
+      forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
+             and isfact($2, RehZay);
+
+      lookup $1 justify.decompose_left;
+      update $1:lefttatweel = 1;
+      vary $1:lefttatweel to 4;
+
+      clear $2;
+      lookup $2 justify.decompose_right;
+      when isfact($1, Lam) and isfact($1, SubwordFirst) and isfact($2, Dal) {
+        lookup $1 justify.decompose_lam_dal;
+        lookup $2 justify.decompose_lam_dal;
+      }
+      update $2:righttatweel = select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.5, 1);
+      vary $2:righttatweel to select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 2, 4);
+    }
+
+    # Preferred maxima are explicit font design choices; continuation offers
+    # the full range after the preferred/decomposition stages.
+    # Open Sad-Reh modestly before offering its full range in continuation.
+    # This leaves room to open another Sad-Reh rather than spending the
+    # remaining width on the first connection's preferred range.
+    action PreferredSadRehPair {
+      forbid has($2:lefttatweel);
+      forbid $1:lefttatweel > 0 or $2:righttatweel > 0;
+      lookup $1 justify.decompose_left;
+      update $1:lefttatweel = 1;
+      vary $1:lefttatweel to 1.25;
+      clear $2;
+      lookup $2 justify.decompose_right;
+      update $2:righttatweel = 1;
+      vary $2:righttatweel to 1.25;
+    }
+
+    action PreferredKaf1_75 {
+      forbid isfact($2, Noon) and $2:lefttatweel > 0;
+      forbid $1:third > 0;
+      lookup $1 justify.prepare_kaf;
+      lookup $2 justify.prepare_kaf;
+      update $1@Fatha:lefttatweel = 1;
+      update $1:third = 1;
+      vary $1:third to 1.75;
+    }
+
+    action PreferredAlternate3 {
+      forbid $self:righttatweel > 0;
+      forbid $self:lefttatweel > 0;
+      lookup $self justify.expand_terminal;
+      update $self:lefttatweel = 1;
+      vary $self:lefttatweel to 3;
+      update $self@Fatha:lefttatweel = 1;
+      vary $self@Fatha:lefttatweel to 1.75;
+    }
+
+    action PreferredAlternate2_5 {
+      forbid $self:righttatweel > 0;
+      forbid $self:lefttatweel > 0;
+      lookup $self justify.expand_terminal;
+      update $self:lefttatweel = 1;
+      vary $self:lefttatweel to 2.5;
+      update $self@Fatha:lefttatweel = 1;
+      vary $self@Fatha:lefttatweel to 1.5;
+    }
+
+    action PreferredKashida {
+      forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
+      forbid isfact($2, CompactNoon);
+      forbid has($2:lefttatweel);
+      forbid $1:lefttatweel > 0 or $2:righttatweel > 0;
+      forbid isfact($2, Qaf) and isfact($2, SubwordLast);
+      forbid isfact($1, Lam)
+             and (isfact($2, Kaf) or isfact($2, TehMarbuta)
+                  or (isfact($2, Heh) and isfact($2, SubwordLast)));
+      forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
+             and isfact($2, RehZay);
+
+      lookup $1 justify.decompose_left;
+      update $1:lefttatweel = 1;
+      vary $1:lefttatweel to 1.75;
+
+      clear $2;
+      lookup $2 justify.decompose_right;
+      when isfact($1, Lam) and isfact($1, SubwordFirst) and isfact($2, Dal) {
+        lookup $1 justify.decompose_lam_dal;
+        lookup $2 justify.decompose_lam_dal;
+      }
+      update $2:righttatweel = select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.5, 1);
+      vary $2:righttatweel to select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.875, 1.75);
+    }
+
+    action PreferredFinalAscendant2 {
+      forbid has($2:lefttatweel);
+      forbid $1:lefttatweel > 0 or $2:righttatweel > 0;
+      forbid isfact($2, Qaf) and isfact($2, SubwordLast);
+      forbid isfact($1, Lam)
+             and (isfact($2, Kaf) or isfact($2, TehMarbuta)
+                  or (isfact($2, Heh) and isfact($2, SubwordLast)));
+      forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
+             and isfact($2, RehZay);
+
+      lookup $1 justify.decompose_left;
+      update $1:lefttatweel = 1;
+      vary $1:lefttatweel to 2;
+
+      clear $2;
+      lookup $2 justify.decompose_right;
+      when isfact($1, Lam) and isfact($1, SubwordFirst) and isfact($2, Dal) {
+        lookup $1 justify.decompose_lam_dal;
+        lookup $2 justify.decompose_lam_dal;
+      }
+      update $2:righttatweel = 0.5;
+      vary $2:righttatweel to 1;
+    }
+
+    # No lookup, clear, or mandatory update in these actions. A positive
+    # current parameter identifies a stretch accepted by an earlier stage.
+    action ContinueKaf4 {
+      forbid not ($1:third > 0);
+      vary $1:third to max($1:third, 4);
+    }
+
+    # A small horizontal companion to an accepted Kaf body in this word.
+    # Preserve other parameters/preparation: unlike the compatibility action,
+    # do not clear the second glyph. Neither pattern includes Kaf itself.
+    action LimitedKafCompanion {
+      forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
+      forbid isfact($2, CompactNoon);
+      forbid has($2:lefttatweel);
+      forbid $1:lefttatweel > 0 or $2:righttatweel > 0;
+      forbid isfact($2, Qaf) and isfact($2, SubwordLast);
+      forbid isfact($1, Lam)
+             and (isfact($2, Kaf) or isfact($2, TehMarbuta)
+                  or (isfact($2, Heh) and isfact($2, SubwordLast)));
+      forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
+             and isfact($2, RehZay);
+      lookup $1 justify.decompose_left;
+      lookup $2 justify.decompose_right;
+      update $1:lefttatweel = 0.5;
+      vary $1:lefttatweel to 1;
+      update $2:righttatweel = select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.25, 0.5);
+      vary $2:righttatweel to select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.5, 1);
+    }
+    action ContinueAlternate9 {
+      forbid not ($self:lefttatweel > 0) or $self:righttatweel > 0;
+      vary $self:lefttatweel to max($self:lefttatweel, 9);
+      when $self@Fatha:lefttatweel > 0 {
+        vary $self@Fatha:lefttatweel to max($self@Fatha:lefttatweel, 4);
+      }
+    }
+    action ContinueAlternate7 {
+      forbid not ($self:lefttatweel > 0) or $self:righttatweel > 0;
+      vary $self:lefttatweel to max($self:lefttatweel, 7);
+      when $self@Fatha:lefttatweel > 0 {
+        vary $self@Fatha:lefttatweel to max($self@Fatha:lefttatweel, 3);
+      }
+    }
+    action ContinueKashida4 {
+      forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
+      forbid isfact($2, CompactNoon);
+      forbid not ($1:lefttatweel > 0) or not ($2:righttatweel > 0);
+      forbid $2:lefttatweel > 0;
+      vary $1:lefttatweel to max($1:lefttatweel, 4);
+      vary $2:righttatweel to max($2:righttatweel, select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 2, 4));
+    }
+    action ContinueFinalAscendant5 {
+      forbid not ($1:lefttatweel > 0) or not ($2:righttatweel > 0);
+      forbid $2:lefttatweel > 0;
+      vary $1:lefttatweel to max($1:lefttatweel, 5);
+      vary $2:righttatweel to max($2:righttatweel, 2.5);
+    }
+
+    # Exact fixed-step schedule using native glyph parameters. cv01 units map
+    # directly to lefttatweel; cv02 units are half a righttatweel unit.
+    action ParameterIncrementAlternate {
+      forbid $self:righttatweel > 0;
+      lookup $self justify.expand_terminal;
+      add $self:lefttatweel 1 clamp 12;
+      replace $self@Fatha { lefttatweel = sum(1, floordiv($self:lefttatweel, 3)); }
+    }
+
+    action ParameterStretchKafBody {
+      add $self:third 1 clamp 20;
+    }
+
+    action ParameterApplyKafPair {
+      forbid isfact($2, Noon) and $2:lefttatweel > 0;
+      lookup $1 justify.prepare_kaf;
+      lookup $2 justify.prepare_kaf;
+      replace $1@Fatha { lefttatweel = sum(1, floordiv($1:lefttatweel, 3)); }
+    }
+
+    action ParameterStretchKashidaPair {
+      forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
+      forbid has($2:lefttatweel);
+      forbid isfact($2, Qaf) and isfact($2, SubwordLast);
+      forbid isfact($1, Lam)
+             and (isfact($2, Kaf) or isfact($2, TehMarbuta)
+                  or (isfact($2, Heh) and isfact($2, SubwordLast)));
+      forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
+             and isfact($2, RehZay);
+
+      lookup $1 justify.decompose_left;
+      add $1:lefttatweel 1 clamp 6;
+
+      clear $2;
+      lookup $2 justify.decompose_right;
+      when isfact($1, Lam) and isfact($1, SubwordFirst) and isfact($2, Dal) {
+        lookup $1 justify.decompose_lam_dal;
+        lookup $2 justify.decompose_lam_dal;
+      }
+
+      update $2:righttatweel = select(isfact($2, FinalAscendantChar) and isfact($2, SubwordLast),
+                                      prod(0.5, $1:lefttatweel), $1:lefttatweel);
+    }
+
     bind BehKashida StretchKashidaPair;
     bind FinalAscendantKashida StretchKashidaPair;
     bind OtherRehKashida StretchKashidaPair;
     bind OtherJoinedKashida StretchKashidaPair;
     bind KafAction ApplyKafPair;
+    bind KafBody StretchKafBody;
     bind AlternateGroup1 IncrementAlternate;
     bind AlternateGroup2 IncrementAlternate;
+    bind CandidateOtherRehKashida CandidateKashida4;
+    bind CandidateOtherJoinedKashida CandidateKashida4;
+    bind CandidateKaf CandidateKaf4;
+    bind CandidateBeforeHah PreferredKashida;
+    bind CandidateSadReh PreferredSadRehPair;
+    bind PreferredAlternateGroup1 PreferredAlternate3;
+    bind InitialShortJoin InitialShortKashida;
+    bind PreferredAlternateGroup2 PreferredAlternate2_5;
+    bind PreferredKaf PreferredKaf1_75;
+    bind PreferredBehKashida PreferredKashida;
+    bind PreferredFinalAscendantKashida PreferredFinalAscendant2;
+    bind PreferredLamLafKashida PreferredFinalAscendant2;
+    bind PreferredRehKashida PreferredKashida;
+    bind ContinueAlternateGroup1 ContinueAlternate9;
+    bind ContinueAlternateGroup2 ContinueAlternate7;
+    bind ContinueKaf ContinueKaf4;
+    bind ContinueBehKashida ContinueKashida4;
+    bind ContinueFinalAscendantKashida ContinueFinalAscendant5;
+    bind ContinueLamLafKashida ContinueFinalAscendant5;
+    bind ContinueRehKashida ContinueKashida4;
+    bind ContinueBeforeHah ContinueKashida4;
+    bind ContinueSadReh ContinueKashida4;
+    bind ContinueShortReh ContinueKashida4;
+    bind KafCompanionReh LimitedKafCompanion;
+    bind KafCompanionJoined LimitedKafCompanion;
+    bind ParameterBehKashida ParameterStretchKashidaPair;
+    bind ParameterFinalAscendantKashida ParameterStretchKashidaPair;
+    bind ParameterOtherRehKashida ParameterStretchKashidaPair;
+    bind ParameterOtherJoinedKashida ParameterStretchKashidaPair;
+    bind ParameterKafAction ParameterApplyKafPair;
+    bind ParameterKafBody ParameterStretchKafBody;
+    bind ParameterAlternateGroup1 ParameterIncrementAlternate;
+    bind ParameterAlternateGroup2 ParameterIncrementAlternate;
   }
 
   selections {
@@ -2644,7 +3119,7 @@ table(justdfa) oldmadina.experimental2 {
       choose BehKashida first selected_only;
       traversal last_first;
       record Beh;
-      forbid_recorded [FinalAscendant OtherKashidas];
+      forbid_recorded [FinalAscendant KafBody OtherKashidas];
     }
     selection AlternateGroup1 {
       choose AlternateGroup1 last selected_only;
@@ -2654,19 +3129,25 @@ table(justdfa) oldmadina.experimental2 {
       choose FinalAscendantKashida last selected_only;
       traversal last_first;
       record FinalAscendant;
-      forbid_recorded [Beh OtherKashidas];
+      forbid_recorded [Beh KafBody OtherKashidas];
     }
     selection Kaf {
       choose KafAction last selected_only;
       traversal last_first;
       record Kaf;
     }
+    # Compatibility selection for the historical schedule: Kaf-body stretch
+    # did not participate in its per-word records.
+    selection KafBodyUnrecorded {
+      choose KafBody last all_non_overlapping;
+      traversal last_first;
+    }
     selection Other {
       choose OtherRehKashida last selected_only;
       choose OtherJoinedKashida last selected_only;
       traversal last_first;
       record OtherKashidas;
-      forbid_recorded [Beh FinalAscendant];
+      forbid_recorded [Beh FinalAscendant KafBody];
     }
     selection AlternateGroup2 {
       choose AlternateGroup2 last selected_only;
@@ -2684,7 +3165,7 @@ table(justdfa) oldmadina.experimental2 {
       choose OtherJoinedKashida last selected_only;
       traversal last_first;
       record SecondKashidaDifferentSubword;
-      different_subword [Beh FinalAscendant OtherKashidas];
+      different_subword [Beh FinalAscendant KafBody OtherKashidas];
     }
     selection SecondKashidaSameSubword {
       choose BehKashida last selected_only;
@@ -2693,33 +3174,266 @@ table(justdfa) oldmadina.experimental2 {
       choose OtherJoinedKashida first all_non_overlapping;
       traversal last_first;
       record SecondKashidaSameSubword;
-      different_position [Beh FinalAscendant OtherKashidas SecondKashidaDifferentSubword];
+      different_position [Beh FinalAscendant KafBody OtherKashidas SecondKashidaDifferentSubword];
+    }
+
+    # Stage one includes limited kaf preparation/body stretching alongside
+    # the other preferred opportunities; generic decomposition is postponed.
+    # Preferred maxima are written directly in its dedicated actions.
+    selection CandidatePreferred {
+      choose PreferredAlternateGroup1 last selected_only weight 6 decay 0.85 record Terminal;
+      choose PreferredAlternateGroup2 last selected_only weight 4 decay 0.85 record Terminal;
+      choose PreferredKaf last all_non_overlapping weight 5 decay 0.9 record KafBody forbid_recorded [KafBody Horizontal];
+      choose PreferredBehKashida first selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
+      choose PreferredFinalAscendantKashida last selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
+      choose PreferredLamLafKashida last selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
+      choose PreferredRehKashida last selected_only weight 6 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
+      traversal last_first;
+    }
+    selection InitialShortJoins {
+      choose InitialShortJoin first all;
+      traversal first_first;
+    }
+
+    selection CandidateDecomposition {
+      forbid_recorded [KafBody];
+      choose CandidateSadReh last selected_only weight 4 decay 0.85 record Horizontal forbid_recorded [Horizontal];
+      choose CandidateBeforeHah last selected_only weight 3 record Horizontal forbid_recorded [Horizontal];
+      traversal last_first;
+    }
+
+    # Inspect all matches: an inactive last match must not hide an earlier
+    # stretched site. Actions reject inactive sites and only vary parameters.
+    # No new record is needed: the original Horizontal record remains in force
+    # for the decomposition/fallback selections that create new connections.
+    selection CandidateContinuePreferred {
+      choose ContinueShortReh last all_non_overlapping weight 5 decay 0.85 forbid_recorded [KafBody];
+      choose ContinueAlternateGroup1 last all_non_overlapping weight 5 decay 0.85;
+      choose ContinueAlternateGroup2 last all_non_overlapping weight 4 decay 0.85;
+      choose ContinueKaf last all_non_overlapping weight 3 decay 0.85;
+      choose ContinueBehKashida first all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
+      choose ContinueFinalAscendantKashida last all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
+      choose ContinueLamLafKashida last all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
+      choose ContinueRehKashida last all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
+      traversal last_first;
+    }
+    selection CandidateContinueDecomposition {
+      forbid_recorded [KafBody];
+      choose ContinueSadReh last all_non_overlapping weight 4 decay 0.85;
+      choose ContinueBeforeHah last all_non_overlapping weight 3;
+      traversal last_first;
+    }
+    selection CandidateRemainingKaf {
+      choose CandidateKaf last all_non_overlapping weight 3 decay 0.85 record KafBody forbid_recorded [KafBody Horizontal];
+      traversal last_first;
+    }
+
+    selection CandidateKafCompanion {
+      require_recorded [KafBody];
+      forbid_recorded [Horizontal];
+      choose KafCompanionReh last selected_only weight 2 decay 0.85;
+      choose KafCompanionJoined last selected_only weight 2 decay 0.85;
+      record Horizontal;
+      traversal last_first;
+    }
+
+    # Generic fallback connections cannot compete with an accepted Kaf body.
+    selection CandidateOther {
+      forbid_recorded [KafBody];
+      choose CandidateOtherRehKashida last selected_only weight 2 decay 0.85 record Horizontal forbid_recorded [Horizontal];
+      choose CandidateOtherJoinedKashida last selected_only weight 2 decay 0.85 record Horizontal forbid_recorded [Horizontal];
+      traversal last_first;
+    }
+
+    selection ParameterBeh {
+      choose ParameterBehKashida first selected_only;
+      traversal last_first;
+      record Beh;
+      forbid_recorded [FinalAscendant KafBody OtherKashidas];
+    }
+    selection ParameterAlternateGroup1 {
+      choose ParameterAlternateGroup1 last selected_only;
+      traversal last_first;
+    }
+    selection ParameterFinalAscendant {
+      choose ParameterFinalAscendantKashida last selected_only;
+      traversal last_first;
+      record FinalAscendant;
+      forbid_recorded [Beh KafBody OtherKashidas];
+    }
+    selection ParameterKaf {
+      choose ParameterKafAction last selected_only;
+      traversal last_first;
+      record Kaf;
+    }
+    selection ParameterKafBodyUnrecorded {
+      choose ParameterKafBody last all_non_overlapping;
+      traversal last_first;
+    }
+    selection ParameterOther {
+      choose ParameterOtherRehKashida last selected_only;
+      choose ParameterOtherJoinedKashida last selected_only;
+      traversal last_first;
+      record OtherKashidas;
+      forbid_recorded [Beh FinalAscendant KafBody];
+    }
+    selection ParameterAlternateGroup2 {
+      choose ParameterAlternateGroup2 last selected_only;
+      traversal last_first;
+    }
+    selection ParameterAlternateAll {
+      choose ParameterAlternateGroup1 last selected_only;
+      choose ParameterAlternateGroup2 last selected_only;
+      traversal last_first;
+    }
+    selection ParameterSecondKashidaDifferentSubword {
+      choose ParameterBehKashida last selected_only;
+      choose ParameterFinalAscendantKashida last selected_only;
+      choose ParameterOtherRehKashida last selected_only;
+      choose ParameterOtherJoinedKashida last selected_only;
+      traversal last_first;
+      record SecondKashidaDifferentSubword;
+      different_subword [Beh FinalAscendant KafBody OtherKashidas];
+    }
+    selection ParameterSecondKashidaSameSubword {
+      choose ParameterBehKashida last selected_only;
+      choose ParameterFinalAscendantKashida last selected_only;
+      choose ParameterOtherRehKashida first all_non_overlapping;
+      choose ParameterOtherJoinedKashida first all_non_overlapping;
+      traversal last_first;
+      record SecondKashidaSameSubword;
+      different_position [Beh FinalAscendant KafBody OtherKashidas SecondKashidaDifferentSubword];
     }
   }
 
-  # Each `stretchpolicy` block is one selectable justification.  They share the
-  # vocabulary above -- and therefore the compiled DFA and every interned id --
-  # so only the schedule below distinguishes them.
-  stretchpolicy standard {
-    phase Beh 2;
-    phase AlternateGroup1 2;
-    phase FinalAscendant 1;
-    phase Kaf 1;
-    phase FinalAscendant 2;
-    phase Other 2;
-    phase AlternateGroup2 2;
-    phase Beh 1;
-    phase AlternateGroup1 1;
-    phase FinalAscendant 1;
-    phase Other 1;
-    phase AlternateGroup2 1;
-    phase AlternateGroup1 2;
-    phase AlternateAll 2;
-    phase Beh 1;
-    phase FinalAscendant 1;
-    phase Other 1;
-    phase AlternateAll 2;
-    phase SecondKashidaDifferentSubword 2;
-    phase SecondKashidaSameSubword 2;
+  # Shared stages contain only glyph selection/allocation phases. A complete
+  # stretch policy may interleave them with spacing and OpenType feature steps.
+  stages {
+    stage InitialShortStretch {
+      phase InitialShortJoins 1 baseline_pool;
+    }
+    stage PreferredStretch {
+      phase CandidatePreferred 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
+      phase CandidateKafCompanion 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
+    }
+    stage DecomposeConnections {
+      phase CandidateDecomposition 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
+    }
+    stage ContinueStretch {
+      phase CandidateContinuePreferred 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
+      phase CandidateContinueDecomposition 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
+      phase CandidateRemainingKaf 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
+      phase CandidateKafCompanion 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
+      phase CandidateOther 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
+    }
+
+    stage LegacyFixedSteps {
+      phase Beh 2;
+      phase AlternateGroup1 2;
+      phase FinalAscendant 1;
+      phase Kaf 1;
+      phase KafBodyUnrecorded 2;
+      phase FinalAscendant 2;
+      phase Other 2;
+      phase AlternateGroup2 2;
+      phase Beh 1;
+      phase KafBodyUnrecorded 2;
+      phase AlternateGroup1 1;
+      phase FinalAscendant 1;
+      phase Other 1;
+      phase KafBodyUnrecorded 2;
+      phase AlternateGroup2 1;
+      phase AlternateGroup1 2;
+      phase KafBodyUnrecorded 2;
+      phase AlternateAll 2;
+      phase Beh 1;
+      phase FinalAscendant 1;
+      phase Other 1;
+      phase AlternateAll 2;
+      phase SecondKashidaDifferentSubword 2;
+      phase KafBodyUnrecorded 2;
+      phase SecondKashidaSameSubword 2;
+    }
+
+    stage ParameterFixedSteps {
+      phase ParameterBeh 2;
+      phase ParameterAlternateGroup1 2;
+      phase ParameterFinalAscendant 1;
+      phase ParameterKaf 1;
+      phase ParameterKafBodyUnrecorded 2;
+      phase ParameterFinalAscendant 2;
+      phase ParameterOther 2;
+      phase ParameterAlternateGroup2 2;
+      phase ParameterBeh 1;
+      phase ParameterKafBodyUnrecorded 2;
+      phase ParameterAlternateGroup1 1;
+      phase ParameterFinalAscendant 1;
+      phase ParameterOther 1;
+      phase ParameterKafBodyUnrecorded 2;
+      phase ParameterAlternateGroup2 1;
+      phase ParameterAlternateGroup1 2;
+      phase ParameterKafBodyUnrecorded 2;
+      phase ParameterAlternateAll 2;
+      phase ParameterBeh 1;
+      phase ParameterFinalAscendant 1;
+      phase ParameterOther 1;
+      phase ParameterAlternateAll 2;
+      phase ParameterSecondKashidaDifferentSubword 2;
+      phase ParameterKafBodyUnrecorded 2;
+      phase ParameterSecondKashidaSameSubword 2;
+    }
+  }
+
+  # Each `stretchpolicy` block is one selectable complete justification.
+  stretchpolicy staged_pool {
+    candidate_width advance;
+    cap_spaces 250 250;
+    stage InitialShortStretch;
+    stage PreferredStretch;
+    stage DecomposeConnections;
+    stage ContinueStretch;
+    fill_spaces;
+  }
+  # Exact endpoint shaping retained for regression and visual comparison.
+  stretchpolicy staged_pool_full_shape {
+    candidate_width full_shape;
+    cap_spaces 250 250;
+    stage InitialShortStretch;
+    stage PreferredStretch;
+    stage DecomposeConnections;
+    stage ContinueStretch;
+    fill_spaces;
+  }
+
+  # Exact pre-ratio schedule retained as a selectable comparison baseline.
+  stretchpolicy fixed_steps {
+    cap_spaces 250 250;
+    stage LegacyFixedSteps;
+    fill_spaces;
+  }
+
+  # A/B counterpart of fixed_steps. It keeps the same selection order and
+  # limits, but writes lefttatweel/righttatweel/third directly.
+  stretchpolicy native_fixed_steps {
+    cap_spaces 250 250;
+    stage ParameterFixedSteps;
+    fill_spaces;
+  }
+
+  shrinkpolicy standard {
+    fit_features [sk01 sk02 sk03 sk04 sk05 sk06 sk07 sk08 sk09 sk10 sk11 sk12 sk13 sk14 sk15 sk16 sk17 sk18 sk19 sk20];
+    balance;
+  }
+
+  shrinkpolicy sclx {
+    fit_sclx 100;
+  }
+
+  shrinkpolicy test {
+    all_features [sk01 sk02 sk03 sk04 sk05 sk06 sk07 sk08 sk09 sk10 sk11 sk12 sk13 sk14 sk15 sk16 sk17 sk18 sk19 sk20];
+  }
+
+  shrinkpolicy scale {
+    scale;
   }
 };

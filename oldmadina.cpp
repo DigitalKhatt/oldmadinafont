@@ -133,30 +133,24 @@ void OldMadina::generateSubstEquivGlyphs() {
     allFamilyMembers.insert(members.begin(), members.end());
   }
 
-  auto generateSingleTatweel =
-      [&](SingleSubtableWithTatweel& subtable) {
+  auto generateSingleParameters =
+      [&](SingleSubtableWithParameters& subtable) {
         for (const auto& [glyphCode, substitution] : subtable.subst) {
           const auto& expansion = substitution.expansion;
-          if (expansion.MinLeftTatweel == 0 &&
-              expansion.MinRightTatweel == 0)
-            continue;
-          if (expansion.MinLeftTatweel > 0 &&
-              expansion.MinRightTatweel > 0)
+          auto adjustment = substitution.parameters;
+          adjustment.lefttatweel += expansion.MinLeftTatweel;
+          adjustment.righttatweel += expansion.MinRightTatweel;
+          if (adjustment.isDefault()) continue;
+          if (adjustment.lefttatweel > 0 && adjustment.righttatweel > 0)
             throw std::runtime_error(
                 "OldMadina single substitution expands both sides");
 
           const auto targetGlyph = substitution.glyphCode;
-          const GlyphParameters adjustment{
-              .lefttatweel = expansion.MinLeftTatweel,
-              .righttatweel = expansion.MinRightTatweel};
-
           const auto inputStates =
               m_layout->getSubstEquivGlyphs(targetGlyph);
           for (const auto& [parameters, inputGlyph] : inputStates) {
-            if ((expansion.MinLeftTatweel > 0 &&
-                 inputGlyph->charrt > 0) ||
-                (expansion.MinRightTatweel > 0 &&
-                 inputGlyph->charlt > 3) ||
+            if ((adjustment.lefttatweel > 0 && inputGlyph->charrt > 0) ||
+                (adjustment.righttatweel > 0 && inputGlyph->charlt > 3) ||
                 inputGlyph->charlt > 5 || inputGlyph->charrt > 5)
               continue;
             m_layout->getAlternate(inputGlyph->charcode, adjustment, true,
@@ -166,18 +160,24 @@ void OldMadina::generateSubstEquivGlyphs() {
         }
       };
 
-  auto generateAlternateTatweel =
-      [&](AlternateSubtableWithTatweel& subtable) {
+  auto generateAlternateParameters =
+      [&](AlternateSubtableWithParameters& subtable) {
         for (const auto& [glyphCode, sequence] : subtable.alternates) {
+          const auto inputStates = m_layout->getSubstEquivGlyphs(glyphCode);
           for (const auto& alternate : sequence) {
-            if (alternate.lefttatweel == 0 &&
-                alternate.righttatweel == 0) {
-              continue;
+            if (!alternate.parameters.isDefault())
+              m_layout->getAlternate(alternate.code, alternate.parameters,
+                                     true, true);
+            // Propagate states through a glyph replacement even when this
+            // lookup does not itself adjust a parameter. This lets a later
+            // declarative lookup combine, for example, cv03's kaf replacement
+            // with cv04's body axis without glyph-specific C++ generation.
+            for (const auto& state : inputStates) {
+              const auto& inputParameters = state.first;
+              auto combined = inputParameters + alternate.parameters;
+              if (!combined.isDefault())
+                m_layout->getAlternate(alternate.code, combined, true, true);
             }
-            const GlyphParameters parameters{
-                .lefttatweel = alternate.lefttatweel,
-                .righttatweel = alternate.righttatweel};
-            m_layout->getAlternate(alternate.code, parameters, true, true);
           }
         }
       };
@@ -189,11 +189,11 @@ void OldMadina::generateSubstEquivGlyphs() {
       return;
     for (auto* subtable : lookup->getSubtables(false)) {
       if (auto* single =
-              dynamic_cast<SingleSubtableWithTatweel*>(subtable)) {
-        generateSingleTatweel(*single);
+              dynamic_cast<SingleSubtableWithParameters*>(subtable)) {
+        generateSingleParameters(*single);
       } else if (auto* alternate =
-                     dynamic_cast<AlternateSubtableWithTatweel*>(subtable)) {
-        generateAlternateTatweel(*alternate);
+                     dynamic_cast<AlternateSubtableWithParameters*>(subtable)) {
+        generateAlternateParameters(*alternate);
       }
     }
   };
@@ -739,23 +739,21 @@ CalcAnchor OldMadina::getanchorCalcFunctions(std::string functionName,
 
 class MediYehShapeFinaii {
  public:
-  MediYehShapeFinaii(Automedina& y, PairAdjustmentSubtable& subtable) : _y(y), _subtable(subtable) {}
-  ValueRecord operator()(GlyphVis* glyph1, GlyphVis* glyph2) {
-    if (glyph2->conatinsAnchor("ltrcursive", GlyphVis::AnchorType::EntryAnchorRTL)) {
-      if (glyph1->conatinsAnchor("ltrcursive", GlyphVis::AnchorType::ExitAnchorRTL)) {
-        auto entryAnchor = glyph2->getAnchor("ltrcursive", GlyphVis::AnchorType::EntryAnchorRTL);
-        auto exitAnchor = glyph1->getAnchor("ltrcursive", GlyphVis::AnchorType::ExitAnchorRTL);
-        short vKern = exitAnchor.y() - entryAnchor.y();
+  ValueRecord operator()(GlyphVis* glyph1, GlyphVis* glyph2) const {
+    // Use a matching cursive subtable's transformed anchors, not the raw
+    // leftAnchor/rightAnchor coordinates (which do not include tr_).
+    // Unmigrated yeh connections still use the explicit ltrcursive anchors.
+    for (const auto* name : {"rtlcursivemedifina", "rtlcursiveinitfina", "ltrcursive"}) {
+      const auto exit = glyph1->anchors.find({name, GlyphVis::AnchorType::ExitAnchorRTL});
+      const auto entry = glyph2->anchors.find({name, GlyphVis::AnchorType::EntryAnchorRTL});
+      if (exit != glyph1->anchors.end() && entry != glyph2->anchors.end()) {
+        short vKern = exit->second.anchor.y() - entry->second.anchor.y();
         return {0, vKern, 0, 0};
       }
     }
 
     return {};
-  };
-
- private:
-  Automedina& _y;
-  PairAdjustmentSubtable& _subtable;
+  }
 };
 
 PairAdjustFunc OldMadina::getPairAdjustFunction(std::string functionName,
@@ -763,7 +761,7 @@ PairAdjustFunc OldMadina::getPairAdjustFunction(std::string functionName,
   PairAdjustFunc ret;
 
   if (functionName == "medi_yehshape_fina_ii") {
-    return MediYehShapeFinaii(*this, *(PairAdjustmentSubtable*)(subtable));
+    return MediYehShapeFinaii{};
   } else {
     return ret;
   }
@@ -2386,7 +2384,7 @@ Lookup* OldMadina::glyphalternates() {
 
     m_layout->addLookup(alternate);
 
-    AlternateSubtableWithTatweel* alternateSubtable = new AlternateSubtableWithTatweel(alternate);
+    AlternateSubtableWithParameters* alternateSubtable = new AlternateSubtableWithParameters(alternate);
     alternate->subtables.push_back(alternateSubtable);
     alternate->name = alternate->name;
 
@@ -2461,7 +2459,7 @@ Lookup* OldMadina::glyphalternates() {
 
   m_layout->addLookup(alternate);
 
-  AlternateSubtableWithTatweel* alternateSubtable = new AlternateSubtableWithTatweel(alternate);
+  AlternateSubtableWithParameters* alternateSubtable = new AlternateSubtableWithParameters(alternate);
   alternate->subtables.push_back(alternateSubtable);
   alternate->name = alternate->name;
 
@@ -2477,6 +2475,31 @@ Lookup* OldMadina::glyphalternates() {
     alternateSubtable->alternates[code] = alternates;
   }
 
+  // cv04 is defined declaratively by glyphbodyalternates in features.fea.
+  // Keep the old builder disabled temporarily for side-by-side reference.
+#if 0
+  alternate = new Lookup(m_layout);
+  alternate->name = "cv04";
+  alternate->feature = alternate->name;
+  alternate->type = Lookup::alternate;
+  m_layout->addLookup(alternate);
+
+  alternateSubtable = new AlternateSubtableWithParameters(alternate);
+  alternate->subtables.push_back(alternateSubtable);
+  alternateSubtable->name = alternate->name;
+
+  for (const auto* glyphName : {"kaf.init.ii", "kaf.medi.ii"}) {
+    const auto glyphCode = m_layout->glyphCodePerName.at(glyphName);
+    auto& sequence = alternateSubtable->alternates[glyphCode];
+    sequence.reserve(20);
+    for (int body = 1; body <= 20; ++body) {
+      GlyphParameters parameters;
+      parameters.third = body;
+      sequence.emplace_back(glyphCode, parameters);
+    }
+  }
+#endif
+
   int cvNumber = 1;
 
   // cv01
@@ -2488,7 +2511,7 @@ Lookup* OldMadina::glyphalternates() {
 
   m_layout->addLookup(alternate);
 
-  alternateSubtable = new AlternateSubtableWithTatweel(alternate);
+  alternateSubtable = new AlternateSubtableWithParameters(alternate);
   alternate->subtables.push_back(alternateSubtable);
   alternateSubtable->name = asStdString(alternate->name);
 
@@ -2591,7 +2614,7 @@ Lookup* OldMadina::glyphalternates() {
 
   // m_layout->addLookup(alternate);
 
-  alternateSubtable = new AlternateSubtableWithTatweel(alternate);
+  alternateSubtable = new AlternateSubtableWithParameters(alternate);
   alternate->subtables.push_back(alternateSubtable);
   alternate->name = alternate->name;
 
@@ -2631,7 +2654,7 @@ Lookup* OldMadina::glyphalternates() {
 
   // m_layout->addLookup(alternate);
 
-  alternateSubtable = new AlternateSubtableWithTatweel(alternate);
+  alternateSubtable = new AlternateSubtableWithParameters(alternate);
   alternate->subtables.push_back(alternateSubtable);
   alternateSubtable->name = asStdString(alternate->name);
   for (auto& glyph : m_layout->expandableGlyphs) {
