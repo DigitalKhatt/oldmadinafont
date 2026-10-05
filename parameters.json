@@ -3802,6 +3802,10 @@
                     "hah.init.beforemeem": [
                         -20,
                         100
+                    ],
+                    "hah.isol": [
+                        39,
+                        490
                     ]
                 }
             },
