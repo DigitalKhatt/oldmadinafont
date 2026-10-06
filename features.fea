@@ -951,7 +951,7 @@ lookup kernAdjustWithMarks {
   
   pos [alef.fina alef.isol]'<40 0 40 0> [wasla]' [behshape.init behshape.init.beforebeh]' [onedotup twodotsup hamzaabove]' [sukun shadda]';
 
-  pos [alef.isol]'<-80 0 -80 0> [hamzaabove]' [fatha]' [hamza.isol]' [kasra]';
+  pos [alef.isol]'<-50 0 -50 0> [hamzaabove]' [fatha]' [hamza.isol]' [kasra]';
 
   pos [alef.fina.lamalef]'<-80 0 -80 0> [maddahabove]' [hamza.isol]' [kasra]' ;
 
@@ -2624,6 +2624,7 @@ table(justdfa) oldmadina.experimental2 {
     line default { use_line_policy; }
 
     render style FontSize { font_scale; normal_output; }
+    render style FontSizeXScale { xscale_output; }
     render style SCLX { axis_output; }
     render style XScale { xscale_output; }
     render default { normal_output; }
@@ -3421,7 +3422,8 @@ table(justdfa) oldmadina.experimental2 {
   }
 
   shrinkpolicy standard {
-    fit_features [sk01 sk02 sk03 sk04 sk05 sk06 sk07 sk08 sk09 sk10 sk11 sk12 sk13 sk14 sk15 sk16 sk17 sk18 sk19 sk20];
+    fit_features [sk01 sk02 sk03 sk04 sk05 sk06 sk07 sk08 sk09 sk10 sk11 sk12 sk13];
+    reduce_spaces 0.95;
     balance;
   }
 
