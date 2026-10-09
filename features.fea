@@ -1974,7 +1974,7 @@ lookup shrink.kern1 {
 
   pos [reh.fina]'<-150 0 -150 0> [shadda]'<0 150 0 0> [fatha]' [hah.init]' [onedotdown]' [sukun]' [ain.fina]'<0 100 0 0> [kasra]';
 
-  pos [reh.isol]'<-70 0 -70 0> [sukun]' [heh.init.beforemeem.ii]' [damma]';
+  pos [reh.isol reh.fina waw.isol]'<-70 0 -70 0> [sukun damma fatha]' [heh.init.beforemeem.ii]' [damma]';
 
   pos [reh.isol]'<-70 0 -70 0> [damma]' [waw.isol]'<-60 80 -60 0> [heh.init]' [fatha]';
 
@@ -2291,6 +2291,12 @@ lookup shrink3 {
   } shrink3.l8;
 
   sub [fehshape.init]'lookup shrink3.l8 [lam.medi]'lookup shrink3.l8;
+
+  lookup shrink3.l9 {
+    sub [lam.init] add -0.3 0;
+  } shrink3.l9;
+
+  sub [lam.init]'lookup shrink3.l9 [noon.fina]';
   
 
 } shrink3;
@@ -2418,6 +2424,10 @@ lookup shrink.space.l5 {
   sub /^space/ add -1.5 0;        
 } shrink.space.l5; 
 
+lookup shrink.space.l5.1 {
+  sub /^space/ add -1.1 0;
+} shrink.space.l5.1;
+
 lookup shrink.space.l6 {    
   sub /^space/ add -2 0;        
 } shrink.space.l6;
@@ -2430,7 +2440,9 @@ lookup shrink.space {
 
   sub /^alef/ /^space/' /^alef/ ;
 
-  sub [smallwaw /^waw/] /^space/'lookup shrink.space.l5 /^endofaya/;
+  sub [/^waw/] /^space/'lookup shrink.space.l5 /^endofaya/;
+
+  sub [smallwaw] /^space/'lookup shrink.space.l5.1 /^endofaya/;
 
   sub [alef.fina.lamalef]' /^space/' [kaf.init.beforelam]' ;
 
@@ -2444,7 +2456,9 @@ lookup shrink.space {
 
   sub [qaf.isol noon.isol noon.fina.afterbeh qaf.fina alefmaksura.isol ]' /^space/'lookup shrink.space.l4 /^endofaya/;
 
-  sub [yehshape.fina.ii yehshape.fina.afterbeh]' /^space/'lookup shrink.space.l3 /^endofaya/;
+  sub [yehshape.fina.afterbeh]' /^space/'lookup shrink.space.l3 /^endofaya/;
+
+  sub [yehshape.fina.ii]' /^space/'lookup shrink.space.l2 /^endofaya/;
 
   sub [noon.fina]' space'lookup shrink.space.l5 [meem.init.beforehah]' ;  
 
@@ -2452,13 +2466,21 @@ lookup shrink.space {
 
   sub [yehshape.fina.ii]' space'lookup shrink.space.l6 [sad.init.beforehah]';
 
+  sub [yehshape.fina.ii]' /^space/' [alef.isol];
+
+  sub [meem.fina]' space' [waw.isol]';
+
+  sub [meem.isol]'  space' [behshape.init.beforebeh]' ;
+
+  sub /^endofaya/ /^space/'lookup shrink.space.l1 [/^waw/];
+
   sub @bases /^space/'lookup shrink.space.l2;
 
 } shrink.space ;
 
 lookup shrink.space.with_marks {
 
-  feature inherited; 
+  feature inherited;
 
   sub [alef.fina] [maddahabove] space'lookup shrink.space.l1 [alef.isol] [hamzaabove];
 
@@ -2483,6 +2505,8 @@ lookup shrink.space.with_marks {
   sub [meem.fina.afterkaf]' ([sukun]?)' space'lookup shrink.space.l5; # [hah.init lam.init]' ;
 
   sub [meem.fina.ii]' [kasratanidgham]' space'lookup shrink.space.l2 /^endofaya/';
+
+
   
 
 } shrink.space.with_marks ;
@@ -2491,6 +2515,8 @@ lookup shrink.space.adjustmarks {
   feature inherited; 
 
   pos [reh.isol]' [dammatanidgham]'<0 150 0 0> space' [/^endofaya/]' ;
+
+
 
 } shrink.space.adjustmarks;
 
@@ -2634,10 +2660,12 @@ table(justdfa) oldmadina.experimental2 {
     # These are the font-declared defaults. Runtime callers may explicitly
     # override either named policy for comparison.
     stretch staged_pool;
-    shrink standard;
+    shrink weighted_native_spacebefore;
   }
 
   facts {
+    fact Shrinkable glyphs [/.*/];
+    fact ShrinkConnection glyphs [/.*[.](init|medi)([.].*)?$/];
     # Each quoted string contributes its individual characters, not a sequence.
     fact BehFirst form medi chars ["بتثنيسشصض"];
     fact BehSecond form medi chars ["بتثنيم"];
@@ -2695,6 +2723,14 @@ table(justdfa) oldmadina.experimental2 {
   }
 
   rules {
+    rule NativeShrinkOnce [Shrinkable];
+    rule ShrinkOnce [Shrinkable];
+    rule NativeShrinkTwice [Shrinkable];
+    rule ShrinkTwice [Shrinkable];
+    rule NativeShrinkOnceConnection [ShrinkConnection];
+    rule ShrinkOnceConnection [ShrinkConnection];
+    rule NativeShrinkTwiceConnection [ShrinkConnection];
+    rule ShrinkTwiceConnection [ShrinkConnection];
     rule InitialShortJoin [JoinedRight JoinedLeft];
     rule BehKashida [BehFirst BehSecond];
     rule FinalAscendantKashida [FinalRightKashida FinalAscendant];
@@ -2760,6 +2796,34 @@ table(justdfa) oldmadina.experimental2 {
   }
 
   actions {
+    # Reuse the guarded GSUB shrink lookups at one base cluster. Whole-word
+    # shaping measures the actual reduction, including contextual positioning.
+    # Keeping feature writes instead of absolute native coordinates preserves
+    # compact ligatures and the later contextual shrink feature fallbacks.
+    # The query attributes preserve each lookup's contextual exclusions.
+    # Deltas compose with GSUB parameters instead of replacing their values.
+    action NativeShrinkOnce {
+      forbid has($self:lefttatweel_delta) or has($self:righttatweel_delta);
+      forbid not ($self:sk04_lefttatweel < 0 or $self:sk04_righttatweel < 0);
+      update $self:lefttatweel_delta = $self:sk04_lefttatweel;
+      update $self:righttatweel_delta = $self:sk04_righttatweel;
+    }
+    action NativeShrinkTwice {
+      forbid not has($self:lefttatweel_delta);
+      forbid ne($self:lefttatweel_delta, $self:sk04_lefttatweel)
+             or ne($self:righttatweel_delta, $self:sk04_righttatweel);
+      forbid not ($self:sk05_lefttatweel < 0 or $self:sk05_righttatweel < 0);
+      update $self:lefttatweel_delta = sum($self:lefttatweel_delta, $self:sk05_lefttatweel);
+      update $self:righttatweel_delta = sum($self:righttatweel_delta, $self:sk05_righttatweel);
+    }
+    action ShrinkOnce {
+      forbid has($self:sk04);
+      update $self:sk04 = 1;
+    }
+    action ShrinkTwice {
+      forbid not has($self:sk04) or has($self:sk05);
+      update $self:sk05 = 1;
+    }
     # Baseline spacing, not a selected Horizontal opportunity. Adjacent joins
     # may share a glyph; the runtime checks both native expansion limits and
     # fits all endpoints together without decomposing any ligature.
@@ -3105,6 +3169,14 @@ table(justdfa) oldmadina.experimental2 {
     bind ContinueShortReh ContinueKashida4;
     bind KafCompanionReh LimitedKafCompanion;
     bind KafCompanionJoined LimitedKafCompanion;
+    bind ShrinkOnce ShrinkOnce;
+    bind NativeShrinkOnce NativeShrinkOnce;
+    bind ShrinkTwice ShrinkTwice;
+    bind NativeShrinkTwice NativeShrinkTwice;
+    bind ShrinkOnceConnection ShrinkOnce;
+    bind NativeShrinkOnceConnection NativeShrinkOnce;
+    bind ShrinkTwiceConnection ShrinkTwice;
+    bind NativeShrinkTwiceConnection NativeShrinkTwice;
     bind ParameterBehKashida ParameterStretchKashidaPair;
     bind ParameterFinalAscendantKashida ParameterStretchKashidaPair;
     bind ParameterOtherRehKashida ParameterStretchKashidaPair;
@@ -3116,6 +3188,28 @@ table(justdfa) oldmadina.experimental2 {
   }
 
   selections {
+    # Prefer shortening initial/medial connections over terminal bodies.
+    # Weights, decay and the longer_subword bonus are tunable design choices.
+    selection NativeShrinkOnce {
+      choose NativeShrinkOnce first all_non_overlapping weight 1 decay 0.95;
+      choose NativeShrinkOnceConnection first all_non_overlapping weight 3 decay 0.95;
+      traversal first_first;
+    }
+    selection ShrinkOnce {
+      choose ShrinkOnce first all_non_overlapping weight 1 decay 0.95;
+      choose ShrinkOnceConnection first all_non_overlapping weight 3 decay 0.95;
+      traversal first_first;
+    }
+    selection NativeShrinkTwice {
+      choose NativeShrinkTwice first all_non_overlapping weight 1 decay 0.95;
+      choose NativeShrinkTwiceConnection first all_non_overlapping weight 3 decay 0.95;
+      traversal first_first;
+    }
+    selection ShrinkTwice {
+      choose ShrinkTwice first all_non_overlapping weight 1 decay 0.95;
+      choose ShrinkTwiceConnection first all_non_overlapping weight 3 decay 0.95;
+      traversal first_first;
+    }
     selection Beh {
       choose BehKashida first selected_only;
       traversal last_first;
@@ -3310,6 +3404,23 @@ table(justdfa) oldmadina.experimental2 {
   # Shared stages contain only glyph selection/allocation phases. A complete
   # stretch policy may interleave them with spacing and OpenType feature steps.
   stages {
+    # Give other words/subwords a mild compression before taking a second
+    # opportunity in the same subword. The remaining stage lifts those limits
+    # before offering the second, more compressed lookup at each site.
+    stage NativeShrinkSpread {
+      phase NativeShrinkOnce 1 candidate_pool per_word 2 per_subword 1 longer_subword 0.2;
+    }
+    stage NativeShrinkRemaining {
+      phase NativeShrinkOnce 1 candidate_pool longer_subword 0.2;
+      phase NativeShrinkTwice 1 candidate_pool longer_subword 0.2;
+    }
+    stage ShrinkSpread {
+      phase ShrinkOnce 1 candidate_pool per_word 2 per_subword 1 longer_subword 0.2;
+    }
+    stage ShrinkRemaining {
+      phase ShrinkOnce 1 candidate_pool longer_subword 0.2;
+      phase ShrinkTwice 1 candidate_pool longer_subword 0.2;
+    }
     stage InitialShortStretch {
       phase InitialShortJoins 1 baseline_pool;
     }
@@ -3421,8 +3532,10 @@ table(justdfa) oldmadina.experimental2 {
     fill_spaces;
   }
 
+
+  # Whole-line baseline retained for direct comparison.
   shrinkpolicy standard {
-    fit_features [sk01 sk02 sk03 sk04 sk05 sk06 sk07 sk08 sk09 sk10 sk11 sk12 sk13];
+    fit_features [sk01 sk02 sk03 sk04 sk05 sk06 sk07 sk08 sk09 sk10 sk11];
     reduce_spaces 0.95;
     balance;
   }
@@ -3431,11 +3544,54 @@ table(justdfa) oldmadina.experimental2 {
     fit_sclx 100;
   }
 
-  shrinkpolicy test {
+  shrinkpolicy all_sk01_20 {
     all_features [sk01 sk02 sk03 sk04 sk05 sk06 sk07 sk08 sk09 sk10 sk11 sk12 sk13 sk14 sk15 sk16 sk17 sk18 sk19 sk20];
   }
 
   shrinkpolicy scale {
     scale;
   }
+
+  # Append new policies to preserve the existing runtime override indices.
+  shrinkpolicy weighted {
+    candidate_width full_shape;
+    fit_features [sk01 sk02 sk03];
+    stage ShrinkSpread;
+    stage ShrinkRemaining;
+    fit_features [sk06 sk07 sk08 sk09 sk10 sk11];
+    reduce_spaces 0.95;
+    balance;
+  }
+
+  shrinkpolicy weighted_native {
+    candidate_width advance;
+    fit_features [sk01 sk02 sk03];
+    stage NativeShrinkSpread;
+    stage NativeShrinkRemaining;
+    fit_features [sk06 sk07 sk08 sk09 sk10 sk11];
+    reduce_spaces 0.95;
+    balance;
+  }
+
+  shrinkpolicy weighted_native_spacebefore {
+    candidate_width advance;
+    fit_features [sk01 sk02 sk03];
+    fit_features [sk10 sk11]; # Spaces
+    stage NativeShrinkSpread;
+    stage NativeShrinkRemaining;
+    fit_features [sk06 sk07 sk08 sk09];
+    reduce_spaces 0.95;
+    balance;
+  }
+
+  shrinkpolicy weighted_native_full_shape {
+    candidate_width full_shape;
+    fit_features [sk01 sk02 sk03];
+    stage NativeShrinkSpread;
+    stage NativeShrinkRemaining;
+    fit_features [sk06 sk07 sk08 sk09 sk10 sk11];
+    reduce_spaces 0.95;
+    balance;
+  }
+
 };
