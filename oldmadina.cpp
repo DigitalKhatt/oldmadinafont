@@ -439,7 +439,7 @@ OldMadina::OldMadina(OtLayout* layout, MPFont* font, bool extended) : Automedina
       "wasla",
       "hamzaabove",
       "hamzaabove.joined",
-      //"hamzaabove.lamalef",
+      "hamzaabove.lamalef",
       "smallhighroundedzero",
       "rectangularzero",
       "smallhighseen",
@@ -957,6 +957,7 @@ Lookup* OldMadina::defaultmarkposition() {
   topmarks.erase("hamzaabove");
   topmarks.erase("hamzaabove.small");
   topmarks.erase("hamzaabove.joined");
+  topmarks.erase("hamzaabove.lamalef");
   topmarks.erase("wasla");
   topmarks.erase("maddahabove");
   topmarks.erase("smallhighseen");
