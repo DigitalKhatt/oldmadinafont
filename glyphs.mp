@@ -4861,7 +4861,7 @@ fill
 %%endpaths
 %%beginbody
 
-setMarkAnchor(onedotsup,z11);
+setMarkAnchor(onedotup,z11);
 
 
 enddefchar;
@@ -4909,7 +4909,7 @@ fill
 %%endpaths
 %%beginbody
 
-setMarkAnchor(onedotsup,z11);
+setMarkAnchor(onedotup,z11);
 
 
 
@@ -5233,7 +5233,7 @@ fill
 
 %%endpaths
 %%beginbody
-setMarkAnchor(onedotsup,z11);
+setMarkAnchor(onedotup,z11);
 
 
 
