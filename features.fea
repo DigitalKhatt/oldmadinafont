@@ -2684,6 +2684,9 @@ table(justdfa) oldmadina.experimental2 {
     # Ascendant incoming connection (rightVerticalRatio = 5), despite being
     # medial rather than subword-last. Never stretch inside its Lam-Alef ligature.
     fact LamLaf glyphs [lam.medi.laf];
+    # These medial forms have a fixed outgoing connection. Prefer opening
+    # their incoming connection instead; ordinary lam.medi is excluded.
+    fact MedialLam glyphs [lam.medi.beforeheh lam.medi.beforeyeh];
     # The first/last constraints make this pair a whole two-base-glyph
     # subword, irrespective of intervening marks. Reh, not Zay.
     fact ShortRehStart form joins_right position first chars ["بتثنيئجحخسشصضطظعغفقمه"];
@@ -2759,6 +2762,7 @@ table(justdfa) oldmadina.experimental2 {
     rule PreferredBehKashida [BehFirst BehSecond];
     rule PreferredFinalAscendantKashida [FinalRightKashida FinalAscendant];
     rule PreferredLamLafKashida [RightKashida LamLaf];
+    rule PreferredMedialLamKashida [RightKashida MedialLam];
     rule PreferredRehKashida [RightKashida RehOrZay];
     rule ContinueAlternateGroup1 [Alternate1];
     rule ContinueAlternateGroup2 [Alternate2];
@@ -2766,6 +2770,7 @@ table(justdfa) oldmadina.experimental2 {
     rule ContinueBehKashida [BehFirst BehSecond];
     rule ContinueFinalAscendantKashida [FinalRightKashida FinalAscendant];
     rule ContinueLamLafKashida [RightKashida LamLaf];
+    rule ContinueMedialLamKashida [RightKashida MedialLam];
     rule ContinueRehKashida [RightKashida RehOrZay];
     rule ContinueBeforeHah [DecomposedBeforeHah DecomposedHah];
     rule ContinueSadReh [DecomposedSad DecomposedReh];
@@ -3156,6 +3161,7 @@ table(justdfa) oldmadina.experimental2 {
     bind PreferredBehKashida PreferredKashida;
     bind PreferredFinalAscendantKashida PreferredFinalAscendant2;
     bind PreferredLamLafKashida PreferredFinalAscendant2;
+    bind PreferredMedialLamKashida PreferredKashida;
     bind PreferredRehKashida PreferredKashida;
     bind ContinueAlternateGroup1 ContinueAlternate9;
     bind ContinueAlternateGroup2 ContinueAlternate7;
@@ -3163,6 +3169,7 @@ table(justdfa) oldmadina.experimental2 {
     bind ContinueBehKashida ContinueKashida4;
     bind ContinueFinalAscendantKashida ContinueFinalAscendant5;
     bind ContinueLamLafKashida ContinueFinalAscendant5;
+    bind ContinueMedialLamKashida ContinueKashida4;
     bind ContinueRehKashida ContinueKashida4;
     bind ContinueBeforeHah ContinueKashida4;
     bind ContinueSadReh ContinueKashida4;
@@ -3282,6 +3289,7 @@ table(justdfa) oldmadina.experimental2 {
       choose PreferredBehKashida first selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredFinalAscendantKashida last selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredLamLafKashida last selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
+      choose PreferredMedialLamKashida last selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredRehKashida last selected_only weight 6 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       traversal last_first;
     }
@@ -3309,6 +3317,7 @@ table(justdfa) oldmadina.experimental2 {
       choose ContinueBehKashida first all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
       choose ContinueFinalAscendantKashida last all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
       choose ContinueLamLafKashida last all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
+      choose ContinueMedialLamKashida last all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
       choose ContinueRehKashida last all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
       traversal last_first;
     }
@@ -3500,7 +3509,7 @@ table(justdfa) oldmadina.experimental2 {
   stretchpolicy staged_pool {
     candidate_width advance;
     cap_spaces 250 250;
-    stage InitialShortStretch;
+    #stage InitialShortStretch;
     stage PreferredStretch;
     stage DecomposeConnections;
     stage ContinueStretch;
