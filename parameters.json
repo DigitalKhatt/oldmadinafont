@@ -1261,7 +1261,7 @@
                 "baseparameters": {
                     "ain.fina": [
                         80,
-                        517
+                        509
                     ],
                     "ain.init.beforeyeh": [
                         139,
@@ -3480,8 +3480,8 @@
             "onedotdown": {
                 "baseparameters": {
                     "behshape.init": [
-                        64,
-                        71
+                        73,
+                        80
                     ],
                     "behshape.init.beforebeh": [
                         13,

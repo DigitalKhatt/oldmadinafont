@@ -2671,7 +2671,7 @@ table(justdfa) oldmadina.experimental2 {
     fact BehSecond form medi chars ["بتثنيم"];
     fact RightKashida form joins_right chars ["بتثنيئجحخسشصضطظعغفقمه"];
     fact FinalRightKashida form joins_right chars ["بتثنيئجحخسشصضطظعغفقمهل"];
-    fact FinalAscendant form final chars ["آادذٱأإكلهة"];
+    fact FinalAscendant form final chars ["آادذٱأإلهة"];
     fact RehOrZay form joins_left chars ["رز"];
     fact OtherJoinedLeft form joins_left chars ["ئبتثنيجحخطظعغفقةلم"];
     fact KafRight form joins_right chars ["ك"];
@@ -2837,7 +2837,7 @@ table(justdfa) oldmadina.experimental2 {
       forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
              and isfact($2, RehZay);
       vary $1:lefttatweel to 0.5;
-      vary $2:righttatweel to select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.125, 0.25);
+      vary $2:righttatweel to select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.25, 0.5);
     }
     # Feature actions stage values; normal shaping applies the GSUB
     # lookups. cv01/cv02 control stretch, cv03 handles kaf, and jdcl/jdcr/jdld
@@ -3278,7 +3278,7 @@ table(justdfa) oldmadina.experimental2 {
     selection CandidatePreferred {
       choose PreferredAlternateGroup1 last selected_only weight 6 decay 0.85 record Terminal;
       choose PreferredAlternateGroup2 last selected_only weight 4 decay 0.85 record Terminal;
-      choose PreferredKaf last all_non_overlapping weight 5 decay 0.9 record KafBody forbid_recorded [KafBody Horizontal];
+      choose PreferredKaf last all_non_overlapping weight 7.5 decay 0.9 record KafBody forbid_recorded [KafBody Horizontal];
       choose PreferredBehKashida first selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredFinalAscendantKashida last selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredLamLafKashida last selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
