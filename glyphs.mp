@@ -3754,6 +3754,46 @@ liii0 ( (-26.6111,22.25), (0,0), (135,10) ) .. tension 1 and 4.94198 ..
 
 %%endpaths
 enddefchar;
+defchar(lam.isol.expa,-1,-1,-1,-1);
+%%beginparams
+z.topmark = (385,822.2);
+
+%%beginverbatim
+minA0 := 0; maxA0 := 12;
+pair lamTailOffset;
+% Corpus p105:l01_w09:paw2:let0: minimum advance is 11.29 qalam widths.
+% Preserve the raised tail; the stem top matches lam.isol at 722.2.
+lamTailOffset := (702.7 - 11.29penwidth,0) + axisdelta0((-12nuqta,0),(0,0));
+%%endverbatim
+
+%%beginpaths
+
+fill
+(386,722.2) .. controls (348.1,722.2) and (302.7,521.487) ..
+(302.7,487.027) .. controls (302.7,453.38) and (322.6,211.351) ..
+(353.1,211.351) .. controls (375.3,211.351) and (378.3,259.161) ..
+(378.3,272.603) .. controls (378.3,304.175) and (370.9,332.411) ..
+(367.4,361.548) .. controls (360.9,414.771) and (348.8,465.558) ..
+(348.8,518.69) .. controls (348.8,523.742) and (349.9,547.286) ..
+(356.4,547.286) .. controls (379.3,547.286) and (434.2,171.479) ..
+(434.2,137.2) .. controls (434.2,45.3) and ((49.8,21.1) + 0.6 * lamTailOffset) ..
+((6.4,21.1) + 0.65 * lamTailOffset) .. controls ((-24.2,21.1) + 0.7 * lamTailOffset) and ((-172,33.8) + lamTailOffset) ..
+((-187.5,85.7) + lamTailOffset) .. controls ((-189.1,90.9) + lamTailOffset) and ((-188.5,95.6) + lamTailOffset) ..
+((-191.5,95.6) + lamTailOffset) .. controls ((-201.4,95.6) + lamTailOffset) and ((-205,31.1) + lamTailOffset) ..
+((-205,9) + lamTailOffset) .. controls ((-205,-9) + lamTailOffset) and ((-203.6,-18.9) + lamTailOffset) ..
+((-198.8,-29.3) + lamTailOffset) .. controls ((-178.1,-74.3) + lamTailOffset) and ((-29.6,-81.9) + 0.7 * lamTailOffset) ..
+((3.5,-81.9) + 0.65 * lamTailOffset) .. controls ((68.2,-81.9) + 0.55 * lamTailOffset) and (325.4,-57.3) ..
+(439.7,20) .. controls (485.2,50.8) and (497.7,137.741) ..
+(497.7,182.665) .. controls (497.7,186.815) and (417.1,676.555) ..
+(415.6,681.697) .. controls (413.1,690.537) and (395.5,722.2) ..
+ cycle
+;
+
+%%endpaths
+%%beginbody
+setMarkAnchor(topmarks,z.topmark);
+setMarkAnchor(shadda,z.topmark);
+enddefchar;
 defchar(lam.init,-1,-1,-1,-1);
 %%backgroundimage:images/lam_init.jpg,-1489.61,-1177.49,1,0,0,1
 

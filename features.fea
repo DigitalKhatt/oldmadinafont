@@ -1608,6 +1608,7 @@ lookup justify.expand_terminal {
   sub sad.isol by sad.isol.expa;
   sub yehshape.isol by yehshape.isol.expa;
   sub alefmaksura.isol by alefmaksura.isol.expa;
+  sub lam.isol by lam.isol.expa;
   sub noon.fina by noon.fina.expa;
   sub noon.fina.afterbeh by noon.fina.expa.afterbeh;
   sub kaf.fina by kaf.fina.expa;
@@ -2725,6 +2726,9 @@ table(justdfa) oldmadina.experimental2 {
     fact FinalAscendantChar chars ["آادذٱأإكلهة"];
     fact Alternate1 form terminal chars ["بتثكن"];
     fact Alternate2 form terminal chars ["ىصضسشفقيئ"];
+    # Flat-tailed isolated Lam is a rare, low-priority terminal alternative.
+    fact IsolatedLam glyphs [lam.isol];
+    fact ExpandedLam glyphs [lam.isol.expa];
   }
 
   rules {
@@ -2782,6 +2786,8 @@ table(justdfa) oldmadina.experimental2 {
     rule KafCompanionReh [RightKashida RehOrZay];
     rule KafCompanionJoined [RightKashida OtherJoinedLeft];
     rule KafCompanionFinalAscendant [FinalRightKashida FinalAscendant];
+    rule RareLamAlternate [IsolatedLam];
+    rule ContinueLamAlternate [ExpandedLam];
 
     # Discrete native-parameter counterparts used by native_fixed_steps. They
     # duplicate the matching rules so the existing cvXX baseline remains
@@ -2995,6 +3001,20 @@ table(justdfa) oldmadina.experimental2 {
       vary $self@Fatha:lefttatweel to 1.5;
     }
 
+    action ExpandIsolatedLam {
+      forbid $self:lefttatweel > 0 or $self:righttatweel > 0;
+      lookup $self justify.expand_terminal;
+      # The glyph itself starts at the minimum corpus width (11.29 qalams).
+      update $self:lefttatweel = 0;
+      vary $self:lefttatweel to 6;
+      # The top mark stays over the fixed head, not over the lengthened tail.
+    }
+    action ContinueIsolatedLam {
+      # ExpandedLam recognition also permits continuation from parameter 0.
+      forbid $self:righttatweel > 0;
+      vary $self:lefttatweel to max($self:lefttatweel, 8);
+    }
+
     action PreferredKashida {
       forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
       forbid isfact($2, CompactNoon);
@@ -3186,6 +3206,8 @@ table(justdfa) oldmadina.experimental2 {
     bind KafCompanionReh LimitedKafCompanion;
     bind KafCompanionJoined LimitedKafCompanion;
     bind KafCompanionFinalAscendant LimitedKafCompanion;
+    bind RareLamAlternate ExpandIsolatedLam;
+    bind ContinueLamAlternate ContinueIsolatedLam;
     bind ShrinkOnce ShrinkOnce;
     bind NativeShrinkOnce NativeShrinkOnce;
     bind ShrinkTwice ShrinkTwice;
@@ -3304,6 +3326,10 @@ table(justdfa) oldmadina.experimental2 {
       choose PreferredRehKashida last selected_only weight 6 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       traversal last_first;
     }
+    selection CandidateRareTerminal {
+      choose RareLamAlternate last selected_only weight 0.5 decay 0.75 record Terminal;
+      traversal last_first;
+    }
     selection InitialShortJoins {
       choose InitialShortJoin first all;
       traversal first_first;
@@ -3324,6 +3350,7 @@ table(justdfa) oldmadina.experimental2 {
       choose ContinueShortReh last all_non_overlapping weight 5 decay 0.85 forbid_recorded [KafBody];
       choose ContinueAlternateGroup1 last all_non_overlapping weight 5 decay 0.85;
       choose ContinueAlternateGroup2 last all_non_overlapping weight 4 decay 0.85;
+      choose ContinueLamAlternate last all_non_overlapping weight 0.5 decay 0.75;
       choose ContinueKaf last all_non_overlapping weight 3 decay 0.85;
       choose ContinueBehKashida first all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
       choose ContinueFinalMeemKashida first all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
@@ -3453,6 +3480,10 @@ table(justdfa) oldmadina.experimental2 {
     stage DecomposeConnections {
       phase CandidateDecomposition 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
     }
+    stage RareTerminalStretch {
+      # After preferred/decomposition sites; at most one rare flat Lam.
+      phase CandidateRareTerminal 1 candidate_pool limit 1 word_position 0.25;
+    }
     stage ContinueStretch {
       phase CandidateContinuePreferred 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
       phase CandidateContinueDecomposition 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
@@ -3525,6 +3556,7 @@ table(justdfa) oldmadina.experimental2 {
     #stage InitialShortStretch;
     stage PreferredStretch;
     stage DecomposeConnections;
+    stage RareTerminalStretch;
     stage ContinueStretch;
     fill_spaces;
   }
@@ -3535,6 +3567,7 @@ table(justdfa) oldmadina.experimental2 {
     stage InitialShortStretch;
     stage PreferredStretch;
     stage DecomposeConnections;
+    stage RareTerminalStretch;
     stage ContinueStretch;
     fill_spaces;
   }

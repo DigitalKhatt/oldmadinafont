@@ -604,6 +604,7 @@ OldMadina::OldMadina(OtLayout* layout, MPFont* font, bool extended) : Automedina
   layout->expandableGlyphs["qaf.isol.expa"] = {20, 0, 0, 0};
 
   layout->expandableGlyphs["lam.isol"] = {0, -0.5, 0, 0};
+  layout->expandableGlyphs["lam.isol.expa"] = {12, 0, 0, 0};
 
   layout->expandableGlyphs["behshape.init"] = {20, -1, 0, 0};
   layout->expandableGlyphs["behshape.init.beforereh"] = {20, -0.5, 0, 0};
