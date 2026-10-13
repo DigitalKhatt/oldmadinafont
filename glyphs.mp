@@ -2938,7 +2938,7 @@ enddefchar;
 defchar(behshape.medi.expa,-1,-1,-1,-1);
 %%backgroundimage:images/behmediexpa.jpg,-2199.73,-1118.75,1,0,0,1
 %%beginparams
-z.mark1 = (83,297);
+z.mark1 = (146,292);
 
 %%beginverbatim
 
@@ -2968,10 +2968,10 @@ liii1 ( (182.156,31.7593), (-2.13187,1.16284), (0,0) ) ..
 
 
 
-x.mark1 := x.mark1 - lefttatweel * nuqta * 0.1;
+x.mark1 := x.mark1 - lefttatweel * nuqta * 0.02;
 
 defAnchor(onedotup,z.mark1,MarkAnchor);
-defAnchor(topmark,z.mark1 - (800,0),MarkAnchor);
+%defAnchor(topmark,z.mark1 - (800,0),MarkAnchor);
 
 enddefchar;
 defchar(behshape.medi.expa.ii,-1,-1,6,-1);

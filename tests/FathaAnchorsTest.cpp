@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -483,6 +484,137 @@ void checkFontOwnedGroupAnchors(OtLayout& layout) {
   require(!otherFont.getAnchor(glyph, subtable, "arbitrary_upper_name", {}), "Other fonts must inherit a nullopt callback with no mark-group policy");
 }
 
+void checkLamMeemStretching(OtLayout& layout) {
+  using namespace digitalkhatt;
+  const int width = 1800 << OtLayout::SCALEBY;
+  const double scale = (1 << OtLayout::SCALEBY) * OtLayout::EMSCALE;
+  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard};
+  const std::vector<LineToJustify> input{{u"وَلَمْ", width, LineJustification::Distribute, LineType::Line}};
+  bool preferred = false, continued = false;
+  layout.setJustificationTraceCallback([&](const auto& trace) {
+    if (trace.decision != "applied") return;
+    preferred |= trace.selection == "CandidatePreferred" && trace.rule == "PreferredLamMeemKashida";
+    continued |= trace.selection == "CandidateContinuePreferred" && trace.rule == "ContinueLamMeemKashida";
+  });
+  const auto page = layout.justifyPage(scale, width, input, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES, options, "qpc_v1_layout");
+  layout.setJustificationTraceCallback({});
+  require(page.size() == 1 && preferred && continued, "Lam-Meem must stretch in the preferred stage and continue when width remains");
+  bool lam = false, meem = false, fatha = false;
+  for (const auto& glyph : page.front().glyphs) {
+    const auto& name = layout.glyphNamePerCode.at(glyph.codepoint);
+    if (name == "lam.init") lam = glyph.parameters.lefttatweel >= 1;
+    if (name == "meem.fina.ii") meem = glyph.parameters.righttatweel >= 1;
+    if (name == "fatha.stretched") fatha |= glyph.parameters.lefttatweel > 0;
+  }
+  require(lam && meem && fatha, "With sufficient width, preferred Lam-final-Meem stretching must deform both endpoints and its owning Fatha");
+}
+
+void checkHehMeemStretching(OtLayout& layout) {
+  using namespace digitalkhatt;
+  const int width = 2400 << OtLayout::SCALEBY;
+  const double scale = (1 << OtLayout::SCALEBY) * OtLayout::EMSCALE;
+  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard};
+  for (const auto& [text, hehName] : std::vector<std::pair<std::u16string, std::string>>{{u"هَمْ", "heh.init"}, {u"مَهَمْ", "heh.medi"}}) {
+    const std::vector<LineToJustify> input{{text, width, LineJustification::Distribute, LineType::Line}};
+    bool preferred = false;
+    layout.setJustificationTraceCallback([&](const auto& trace) {
+      if (trace.decision != "applied") return;
+      preferred |= trace.selection == "CandidatePreferred" && trace.rule == "PreferredHehMeemKashida";
+      if (trace.rule != "PreferredHehMeemKashida" && trace.rule != "ContinueHehMeemKashida") return;
+      int endpointCount = 0;
+      for (const auto& parameter : trace.parameters) {
+        if (parameter.attribute != "lefttatweel" && parameter.attribute != "righttatweel") continue;
+        ++endpointCount;
+        if (trace.rule == "PreferredHehMeemKashida") {
+          require(parameter.minimumValue == 0.5 && parameter.maximumValue == 1.5, "Heh-final-Meem preferred endpoints must use the 0.5..1.5 range");
+        } else {
+          require(parameter.maximumValue == 1.2, "Heh-final-Meem continuation must retain the maximum 1.2");
+        }
+      }
+      require(endpointCount == 2, "Heh-final-Meem must limit both kashida endpoints");
+    });
+    const auto page = layout.justifyPage(scale, width, input, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES, options, "qpc_v1_layout");
+    layout.setJustificationTraceCallback({});
+    require(page.size() == 1 && preferred, hehName + "-final-Meem must stretch in the preferred stage");
+    bool heh = false, meem = false;
+    for (const auto& glyph : page.front().glyphs) {
+      const auto& name = layout.glyphNamePerCode.at(glyph.codepoint);
+      if (name == hehName) heh = glyph.parameters.lefttatweel > 1 && glyph.parameters.lefttatweel <= 1.5;
+      if (name == "meem.fina" || name == "meem.fina.ii") meem = glyph.parameters.righttatweel > 0.5 && glyph.parameters.righttatweel <= 1.5;
+    }
+    require(heh && meem, hehName + "-final-Meem must decompose if necessary and deform both endpoints beyond their starting lengths");
+  }
+}
+
+void checkLastResortDecomposition(OtLayout& layout) {
+  using namespace digitalkhatt;
+  const int width = 5000 << OtLayout::SCALEBY;
+  const double scale = (1 << OtLayout::SCALEBY) * OtLayout::EMSCALE;
+  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard};
+  const std::vector<LineToJustify> input{{u"تَحُسُّونَهُم", width, LineJustification::Distribute, LineType::Line}};
+  bool preferredHeh = false, regularDecomposition = false;
+  layout.setJustificationTraceCallback([&](const auto& trace) {
+    if (trace.decision != "applied") return;
+    preferredHeh |= trace.rule == "PreferredHehMeemKashida";
+    regularDecomposition |= trace.selection == "CandidateDecomposition";
+  });
+  const auto page = layout.justifyPage(scale, width, input, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES, options, "qpc_v1_layout");
+  layout.setJustificationTraceCallback({});
+  require(page.size() == 1 && preferredHeh && !regularDecomposition, "The normal decomposition selection must still respect an earlier Horizontal record in the word");
+  bool beh = false, hah = false, heh = false, meem = false;
+  for (const auto& glyph : page.front().glyphs) {
+    const auto& name = layout.glyphNamePerCode.at(glyph.codepoint);
+    require(name != "behshape.init.beforehah" && name != "hah.medi.afterbeh", "Last resort must decompose Beh-Hah despite the earlier Horizontal record");
+    if (name == "behshape.init" && glyph.cluster == 0) beh = glyph.parameters.lefttatweel == 0.5;
+    if (name == "hah.medi") hah = glyph.parameters.righttatweel == 0.5;
+    if (name == "heh.medi") heh = glyph.parameters.lefttatweel > 0;
+    if (name == "meem.fina.ii") meem = glyph.parameters.righttatweel > 0;
+  }
+  require(beh && hah && heh && meem, "Last-resort endpoints must stay at 0.5 and preserve the earlier Heh-Meem stretching");
+
+  // A preferred Meem-Lam connection occupies the same subword as Beh-Hah.
+  const std::vector<LineToJustify> sameSubwordInput{{u"تَحْمَلْ", width, LineJustification::Distribute, LineType::Line}};
+  bool preferredMeemLam = false;
+  layout.setJustificationTraceCallback([&](const auto& trace) {
+    preferredMeemLam |= trace.decision == "applied" && trace.rule == "PreferredFinalAscendantKashida";
+  });
+  const auto blockedPage = layout.justifyPage(scale, width, sameSubwordInput, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES, options, "qpc_v1_layout");
+  layout.setJustificationTraceCallback({});
+  require(blockedPage.size() == 1 && preferredMeemLam, "Same-subword probe must first accept the preferred Meem-Lam stretch");
+  bool retainedBeh = false, retainedHah = false;
+  for (const auto& glyph : blockedPage.front().glyphs) {
+    const auto& name = layout.glyphNamePerCode.at(glyph.codepoint);
+    retainedBeh |= name == "behshape.init.beforehah";
+    retainedHah |= name == "hah.medi.afterbeh";
+  }
+  require(retainedBeh && retainedHah, "Last-resort decomposition must not open another connection in an already-stretched subword");
+
+  // Isolate the authored last-resort stage so earlier preferred actions do
+  // not consume Ain-Alef before its own last-resort rule can be exercised.
+  auto& catalog = *layout.compiledJustificationCatalog;
+  const int staged = catalog.stretchPolicyIndex("staged_pool");
+  require(staged >= 0, "Missing staged_pool policy");
+  auto probe = catalog.stretchPolicies.at(staged);
+  probe.name = "test.last_resort_only";
+  std::erase_if(probe.steps, [](const auto& step) { return step.stage != "DecomposeLastResort"; });
+  require(probe.steps.size() == 1, "Missing last-resort stage");
+  const int probeIndex = static_cast<int>(catalog.stretchPolicies.size());
+  catalog.stretchPolicies.push_back(std::move(probe));
+  const JustOption probeOptions{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard, probeIndex};
+  const std::vector<LineToJustify> ainInput{{u"عَا", width, LineJustification::Distribute, LineType::Line}};
+  const auto ainPage = layout.justifyPage(scale, width, ainInput, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES, probeOptions, "qpc_v1_layout");
+  catalog.stretchPolicies.pop_back();
+  require(ainPage.size() == 1, "Missing Ain-Alef proof line");
+  bool ain = false, alef = false;
+  for (const auto& glyph : ainPage.front().glyphs) {
+    const auto& name = layout.glyphNamePerCode.at(glyph.codepoint);
+    require(name != "ain.init.finjani", "Ain-Alef last resort must replace the compact Finjani form");
+    if (name == "ain.init") ain = glyph.parameters.lefttatweel == 0.5;
+    if (name == "alef.fina") alef = glyph.parameters.righttatweel == 0.25;
+  }
+  require(ain && alef, "Last-resort Ain-Alef must use left 0.5 and ascendant incoming right 0.25");
+}
+
 void checkSerialization(OtLayout& layout) {
   layout.setExtended(false);  // Standard OTF reads parameters from materialized glyph IDs.
   GlyphParameters parameters;
@@ -590,6 +722,9 @@ int main(int argc, char** argv) {
     checkSharedGlyphTopAnchor(layout);
     checkFontOwnedGroupAnchors(layout);
     hb_font_destroy(font);
+    checkLamMeemStretching(layout);
+    checkHehMeemStretching(layout);
+    checkLastResortDecomposition(layout);
     checkSerialization(layout);
     std::cout << "Attachment/native/GSUB regressions, local no-lift anchors, expanded Beh/Yeh centring, baseline metadata, Shadda threshold transitions and 15 serialized anchor subtables passed\n";
   } catch (const std::exception& error) {

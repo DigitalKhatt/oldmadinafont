@@ -571,10 +571,6 @@
                         -8,
                         122
                     ],
-                    "behshape.medi.expa": [
-                        -20,
-                        -100
-                    ],
                     "behshape.medi.ii": [
                         -135,
                         52
@@ -590,10 +586,6 @@
                     "dal.isol": [
                         -25,
                         3
-                    ],
-                    "feh.isol": [
-                        100,
-                        0
                     ],
                     "fehshape.init": [
                         -4,

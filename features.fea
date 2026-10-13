@@ -2672,7 +2672,9 @@ table(justdfa) oldmadina.experimental2 {
     fact BehFirst form medi chars ["بتثنيسشصض"];
     fact BehSecond form medi chars ["بتثنيم"];
     # Prefer incoming kashida on these final Meem forms as a separate endpoint.
-    fact FinalMeem glyphs [meem.fina meem.fina.ii];
+    fact FinalMeem glyphs [meem.fina meem.fina.ii meem.fina.afterheh];
+    fact JoiningLam form joins_right chars ["ل"];
+    fact JoiningHeh form joins_right chars ["ه"];
     fact RightKashida form joins_right chars ["بتثنيئجحخسشصضطظعغفقمه"];
     fact FinalRightKashida form joins_right chars ["بتثنيئجحخسشصضطظعغفقمهل"];
     fact FinalAscendant form final chars ["آادذٱأإلهة"];
@@ -2702,6 +2704,8 @@ table(justdfa) oldmadina.experimental2 {
     fact DecomposableHah glyphs [hah.medi.afterbeh hah.medi.afterbeh.beforeyeh hah.medi.aftermeem hah.medi.afterfeh hah.medi.aftersad];
     fact DecomposedBeforeHah glyphs [behshape.init meem.init fehshape.init sad.init];
     fact DecomposedHah glyphs [hah.medi hah.medi.beforeyeh];
+    fact FinjaniAin glyphs [ain.init.finjani];
+    fact FinalAlef glyphs [alef.fina];
     fact SadBeforeReh chars ["ص"] glyphs [sad.init.beforereh sad.medi.beforereh];
     fact RehAfterSad chars ["ر"] glyphs [reh.fina.afterseen];
     fact DecomposedSad chars ["ص"] glyphs [sad.init sad.medi];
@@ -2754,12 +2758,16 @@ table(justdfa) oldmadina.experimental2 {
     # Full-range fallback connections used after the preferred/decomposition
     # stages. Separate bindings preserve the discrete/OTF comparison baseline.
     rule CandidateOtherRehKashida [RightKashida RehOrZay];
-    rule CandidateOtherJoinedKashida [RightKashida OtherJoinedLeft];
+    # FinalRightKashida also admits Lam; the action limits it to final Meem.
+    rule CandidateOtherJoinedKashida [FinalRightKashida OtherJoinedLeft];
 
     # Preparation and body deformation are one optional scored candidate.
     rule CandidateKaf [KafRight JoinedLeft];
     rule CandidateBeforeHah [DecomposableBeforeHah DecomposableHah];
     rule CandidateSadReh [SadBeforeReh RehAfterSad];
+    rule LastResortBeforeHah [DecomposableBeforeHah DecomposableHah];
+    rule LastResortSadReh [SadBeforeReh RehAfterSad];
+    rule LastResortAinAlef [FinjaniAin FinalAlef];
 
     # Separate bindings keep the comparison policies unchanged. Continuation
     # is ordinary current-state matching, guarded by the existing parameters.
@@ -2768,6 +2776,8 @@ table(justdfa) oldmadina.experimental2 {
     rule PreferredKaf [KafRight JoinedLeft];
     rule PreferredBehKashida [BehFirst BehSecond];
     rule PreferredFinalMeemKashida [BehFirst FinalMeem];
+    rule PreferredLamMeemKashida [JoiningLam FinalMeem];
+    rule PreferredHehMeemKashida [JoiningHeh FinalMeem];
     rule PreferredFinalAscendantKashida [FinalRightKashida FinalAscendant];
     rule PreferredLamLafKashida [RightKashida LamLaf];
     rule PreferredMedialLamKashida [RightKashida MedialLam];
@@ -2777,6 +2787,8 @@ table(justdfa) oldmadina.experimental2 {
     rule ContinueKaf [KafBody JoinedLeft];
     rule ContinueBehKashida [BehFirst BehSecond];
     rule ContinueFinalMeemKashida [BehFirst FinalMeem];
+    rule ContinueLamMeemKashida [JoiningLam FinalMeem];
+    rule ContinueHehMeemKashida [JoiningHeh FinalMeem];
     rule ContinueFinalAscendantKashida [FinalRightKashida FinalAscendant];
     rule ContinueLamLafKashida [RightKashida LamLaf];
     rule ContinueMedialLamKashida [RightKashida MedialLam];
@@ -2954,9 +2966,8 @@ table(justdfa) oldmadina.experimental2 {
       forbid isfact($2, CompactNoon);
       forbid has($2:lefttatweel);
       forbid isfact($2, Qaf) and isfact($2, SubwordLast);
-      forbid isfact($1, Lam)
-             and (isfact($2, Kaf) or isfact($2, TehMarbuta)
-                  or (isfact($2, Heh) and isfact($2, SubwordLast)));
+      # The joined fallback adds Lam-Meem, not all outgoing Lam connections.
+      forbid isfact($1, Lam) and not isfact($2, FinalMeem);
       forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
              and isfact($2, RehZay);
 
@@ -2989,6 +3000,16 @@ table(justdfa) oldmadina.experimental2 {
       lookup $2 justify.decompose_right;
       update $2:righttatweel = 1;
       vary $2:righttatweel to 1.25;
+    }
+
+    # Open a remaining ligature modestly, without clearing other parameters.
+    # No vary: later allocation must not grow this last-resort connection.
+    action SmallDecomposition {
+      lookup $1 justify.decompose_left;
+      lookup $2 justify.decompose_right;
+      update $1:lefttatweel = max($1:lefttatweel, 0.5);
+      # Ascendants retain the half-length incoming connection.
+      update $2:righttatweel = max($2:righttatweel, select(isfact($2, FinalAscendantChar) and isfact($2, SubwordLast), 0.25, 0.5));
     }
 
     action PreferredKaf1_75 {
@@ -3043,8 +3064,9 @@ table(justdfa) oldmadina.experimental2 {
              and isfact($2, RehZay);
 
       lookup $1 justify.decompose_left;
+      # Heh-final-Meem is limited to 0.5..1.5 on both endpoints.
       update $1:lefttatweel = 0.5;
-      vary $1:lefttatweel to 1.75;
+      vary $1:lefttatweel to select(isfact($1, JoiningHeh) and isfact($2, FinalMeem), 1.5, 1.75);
 
       clear $2;
       lookup $2 justify.decompose_right;
@@ -3053,7 +3075,7 @@ table(justdfa) oldmadina.experimental2 {
         lookup $2 justify.decompose_lam_dal;
       }
       update $2:righttatweel = select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.25, 0.5);
-      vary $2:righttatweel to select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.875, 1.75);
+      vary $2:righttatweel to select(isfact($1, JoiningHeh) and isfact($2, FinalMeem), 1.5, select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.875, 1.75));
     }
 
     action PreferredFinalAscendant2 {
@@ -3123,8 +3145,8 @@ table(justdfa) oldmadina.experimental2 {
       forbid isfact($2, CompactNoon);
       forbid not ($1:lefttatweel > 0) or not ($2:righttatweel > 0);
       forbid $2:lefttatweel > 0;
-      vary $1:lefttatweel to max($1:lefttatweel, 4);
-      vary $2:righttatweel to max($2:righttatweel, select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 2, 4));
+      vary $1:lefttatweel to max($1:lefttatweel, select(isfact($1, JoiningHeh) and isfact($2, FinalMeem), 1.2, 4));
+      vary $2:righttatweel to max($2:righttatweel, select(isfact($1, JoiningHeh) and isfact($2, FinalMeem), 1.2, select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 2, 4)));
     }
     action ContinueFinalAscendant5 {
       forbid not ($1:lefttatweel > 0) or not ($2:righttatweel > 0);
@@ -3188,12 +3210,17 @@ table(justdfa) oldmadina.experimental2 {
     bind CandidateKaf CandidateKaf4;
     bind CandidateBeforeHah PreferredKashida;
     bind CandidateSadReh PreferredSadRehPair;
+    bind LastResortBeforeHah SmallDecomposition;
+    bind LastResortSadReh SmallDecomposition;
+    bind LastResortAinAlef SmallDecomposition;
     bind PreferredAlternateGroup1 PreferredAlternate3;
     bind InitialShortJoin InitialShortKashida;
     bind PreferredAlternateGroup2 PreferredAlternate2_5;
     bind PreferredKaf PreferredKaf1_75;
     bind PreferredBehKashida PreferredKashida;
     bind PreferredFinalMeemKashida PreferredKashida;
+    bind PreferredLamMeemKashida PreferredKashida;
+    bind PreferredHehMeemKashida PreferredKashida;
     bind PreferredFinalAscendantKashida PreferredFinalAscendant2;
     bind PreferredLamLafKashida PreferredFinalAscendant2;
     bind PreferredMedialLamKashida PreferredKashida;
@@ -3203,6 +3230,8 @@ table(justdfa) oldmadina.experimental2 {
     bind ContinueKaf ContinueKaf4;
     bind ContinueBehKashida ContinueKashida4;
     bind ContinueFinalMeemKashida ContinueKashida4;
+    bind ContinueLamMeemKashida ContinueKashida4;
+    bind ContinueHehMeemKashida ContinueKashida4;
     bind ContinueFinalAscendantKashida ContinueFinalAscendant5;
     bind ContinueLamLafKashida ContinueFinalAscendant5;
     bind ContinueMedialLamKashida ContinueKashida4;
@@ -3327,6 +3356,8 @@ table(justdfa) oldmadina.experimental2 {
       choose PreferredKaf last all_non_overlapping weight 7.5 decay 0.9 record KafBody forbid_recorded [KafBody Horizontal];
       choose PreferredBehKashida first selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredFinalMeemKashida first selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
+      choose PreferredLamMeemKashida first selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
+      choose PreferredHehMeemKashida first selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredFinalAscendantKashida last selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredLamLafKashida last selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredMedialLamKashida last selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
@@ -3349,6 +3380,16 @@ table(justdfa) oldmadina.experimental2 {
       traversal last_first;
     }
 
+    # An earlier stretch in another subword does not block this final escape.
+    selection LastResortDecomposition {
+      different_subword [Horizontal KafBody];
+      choose LastResortSadReh last selected_only;
+      choose LastResortBeforeHah last selected_only;
+      choose LastResortAinAlef last selected_only;
+      record Horizontal;
+      traversal last_first;
+    }
+
     # Inspect all matches: an inactive last match must not hide an earlier
     # stretched site. Actions reject inactive sites and only vary parameters.
     # No new record is needed: the original Horizontal record remains in force
@@ -3361,6 +3402,8 @@ table(justdfa) oldmadina.experimental2 {
       choose ContinueKaf last all_non_overlapping weight 3 decay 0.85;
       choose ContinueBehKashida first all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
       choose ContinueFinalMeemKashida first all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
+      choose ContinueLamMeemKashida first all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
+      choose ContinueHehMeemKashida first all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
       choose ContinueFinalAscendantKashida last all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
       choose ContinueLamLafKashida last all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
       choose ContinueMedialLamKashida last all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
@@ -3498,6 +3541,11 @@ table(justdfa) oldmadina.experimental2 {
       phase CandidateKafCompanion 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
       phase CandidateOther 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
     }
+    stage DecomposeLastResort {
+      # Use positioned width: nominal advances can misclassify decomposition
+      # as shrinking even when its cursive-adjusted width increases.
+      phase LastResortDecomposition 1;
+    }
 
     stage LegacyFixedSteps {
       phase Beh 2;
@@ -3565,6 +3613,7 @@ table(justdfa) oldmadina.experimental2 {
     stage DecomposeConnections;
     stage RareTerminalStretch;
     stage ContinueStretch;
+    stage DecomposeLastResort;
     fill_spaces;
   }
   # Exact endpoint shaping retained for regression and visual comparison.
@@ -3576,6 +3625,7 @@ table(justdfa) oldmadina.experimental2 {
     stage DecomposeConnections;
     stage RareTerminalStretch;
     stage ContinueStretch;
+    stage DecomposeLastResort;
     fill_spaces;
   }
 
