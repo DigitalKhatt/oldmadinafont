@@ -647,6 +647,16 @@ void checkLastResortDecomposition(OtLayout& layout) {
   // Isolate the authored last-resort stage so earlier preferred actions do
   // not consume Ain-Alef before its own last-resort rule can be exercised.
   auto& catalog = *layout.compiledJustificationCatalog;
+  const auto hahRule = std::find_if(catalog.rules.begin(), catalog.rules.end(), [](const auto& rule) { return rule.name == "LastResortBeforeHah"; });
+  require(hahRule != catalog.rules.end(), "Missing Hah-ligature last-resort rule");
+  for (const auto& [first, second] : std::vector<std::pair<std::string, std::string>>{{"behshape.init.beforehah", "hah.medi.afterbeh"}, {"behshape.init.beforehah", "hah.medi.afterbeh.beforeyeh"}, {"meem.init.beforehah", "hah.medi.aftermeem"}, {"fehshape.init.beforehah", "hah.medi.afterfeh"}, {"sad.init.beforehah", "hah.medi.aftersad"}, {"lam.init.lam_hah", "hah.medi.lam_hah"}, {"lam.init.beforehahyeh", "hah.medi.afterlam.beforeyeh"}}) {
+    const std::array facts{digitalkhatt::justify::glyphFacts({.glyphName = first}, catalog.facts), digitalkhatt::justify::glyphFacts({.glyphName = second}, catalog.facts)};
+    const auto matches = catalog.dfa->match(facts);
+    require(std::any_of(matches.begin(), matches.end(), [&](const auto& match) { return match.ruleId == hahRule->id; }), first + "-" + second + " must be covered by last-resort Hah decomposition");
+  }
+  const std::array ordinaryHah{digitalkhatt::justify::glyphFacts({.glyphName = "lam.init"}, catalog.facts), digitalkhatt::justify::glyphFacts({.glyphName = "hah.medi.ii"}, catalog.facts)};
+  const auto ordinaryMatches = catalog.dfa->match(ordinaryHah);
+  require(std::none_of(ordinaryMatches.begin(), ordinaryMatches.end(), [&](const auto& match) { return match.ruleId == hahRule->id; }), "A compact outgoing Hah shape must not be mistaken for an incoming two-glyph ligature");
   const int staged = catalog.stretchPolicyIndex("staged_pool");
   require(staged >= 0, "Missing staged_pool policy");
   auto probe = catalog.stretchPolicies.at(staged);
@@ -658,7 +668,6 @@ void checkLastResortDecomposition(OtLayout& layout) {
   const JustOption probeOptions{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard, probeIndex};
   const std::vector<LineToJustify> ainInput{{u"عَا", width, LineJustification::Distribute, LineType::Line}};
   const auto ainPage = layout.justifyPage(scale, width, ainInput, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES, probeOptions, "qpc_v1_layout");
-  catalog.stretchPolicies.pop_back();
   require(ainPage.size() == 1, "Missing Ain-Alef proof line");
   bool ain = false, alef = false;
   for (const auto& glyph : ainPage.front().glyphs) {
@@ -668,6 +677,21 @@ void checkLastResortDecomposition(OtLayout& layout) {
     if (name == "alef.fina") alef = glyph.parameters.righttatweel == 0.5;
   }
   require(ain && alef, "Last-resort Ain-Alef must use left 1 and ascendant incoming right 0.5");
+
+  for (const auto& [text, firstName, hahName] : std::vector<std::tuple<std::u16string, std::string, std::string>>{{u"لَحَمْ", "lam.init", "hah.medi"}, {u"لَحِيَ", "lam.init", "hah.medi.beforeyeh"}, {u"بَحِيَ", "behshape.init", "hah.medi.beforeyeh"}, {u"مَحَمْ", "meem.init", "hah.medi"}}) {
+    const std::vector<LineToJustify> hahInput{{text, width, LineJustification::Distribute, LineType::Line}};
+    const auto hahPage = layout.justifyPage(scale, width, hahInput, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES, probeOptions, "qpc_v1_layout");
+    require(hahPage.size() == 1, "Missing Hah-ligature last-resort proof line");
+    bool first = false, hah = false;
+    for (const auto& glyph : hahPage.front().glyphs) {
+      const auto& name = layout.glyphNamePerCode.at(glyph.codepoint);
+      require(name != "lam.init.lam_hah" && name != "lam.init.beforehahyeh" && name != "hah.medi.lam_hah" && name != "hah.medi.afterlam.beforeyeh" && name != "behshape.init.beforehah" && name != "meem.init.beforehah", "Last resort must open the incoming Hah ligature");
+      if (name == firstName) first = glyph.parameters.lefttatweel == 1;
+      if (name == hahName) hah = glyph.parameters.righttatweel == 1;
+    }
+    require(first && hah, firstName + "-" + hahName + " must open at 1 / 1 and preserve any outgoing Hah-Yeh form");
+  }
+  catalog.stretchPolicies.pop_back();
 
   // Page 171:14:4: Seen-Reh wins the preferred pass, then Ain-Alef opens
   // minimally in another subword. Only the original Seen-Reh may continue.

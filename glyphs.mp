@@ -8653,6 +8653,8 @@ endfor
 
 enddefchar;
 defchar(sad.isol.expa,-1,-1,-1,-1);
+%%beginparams
+z.onedotup = (363,370);
 %%beginbody
 
 
@@ -8678,10 +8680,12 @@ draw pic_ shifted shift_;
 
 pair leftanchor;
 
-
+setMarkAnchor(onedotup,z.onedotup);
 enddefchar;
 defchar(sad.fina.expa,-1,-1,-1,-1);
 %%beginparams
+z.lowmarks = (388,-171);
+z.onedotup = (337,370);
 z10 = (672,0);
 
 %%beginpaths
@@ -8703,6 +8707,10 @@ endgroup;
 
 
 rightanchor := z10;
+
+setMarkAnchor(onedotup,z.onedotup);
+setMarkAnchor(lowmarks,z.lowmarks);
+
 
 enddefchar;
 defchar(yehshape.fina.ii.expa,-1,-1,-1,-1);
