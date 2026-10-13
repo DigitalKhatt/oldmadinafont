@@ -1843,6 +1843,12 @@ lookup shrink.gsub3 {
 } shrink.gsub3;
 
 
+lookup shrink.dalalef.gsub {
+  feature inherited;
+  # Match the same marked Dal-Alef connection as shrink.kern1 below.
+  sub [dal.fina] ([onedotup]?) [@FathaPosition] alef.isol'lookup alefadjustmentgsub.l1;
+} shrink.dalalef.gsub;
+
 lookup shrink.kern1 {
 
   feature inherited;
@@ -1857,7 +1863,7 @@ lookup shrink.kern1 {
   lookup shrink.kern1.l2 {
     lookupflag IgnoreMarks ;
     pos cursive [dal.fina] <anchor 0 0> <anchor 0 0> ;
-    pos cursive [alef.isol] <anchor 0 0> <anchor 0 0> ;    
+    pos cursive [alef.isol alef.isol.ii] <anchor 0 0> <anchor 0 0> ;
   } shrink.kern1.l2;   
 
   pos [reh.isol] [damma] [waw.isol]'lookup shrink.kern1.l1 [noon.isol]'<0 100 -50 0> ;
@@ -1871,7 +1877,7 @@ lookup shrink.kern1 {
   
   pos [reh.fina]' [kasra]' [behshape.init]'<0 0 -100 0> [twodotsdown]' ;
 
-  pos [dal.fina]' ([onedotup]?)' [@FathaPosition]' [alef.isol]'lookup shrink.kern1.l2;
+  pos [dal.fina]' ([onedotup]?)' [@FathaPosition]' [alef.isol alef.isol.ii]'lookup shrink.kern1.l2;
 
   pos [reh.isol]'<-50 0 -50 0> [kasra]' [behshape.init.beforenoon]' [twodotsdown]' [noon.fina.afterbeh]'<0 80 0 0> ;
   
@@ -2578,6 +2584,7 @@ feature sk02 {
 } sk02;
 
 feature sk03 {
+  lookup shrink.dalalef.gsub;
   lookup shrink.kern1;
   lookup shrink.kern.1.withoutmark;
 } sk03;
@@ -3007,9 +3014,9 @@ table(justdfa) oldmadina.experimental2 {
     action SmallDecomposition {
       lookup $1 justify.decompose_left;
       lookup $2 justify.decompose_right;
-      update $1:lefttatweel = max($1:lefttatweel, 0.5);
+      update $1:lefttatweel = max($1:lefttatweel, 1);
       # Ascendants retain the half-length incoming connection.
-      update $2:righttatweel = max($2:righttatweel, select(isfact($2, FinalAscendantChar) and isfact($2, SubwordLast), 0.25, 0.5));
+      update $2:righttatweel = max($2:righttatweel, select(isfact($2, FinalAscendantChar) and isfact($2, SubwordLast), 0.5, 1));
     }
 
     action PreferredKaf1_75 {
@@ -3358,7 +3365,7 @@ table(justdfa) oldmadina.experimental2 {
       choose PreferredFinalMeemKashida first selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredLamMeemKashida first selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredHehMeemKashida first selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
-      choose PreferredFinalAscendantKashida last selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
+      choose PreferredFinalAscendantKashida last selected_only weight 4 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredLamLafKashida last selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredMedialLamKashida last selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredRehKashida last selected_only weight 6 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
@@ -3383,9 +3390,9 @@ table(justdfa) oldmadina.experimental2 {
     # An earlier stretch in another subword does not block this final escape.
     selection LastResortDecomposition {
       different_subword [Horizontal KafBody];
-      choose LastResortSadReh last selected_only;
-      choose LastResortBeforeHah last selected_only;
-      choose LastResortAinAlef last selected_only;
+      choose LastResortSadReh last selected_only record MinimalDecomposition;
+      choose LastResortBeforeHah last selected_only record MinimalDecomposition;
+      choose LastResortAinAlef last selected_only record MinimalDecomposition;
       record Horizontal;
       traversal last_first;
     }
@@ -3395,6 +3402,8 @@ table(justdfa) oldmadina.experimental2 {
     # No new record is needed: the original Horizontal record remains in force
     # for the decomposition/fallback selections that create new connections.
     selection CandidateContinuePreferred {
+      # Continue earlier stretches, but leave a minimally opened site alone.
+      different_position [MinimalDecomposition];
       choose ContinueShortReh last all_non_overlapping weight 5 decay 0.85 forbid_recorded [KafBody];
       choose ContinueAlternateGroup1 last all_non_overlapping weight 5 decay 0.85;
       choose ContinueAlternateGroup2 last all_non_overlapping weight 4 decay 0.85;
@@ -3412,6 +3421,7 @@ table(justdfa) oldmadina.experimental2 {
     }
     selection CandidateContinueDecomposition {
       forbid_recorded [KafBody];
+      different_position [MinimalDecomposition];
       choose ContinueSadReh last all_non_overlapping weight 4 decay 0.85;
       choose ContinueBeforeHah last all_non_overlapping weight 3;
       traversal last_first;
@@ -3612,8 +3622,8 @@ table(justdfa) oldmadina.experimental2 {
     stage PreferredStretch;
     stage DecomposeConnections;
     stage RareTerminalStretch;
-    stage ContinueStretch;
     stage DecomposeLastResort;
+    stage ContinueStretch;
     fill_spaces;
   }
   # Exact endpoint shaping retained for regression and visual comparison.
@@ -3624,8 +3634,8 @@ table(justdfa) oldmadina.experimental2 {
     stage PreferredStretch;
     stage DecomposeConnections;
     stage RareTerminalStretch;
-    stage ContinueStretch;
     stage DecomposeLastResort;
+    stage ContinueStretch;
     fill_spaces;
   }
 

@@ -8708,11 +8708,11 @@ enddefchar;
 defchar(yehshape.fina.ii.expa,-1,-1,-1,-1);
 %%backgroundimage:images/yehexpa.jpg,-1050.22,-670.564,1,0,0,1
 %%beginparams
-minA0 := 0;
 maxA0 := 5.1;
+minA0 := 0;
+z.topmarks = leii0 ( (193.061,236), (-349.86,0) );
 z1 = (346,30);
 z5 = (542,-18);
-z.topmarks = leii0 ( (193.0614,236), (-349.86,0) );
 
 %%beginverbatim
 

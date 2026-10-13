@@ -484,6 +484,34 @@ void checkFontOwnedGroupAnchors(OtLayout& layout) {
   require(!otherFont.getAnchor(glyph, subtable, "arbitrary_upper_name", {}), "Other fonts must inherit a nullopt callback with no mark-group policy");
 }
 
+void checkShrinkAlefAboveDal(OtLayout& layout, FontProvider& provider, hb_font_t* font) {
+  using namespace digitalkhatt::justify::runtime;
+  const auto* normal = layout.getGlyph(layout.glyphCodePerName.at("alef.isol"));
+  const auto* shorter = layout.getGlyph(layout.glyphCodePerName.at("alef.isol.ii"));
+  require(shorter->bbox.ury - shorter->bbox.lly < normal->bbox.ury - normal->bbox.lly, "alef.isol.ii must have a shorter outline");
+  for (const auto& [text, matches] : std::vector<std::pair<std::u16string, bool>>{{u"عَذَابٌ", true}, {u"عَدَابٌ", true}, {u"عَذْابٌ", false}}) {
+    for (bool shrink : {false, true}) {
+      std::vector<hb_feature_t> features;
+      if (shrink) features.push_back({HB_TAG('s', 'k', '0', '3'), 1, 0, static_cast<unsigned>(-1)});
+      auto* buffer = shape(text, font, features, &provider, {}, false);
+      unsigned count = 0;
+      const auto* infos = hb_buffer_get_glyph_infos(buffer, &count);
+      const auto* positions = hb_buffer_get_glyph_positions(buffer, nullptr);
+      bool alef = false;
+      for (unsigned i = 0; i < count; ++i) {
+        if (infos[i].cluster != 4) continue;
+        const auto& name = layout.glyphNamePerCode.at(infos[i].codepoint);
+        const bool replaced = shrink && matches;
+        require(name == (replaced ? "alef.isol.ii" : "alef.isol"), "Short Alef substitution must follow the Dal-Fatha shrinking context only");
+        if (replaced) require(positions[i].y_offset > 0, "Short Alef must retain the shrinking placement above Dal");
+        alef = true;
+      }
+      hb_buffer_destroy(buffer);
+      require(alef, "Missing Alef in Dal-Alef shrink probe");
+    }
+  }
+}
+
 void checkLamMeemStretching(OtLayout& layout) {
   using namespace digitalkhatt;
   const int width = 1800 << OtLayout::SCALEBY;
@@ -546,6 +574,33 @@ void checkHehMeemStretching(OtLayout& layout) {
   }
 }
 
+void checkFinalAscendantPrecedence(OtLayout& layout) {
+  using namespace digitalkhatt;
+  const int width = 5000 << OtLayout::SCALEBY;
+  const double scale = (1 << OtLayout::SCALEBY) * OtLayout::EMSCALE;
+  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard};
+  const std::vector<LineToJustify> input{{u"أَحْبَارَهُمْ", width, LineJustification::Distribute, LineType::Line}};
+  bool behAlef = false, hehMeem = false, continued = false;
+  layout.setJustificationTraceCallback([&](const auto& trace) {
+    if (trace.decision != "applied") return;
+    behAlef |= trace.rule == "PreferredFinalAscendantKashida";
+    hehMeem |= trace.rule == "PreferredHehMeemKashida";
+    continued |= trace.rule == "ContinueFinalAscendantKashida";
+  });
+  const auto page = layout.justifyPage(scale, width, input, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES, options, "qpc_v1_layout");
+  layout.setJustificationTraceCallback({});
+  require(page.size() == 1 && behAlef && !hehMeem && continued, "Beh-Alef must win over Heh-Meem and retain the existing final-ascendant continuation");
+  bool beh = false, alef = false, compactHeh = false, compactMeem = false;
+  for (const auto& glyph : page.front().glyphs) {
+    const auto& name = layout.glyphNamePerCode.at(glyph.codepoint);
+    if (name == "behshape.medi.expa") beh = glyph.parameters.lefttatweel > 0;
+    if (name == "alef.fina") alef = glyph.parameters.righttatweel > 0;
+    if (name == "heh.init" || name == "heh.init.beforemeem") compactHeh = glyph.parameters.lefttatweel == 0;
+    if (name == "meem.fina.ii" || name == "meem.fina.afterheh") compactMeem = glyph.parameters.righttatweel == 0;
+  }
+  require(beh && alef && compactHeh && compactMeem, "Chosen Beh-Alef must stretch both endpoints while the competing Heh-Meem connection remains unstretched");
+}
+
 void checkLastResortDecomposition(OtLayout& layout) {
   using namespace digitalkhatt;
   const int width = 5000 << OtLayout::SCALEBY;
@@ -565,12 +620,12 @@ void checkLastResortDecomposition(OtLayout& layout) {
   for (const auto& glyph : page.front().glyphs) {
     const auto& name = layout.glyphNamePerCode.at(glyph.codepoint);
     require(name != "behshape.init.beforehah" && name != "hah.medi.afterbeh", "Last resort must decompose Beh-Hah despite the earlier Horizontal record");
-    if (name == "behshape.init" && glyph.cluster == 0) beh = glyph.parameters.lefttatweel == 0.5;
-    if (name == "hah.medi") hah = glyph.parameters.righttatweel == 0.5;
+    if (name == "behshape.init" && glyph.cluster == 0) beh = glyph.parameters.lefttatweel == 1;
+    if (name == "hah.medi") hah = glyph.parameters.righttatweel == 1;
     if (name == "heh.medi") heh = glyph.parameters.lefttatweel > 0;
     if (name == "meem.fina.ii") meem = glyph.parameters.righttatweel > 0;
   }
-  require(beh && hah && heh && meem, "Last-resort endpoints must stay at 0.5 and preserve the earlier Heh-Meem stretching");
+  require(beh && hah && heh && meem, "Last-resort endpoints must stay at 1 and preserve the earlier Heh-Meem stretching");
 
   // A preferred Meem-Lam connection occupies the same subword as Beh-Hah.
   const std::vector<LineToJustify> sameSubwordInput{{u"تَحْمَلْ", width, LineJustification::Distribute, LineType::Line}};
@@ -609,10 +664,31 @@ void checkLastResortDecomposition(OtLayout& layout) {
   for (const auto& glyph : ainPage.front().glyphs) {
     const auto& name = layout.glyphNamePerCode.at(glyph.codepoint);
     require(name != "ain.init.finjani", "Ain-Alef last resort must replace the compact Finjani form");
-    if (name == "ain.init") ain = glyph.parameters.lefttatweel == 0.5;
-    if (name == "alef.fina") alef = glyph.parameters.righttatweel == 0.25;
+    if (name == "ain.init") ain = glyph.parameters.lefttatweel == 1;
+    if (name == "alef.fina") alef = glyph.parameters.righttatweel == 0.5;
   }
-  require(ain && alef, "Last-resort Ain-Alef must use left 0.5 and ascendant incoming right 0.25");
+  require(ain && alef, "Last-resort Ain-Alef must use left 1 and ascendant incoming right 0.5");
+
+  // Page 171:14:4: Seen-Reh wins the preferred pass, then Ain-Alef opens
+  // minimally in another subword. Only the original Seen-Reh may continue.
+  const std::vector<LineToJustify> shurraInput{{u"شُرَّعࣰا", width, LineJustification::Distribute, LineType::Line}};
+  bool rehContinued = false, ainContinued = false;
+  layout.setJustificationTraceCallback([&](const auto& trace) {
+    if (trace.decision != "applied") return;
+    rehContinued |= trace.rule == "ContinueShortReh" || trace.rule == "ContinueRehKashida";
+    ainContinued |= trace.rule == "ContinueFinalAscendantKashida";
+  });
+  const auto shurraPage = layout.justifyPage(scale, width, shurraInput, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES, options, "qpc_v1_layout");
+  layout.setJustificationTraceCallback({});
+  require(shurraPage.size() == 1 && rehContinued && !ainContinued, "A minimally decomposed Ain-Alef must stay locked without blocking Seen-Reh continuation in another subword");
+  bool minimalAin = false, minimalAlef = false;
+  for (const auto& glyph : shurraPage.front().glyphs) {
+    const auto& name = layout.glyphNamePerCode.at(glyph.codepoint);
+    require(name != "ain.init.finjani", "Small decomposition must happen before continuation consumes the line gap");
+    if (name == "ain.init") minimalAin = glyph.parameters.lefttatweel == 1;
+    if (name == "alef.fina") minimalAlef = glyph.parameters.righttatweel == 0.5;
+  }
+  require(minimalAin && minimalAlef, "Final Ain-Alef parameters must remain 1 / 0.5 after the complete staged-pool recipe");
 }
 
 void checkSerialization(OtLayout& layout) {
@@ -701,6 +777,7 @@ int main(int argc, char** argv) {
     layout.loadLookupFile((fs::absolute(argv[1]).parent_path() / "features.fea").string());
     auto* font = layout.createFont(1, false);
     FontProvider provider(layout);
+    checkShrinkAlefAboveDal(layout, provider, font);
     for (const auto& [root, style] : {std::pair{"noon.fina.expa", 1}, {"kaf.fina.expa", 2}, {"kaf.init.ii", 3}, {"behshape.isol", 0}}) {
       for (const auto parent : {Parent::Base, Parent::Dot, Parent::Shadda}) checkDispatch(layout, provider, font, root, style, parent, 1);
       for (double left : {0.0625, 1.5, 1.5625, 5.0}) checkDispatch(layout, provider, font, root, style, Parent::Shadda, left);
@@ -724,6 +801,7 @@ int main(int argc, char** argv) {
     hb_font_destroy(font);
     checkLamMeemStretching(layout);
     checkHehMeemStretching(layout);
+    checkFinalAscendantPrecedence(layout);
     checkLastResortDecomposition(layout);
     checkSerialization(layout);
     std::cout << "Attachment/native/GSUB regressions, local no-lift anchors, expanded Beh/Yeh centring, baseline metadata, Shadda threshold transitions and 15 serialized anchor subtables passed\n";
