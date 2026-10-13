@@ -649,14 +649,16 @@ void checkLastResortDecomposition(OtLayout& layout) {
   auto& catalog = *layout.compiledJustificationCatalog;
   const auto hahRule = std::find_if(catalog.rules.begin(), catalog.rules.end(), [](const auto& rule) { return rule.name == "LastResortBeforeHah"; });
   require(hahRule != catalog.rules.end(), "Missing Hah-ligature last-resort rule");
-  for (const auto& [first, second] : std::vector<std::pair<std::string, std::string>>{{"behshape.init.beforehah", "hah.medi.afterbeh"}, {"behshape.init.beforehah", "hah.medi.afterbeh.beforeyeh"}, {"meem.init.beforehah", "hah.medi.aftermeem"}, {"fehshape.init.beforehah", "hah.medi.afterfeh"}, {"sad.init.beforehah", "hah.medi.aftersad"}, {"lam.init.lam_hah", "hah.medi.lam_hah"}, {"lam.init.beforehahyeh", "hah.medi.afterlam.beforeyeh"}}) {
+  for (const auto& [first, second] : std::vector<std::pair<std::string, std::string>>{{"behshape.init.beforehah", "hah.medi.afterbeh"}, {"meem.init.beforehah", "hah.medi.aftermeem"}, {"fehshape.init.beforehah", "hah.medi.afterfeh"}, {"sad.init.beforehah", "hah.medi.aftersad"}, {"lam.init.lam_hah", "hah.medi.lam_hah"}}) {
     const std::array facts{digitalkhatt::justify::glyphFacts({.glyphName = first}, catalog.facts), digitalkhatt::justify::glyphFacts({.glyphName = second}, catalog.facts)};
     const auto matches = catalog.dfa->match(facts);
     require(std::any_of(matches.begin(), matches.end(), [&](const auto& match) { return match.ruleId == hahRule->id; }), first + "-" + second + " must be covered by last-resort Hah decomposition");
   }
-  const std::array ordinaryHah{digitalkhatt::justify::glyphFacts({.glyphName = "lam.init"}, catalog.facts), digitalkhatt::justify::glyphFacts({.glyphName = "hah.medi.ii"}, catalog.facts)};
-  const auto ordinaryMatches = catalog.dfa->match(ordinaryHah);
-  require(std::none_of(ordinaryMatches.begin(), ordinaryMatches.end(), [&](const auto& match) { return match.ruleId == hahRule->id; }), "A compact outgoing Hah shape must not be mistaken for an incoming two-glyph ligature");
+  for (const auto& [first, second] : std::vector<std::pair<std::string, std::string>>{{"lam.init", "hah.medi.ii"}, {"lam.init.beforehahyeh", "hah.medi.afterlam.beforeyeh"}, {"behshape.init.beforehah", "hah.medi.afterbeh.beforeyeh"}}) {
+    const std::array facts{digitalkhatt::justify::glyphFacts({.glyphName = first}, catalog.facts), digitalkhatt::justify::glyphFacts({.glyphName = second}, catalog.facts)};
+    const auto matches = catalog.dfa->match(facts);
+    require(std::none_of(matches.begin(), matches.end(), [&](const auto& match) { return match.ruleId == hahRule->id; }), "Ordinary Hah connections and three-glyph compounds must not match two-glyph last-resort decomposition");
+  }
   const int staged = catalog.stretchPolicyIndex("staged_pool");
   require(staged >= 0, "Missing staged_pool policy");
   auto probe = catalog.stretchPolicies.at(staged);
@@ -678,7 +680,7 @@ void checkLastResortDecomposition(OtLayout& layout) {
   }
   require(ain && alef, "Last-resort Ain-Alef must use left 1 and ascendant incoming right 0.5");
 
-  for (const auto& [text, firstName, hahName] : std::vector<std::tuple<std::u16string, std::string, std::string>>{{u"لَحَمْ", "lam.init", "hah.medi"}, {u"لَحِيَ", "lam.init", "hah.medi.beforeyeh"}, {u"بَحِيَ", "behshape.init", "hah.medi.beforeyeh"}, {u"مَحَمْ", "meem.init", "hah.medi"}}) {
+  for (const auto& [text, firstName, hahName] : std::vector<std::tuple<std::u16string, std::string, std::string>>{{u"لَحَمْ", "lam.init", "hah.medi"}, {u"مَحَمْ", "meem.init", "hah.medi"}}) {
     const std::vector<LineToJustify> hahInput{{text, width, LineJustification::Distribute, LineType::Line}};
     const auto hahPage = layout.justifyPage(scale, width, hahInput, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES, probeOptions, "qpc_v1_layout");
     require(hahPage.size() == 1, "Missing Hah-ligature last-resort proof line");
@@ -689,7 +691,19 @@ void checkLastResortDecomposition(OtLayout& layout) {
       if (name == firstName) first = glyph.parameters.lefttatweel == 1;
       if (name == hahName) hah = glyph.parameters.righttatweel == 1;
     }
-    require(first && hah, firstName + "-" + hahName + " must open at 1 / 1 and preserve any outgoing Hah-Yeh form");
+    require(first && hah, firstName + "-" + hahName + " must open at 1 / 1");
+  }
+  for (const auto& [text, firstName, hahName] : std::vector<std::tuple<std::u16string, std::string, std::string>>{{u"لَحِيَ", "lam.init.beforehahyeh", "hah.medi.afterlam.beforeyeh"}, {u"بَحِيَ", "behshape.init.beforehah", "hah.medi.afterbeh.beforeyeh"}}) {
+    const std::vector<LineToJustify> compoundInput{{text, width, LineJustification::Distribute, LineType::Line}};
+    const auto compoundPage = layout.justifyPage(scale, width, compoundInput, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES, probeOptions, "qpc_v1_layout");
+    require(compoundPage.size() == 1, "Missing three-glyph compound proof line");
+    bool first = false, hah = false;
+    for (const auto& glyph : compoundPage.front().glyphs) {
+      const auto& name = layout.glyphNamePerCode.at(glyph.codepoint);
+      if (name == firstName) first = glyph.parameters.lefttatweel == 0;
+      if (name == hahName) hah = glyph.parameters.righttatweel == 0;
+    }
+    require(first && hah, "Last-resort decomposition must preserve the three-glyph " + firstName + "-" + hahName + "-Yeh compound");
   }
   catalog.stretchPolicies.pop_back();
 

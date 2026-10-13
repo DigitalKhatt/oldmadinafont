@@ -1566,7 +1566,6 @@ lookup justify.decompose_left {
   sub fehshape.init.beforehah by fehshape.init;
   sub sad.init.beforehah by sad.init;
   sub lam.init.lam_hah by lam.init;
-  sub lam.init.beforehahyeh by lam.init;
   sub hah.init.ii by hah.init;
   sub hah.medi.ii by hah.medi;
   sub ain.init.finjani by ain.init;
@@ -1584,7 +1583,6 @@ lookup justify.decompose_right {
   sub hah.medi.afterbeh by hah.medi;
   # Preserve the other connection, to yeh.
   sub hah.medi.afterbeh.beforeyeh by hah.medi.beforeyeh;
-  sub hah.medi.afterlam.beforeyeh by hah.medi.beforeyeh;
   sub hah.medi.aftermeem by hah.medi;
   sub hah.medi.afterfeh by hah.medi;
   sub hah.medi.aftersad by hah.medi;
@@ -2711,10 +2709,10 @@ table(justdfa) oldmadina.experimental2 {
     # character restriction. .beforehahyeh is a different compound form.
     fact DecomposableBeforeHah glyphs [/.*[.]beforehah$/];
     fact DecomposableHah glyphs [hah.medi.afterbeh hah.medi.afterbeh.beforeyeh hah.medi.aftermeem hah.medi.afterfeh hah.medi.aftersad];
-    # Last resort also opens Lam-Hah and compound Hah-Yeh forms. The right
-    # decomposition lookup preserves the outgoing Hah-Yeh connection.
-    fact LigatureBeforeHah glyphs [/.*[.]beforehah(yeh)?$/ lam.init.lam_hah];
-    fact LigatureHah glyphs [/^hah[.]medi[.](after.*|lam_hah)$/];
+    # Last resort opens only two-glyph ligatures, including Lam-Hah.
+    # Compound Beh/Lam-Hah-Yeh forms remain intact.
+    fact LigatureBeforeHah glyphs [/.*[.]beforehah$/ lam.init.lam_hah];
+    fact LigatureHah glyphs [/^hah[.]medi[.](after(beh|meem|feh|sad)|lam_hah)$/];
     fact DecomposedBeforeHah glyphs [behshape.init meem.init fehshape.init sad.init];
     fact DecomposedHah glyphs [hah.medi hah.medi.beforeyeh];
     fact FinjaniAin glyphs [ain.init.finjani];
