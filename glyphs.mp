@@ -1105,9 +1105,39 @@ tr_ := identity shifted (0,-ypart llcorner currentpicture);
 savepicture:=1;
 enddefchar;
 defchar(fatha,1614,-1,-1,-1);
+
+%%beginverbatim
+% Natural outline is unchanged. Maximum width follows the longest clean corpus
+% Fatha, p320:l06_w07:paw2:mk:fatha:453 (16.47 x 8.18 pen widths).
+% Keep the neutral master. Long forms follow the reference's gently bowed
+% spine, with a thinner stroke instead of filling out the terminal shoulders.
+minA0 := -1;
+maxA0 := 10;
+pair fathaOffset, fathaUpper, fathaLower, fathaBow;
+fathaOffset := axisdelta0((1365.371,622.755333),(-137.2,-62.58));
+fathaUpper := axisdelta0((0,10),(0,0));
+fathaLower := -fathaUpper;
+fathaBow := axisdelta0((0,26),(0,0));
+%%endverbatim
+
+%%beginpaths
+
+fill
+((17.309,0) + fathaLower) .. controls ((9.02008,0) + fathaLower) and ((0,5.80158) + 0.5 * fathaLower) ..
+(0,14.1386) .. controls (0,33.2391) and ((6.74726,57.3123) + fathaUpper) ..
+((17.1119,63.3603) + fathaUpper) .. controls ((20.3973,65.2775) + fathaUpper) and ((132.191,128.041) + 0.5 * fathaOffset + fathaUpper + fathaBow) ..
+((139.084,131.879) + 0.5 * fathaOffset + fathaUpper + fathaBow) .. controls ((146.309,135.901) + 0.5 * fathaOffset + fathaUpper + fathaBow) and ((224.514,178.885) + fathaOffset + fathaUpper) ..
+((225.786,178.885) + fathaOffset + fathaUpper) .. controls ((234.87,178.885) + fathaOffset + fathaUpper) and ((248.689,171.048) + fathaOffset + 0.5 * fathaUpper) ..
+((248.689,159.711) + fathaOffset) .. controls ((248.689,127.98) + fathaOffset + 0.5 * fathaLower) and ((224.459,107.698) + fathaOffset + fathaLower) ..
+((214.975,102.412) + fathaOffset + fathaLower) .. controls ((213.542,101.613) + fathaOffset + fathaLower) and ((165.373,74.8773) + 0.5 * fathaOffset + fathaLower + fathaBow) ..
+((151.702,67.5806) + 0.5 * fathaOffset + fathaLower + fathaBow) .. controls ((141.143,61.9445) + 0.5 * fathaOffset + fathaLower + fathaBow) and ((23.9436,0) + fathaLower) ..
+ cycle
+;
+
+%%endpaths
 %%beginbody
-%fathashape_(lefttatweel+0.38,0);
-fathashape_(lefttatweel,0);
+leftbearing := 0;
+tr_ := identity shifted (0,-ypart llcorner currentpicture);
 savepicture:=1;
 enddefchar;
 defchar(kasra,1616,-1,-1,-1);
@@ -4520,6 +4550,11 @@ fill
 
 setMarkAnchor(buttonmark,z.mark1);
 
+enddefchar;
+defchar(fatha.stretched,-1,-1,3,-1);
+%%beginbody
+% A positioning identity only: use the approved Fatha outline and all its axes.
+fatha$(params);
 enddefchar;
 defchar(meem.fina.afterheh,-1,-1,-1,-1);
 %%backgroundimage:images/kaf_meem.jpg,-614,-1096,1,0,0,1
@@ -8673,13 +8708,14 @@ enddefchar;
 defchar(yehshape.fina.ii.expa,-1,-1,-1,-1);
 %%backgroundimage:images/yehexpa.jpg,-1050.22,-670.564,1,0,0,1
 %%beginparams
+minA0 := 0;
+maxA0 := 5.1;
 z1 = (346,30);
 z5 = (542,-18);
+z.topmarks = leii0 ( (193.0614,236), (-349.86,0) );
 
 %%beginverbatim
 
-minA0 := 0;
-maxA0 := 5.1;
 tatweel_ := -maxA0 * nuqta;
 z2 = z5 + behshape.medi.beforeyeh.p1 ;
 
@@ -8705,6 +8741,7 @@ leii0 ( (-63.2372,-168.548), (tatweel_,6) ) .. tension 1 and 1.78941 ..
 %%beginbody
 rightbearing := x1 - x2;
 setCursiveAnchor(ltrcursive,z1,EntryAnchorRTL);
+setMarkAnchor(topmarks,z.topmarks);
 tr_ := tr_ shifted(0,0 -y1);
 enddefchar;
 defchar(yehshape.fina.afterbeh.expa,-1,-1,-1,-1);

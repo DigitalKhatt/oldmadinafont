@@ -1,18 +1,84 @@
 #include "oldmadina.h"
 
 #include <algorithm>
+#include <array>
 #include <cctype>
+#include <hb-ot.h>
 
 #include "GlyphVis.h"
 #include "Lookup.h"
 #include "Subtable.h"
 #include "defaultmarkpositions.h"
+#include "fathamarkpositions.h"
 #include "metafont.h"
 #include <format>
 
 #include "digitalkhatt/core/Regex16.h"
 
 using namespace std;
+
+bool OldMadina::preserveMarkGposHorizontal(hb_codepoint_t mark, const GlyphParameters& parameters) const {
+  const auto& name = m_layout->glyphNamePerCode.at(mark);
+  return name == "fatha.stretched" && parameters.lefttatweel > 0;
+}
+
+std::optional<double> OldMadina::markBaselineClearance(hb_codepoint_t mark, const GlyphParameters& parameters) const {
+  if (preserveMarkGposHorizontal(mark, parameters)) return oldmadina::fathaBaselineClearance(parameters.lefttatweel);
+  return std::nullopt;
+}
+
+void OldMadina::prepareAnchorResolution() {
+  anchorClassCache_.clear();
+}
+
+std::optional<std::size_t> OldMadina::matchingAnchorClassSize(const MarkBaseSubtable& subtable, std::string_view className, const std::string& anchorName) const {
+  const AnchorClassKey key{&subtable, std::string(className), anchorName};
+  const auto cached = anchorClassCache_.find(key);
+  if (cached != anchorClassCache_.end()) return cached->second;
+  std::optional<std::size_t> size;
+  const auto found = subtable.classes.find(std::get<1>(key));
+  if (found != subtable.classes.end()) {
+    // Numeric coverage is authoritative, as in standard OpenType serialization.
+    auto coverage = found->second.markCodes;
+    bool unresolved = false;
+    if (coverage.empty()) {
+      for (const auto& expression : found->second.mark) {
+        const auto codes = m_layout->classtoUnicode(expression);
+        unresolved |= codes.empty();
+        coverage.insert(codes.begin(), codes.end());
+      }
+    }
+    const auto members = m_layout->classtoUnicode(anchorName);
+    // A positioning class shares one base anchor: every covered mark must fit.
+    const auto belongs = [&](auto code) {
+      if (members.contains(code)) return true;
+      const auto* mark = m_layout->getGlyph(code);
+      // OTF instances inherit membership from their recorded source, including
+      // variants materialized after the font's class coverage was cached.
+      return mark && mark->sourceGlyphCode && members.contains(*mark->sourceGlyphCode);
+    };
+    if (!unresolved && !coverage.empty() && std::all_of(coverage.begin(), coverage.end(), belongs)) size = members.size();
+  }
+  return anchorClassCache_.emplace(key, size).first->second;
+}
+
+std::optional<Point> OldMadina::getAnchor(const GlyphVis& glyph, const MarkBaseSubtable& subtable, std::string_view className, const GlyphParameters&) const {
+  std::optional<Point> result;
+  std::optional<std::size_t> smallestClass;
+  for (const auto& [key, anchor] : glyph.anchors) {
+    if (key.type != GlyphVis::AnchorType::MarkAnchor) continue;
+    // Anchor names are font classes, or singleton glyph groups such as Shadda.
+    // Unknown names are not interpreted as regular expressions.
+    if (!classes.contains(key.name) && !m_layout->glyphCodePerName.contains(key.name)) continue;
+    const auto size = matchingAnchorClassSize(subtable, className, key.name);
+    // Most specific containing class wins; equal sizes use lexical anchor order.
+    if (size && (!smallestClass || *size < *smallestClass)) {
+      result = anchor.anchor;
+      smallestClass = size;
+    }
+  }
+  return result;
+}
 
 class DefaultBaseOfWaqfToMark : public AnchorCalc {
  public:
@@ -379,6 +445,7 @@ OldMadina::OldMadina(OtLayout* layout, MPFont* font, bool extended) : Automedina
       "kasratanidgham",
       "dammatanidgham",
       "fatha",
+      "fatha.stretched",
       "damma",
       "kasra",
       "shadda",
@@ -423,6 +490,7 @@ OldMadina::OldMadina(OtLayout* layout, MPFont* font, bool extended) : Automedina
       "fathatanidgham",
       "dammatanidgham",
       "fatha",
+      "fatha.stretched",
       "damma",
       "shadda",
       "headkhah",
@@ -687,7 +755,8 @@ OldMadina::OldMadina(OtLayout* layout, MPFont* font, bool extended) : Automedina
   layout->expandableGlyphs["reh.fina"] = {0.0, 0.0, 20, -0.5};
   layout->expandableGlyphs["ain.fina"] = {0.0, 0.0, 20, -0.3};
 
-  layout->expandableGlyphs["fatha"] = {20, -1.0, 0, 0};
+  layout->expandableGlyphs["fatha"] = {10, -1.0, 0, 0};
+  layout->expandableGlyphs["fatha.stretched"] = layout->expandableGlyphs["fatha"];
   layout->expandableGlyphs["kasra"] = {20, -1.0, 0, 0};
   layout->expandableGlyphs["space"] = {20, -2, 0.0, 0.0};
   layout->expandableGlyphs["kasratan"] = {20, -0.7, 0.0, 0.0};
@@ -716,7 +785,12 @@ CalcAnchor OldMadina::getanchorCalcFunctions(std::string functionName,
   if (functionName == "defaultmarkabovemark") {
     return Defaultmarkabovemark(*this, *(MarkBaseSubtable*)(subtable));
   } else if (functionName == "defaultopmarkanchor") {
-    return Defaultopmarkanchor(*this, *(MarkBaseSubtable*)(subtable));
+    auto* markSubtable = static_cast<MarkBaseSubtable*>(subtable);
+    const CalcAnchor natural = oldmadina::topMarkAnchor(*this);
+    return [this, markSubtable, natural](std::string glyph, std::string markClass, Point adjust, GlyphParameters parameters) {
+      if (glyph == "fatha.stretched") return oldmadina::fathaMarkAnchor(*this, *markSubtable, markClass, oldmadina::FathaAnchorStyle::Right)(glyph, markClass, adjust, parameters);
+      return natural(glyph, markClass, adjust, parameters);
+    };
   } else if (functionName == "defaultmarkbelowmark") {
     return Defaultmarkbelowmark(*this, *(MarkBaseSubtable*)(subtable));
   } else if (functionName == "defaullowmarkanchor") {
@@ -724,7 +798,7 @@ CalcAnchor OldMadina::getanchorCalcFunctions(std::string functionName,
   } else if (functionName == "defaultbaseanchorforlow") {
     return Defaulbaseanchorforlow(*this, *(MarkBaseSubtable*)(subtable));
   } else if (functionName == "defaulbaseanchorfortop") {
-    return Defaulbaseanchorfortop(*this, *(MarkBaseSubtable*)(subtable));
+    return Defaulbaseanchorfortop(*this, *static_cast<MarkBaseSubtable*>(subtable));
   } else if (functionName == "joinedsmalllettersbaseanchor") {
     return Joinedsmalllettersbaseanchor(*this, *(MarkBaseSubtable*)(subtable));
   } else if (functionName == "DefaultBaseOfWaqfToMark") {
@@ -795,6 +869,8 @@ Lookup* OldMadina::getLookup(std::string lookupName) {
     return defaultmarkdotmarks();
   } else if (lookupName == "defaultmkmk") {
     return defaultmkmk();
+  } else if (lookupName == "fatha.stretched.mkmk") {
+    return stretchedFathaMkmk();
   } else if (lookupName == "ayanumbers") {
     return ayanumbers();
   } else if (lookupName == "ayanumberskern") {
@@ -963,6 +1039,7 @@ Lookup* OldMadina::defaultmarkposition() {
   topmarks.erase("maddahabove");
   topmarks.erase("smallhighseen");
   topmarks.erase("shadda");
+  topmarks.erase("fatha.stretched");
 
   auto lowmarks = classes["lowmarks"];
   lowmarks.erase("hamzabelow");
@@ -977,7 +1054,7 @@ Lookup* OldMadina::defaultmarkposition() {
   newsubtable->base = {"meem.fina.afterkaf"};
   newsubtable->classes["sukun"].mark = {"sukun"};
   newsubtable->classes["sukun"].basefunction = Defaulbaseanchorfortop(*this, *newsubtable);
-  newsubtable->classes["sukun"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["sukun"].markfunction = oldmadina::topMarkAnchor(*this);
 
   // tah
   newsubtable = new MarkBaseSubtable(lookup);
@@ -988,19 +1065,19 @@ Lookup* OldMadina::defaultmarkposition() {
 
   newsubtable->classes["fathadamma"].mark = {"fatha", "damma", "shadda"};
   newsubtable->classes["fathadamma"].basefunction = Defaulbaseanchorfortop(*this, *newsubtable);
-  newsubtable->classes["fathadamma"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["fathadamma"].markfunction = oldmadina::topMarkAnchor(*this);
 
   newsubtable->classes["sukun"].mark = {"sukun"};
   newsubtable->classes["sukun"].basefunction = Defaulbaseanchorfortop(*this, *newsubtable);
-  newsubtable->classes["sukun"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["sukun"].markfunction = oldmadina::topMarkAnchor(*this);
 
   newsubtable->classes["fathatandammatan"].mark = {"fathatan", "dammatan"};
   newsubtable->classes["fathatandammatan"].basefunction = Defaulbaseanchorfortop(*this, *newsubtable);
-  newsubtable->classes["fathatandammatan"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["fathatandammatan"].markfunction = oldmadina::topMarkAnchor(*this);
 
   newsubtable->classes["idgham"].mark = {"fathatanidgham", "dammatanidgham"};
   newsubtable->classes["idgham"].basefunction = Defaulbaseanchorfortop(*this, *newsubtable);
-  newsubtable->classes["idgham"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["idgham"].markfunction = oldmadina::topMarkAnchor(*this);
 
   // default
   newsubtable = new MarkBaseSubtable(lookup);
@@ -1010,7 +1087,7 @@ Lookup* OldMadina::defaultmarkposition() {
   newsubtable->base = {"bases"};
   newsubtable->classes["topmarks"].mark = toStdStringSet(topmarks);
   newsubtable->classes["topmarks"].basefunction = Defaulbaseanchorfortop(*this, *newsubtable);
-  newsubtable->classes["topmarks"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["topmarks"].markfunction = oldmadina::topMarkAnchor(*this);
 
   newsubtable = new MarkBaseSubtable(lookup);
   lookup->subtables.push_back(newsubtable);
@@ -1026,7 +1103,7 @@ Lookup* OldMadina::defaultmarkposition() {
   lookup->subtables.push_back(newsubtable);
   newsubtable->classes["smallletters"].mark = {"smallalef.joined", "smallhighwaw"};
   newsubtable->classes["smallletters"].basefunction = Defaulbaseanchorforsmallalef(*this, *newsubtable);
-  newsubtable->classes["smallletters"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["smallletters"].markfunction = oldmadina::topMarkAnchor(*this);
 
   newsubtable = new MarkBaseSubtable(lookup);
   newsubtable->name = "joinedmarks";
@@ -1034,7 +1111,7 @@ Lookup* OldMadina::defaultmarkposition() {
   lookup->subtables.push_back(newsubtable);
   newsubtable->classes["hamzaabove"].mark = {"hamzaabove.joined"};
   newsubtable->classes["hamzaabove"].basefunction = Defaulbaseanchorforsmallalef(*this, *newsubtable);
-  newsubtable->classes["hamzaabove"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["hamzaabove"].markfunction = oldmadina::topMarkAnchor(*this);
 
   // default
   newsubtable = new MarkBaseSubtable(lookup);
@@ -1044,7 +1121,7 @@ Lookup* OldMadina::defaultmarkposition() {
 
   newsubtable->classes["smallhighyeh"].mark = {"smallhighyeh"};
   newsubtable->classes["smallhighyeh"].basefunction = Defaulbaseanchorforsmallalef(*this, *newsubtable);
-  newsubtable->classes["smallhighyeh"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["smallhighyeh"].markfunction = oldmadina::topMarkAnchor(*this);
 
   // shadda
 
@@ -1055,7 +1132,7 @@ Lookup* OldMadina::defaultmarkposition() {
   newsubtable->base = {"bases"};
   newsubtable->classes["shadda"].mark = {"shadda"};
   newsubtable->classes["shadda"].basefunction = Defaulbaseanchorfortop(*this, *newsubtable);
-  newsubtable->classes["shadda"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["shadda"].markfunction = oldmadina::topMarkAnchor(*this);
 
   // maddahabove
 
@@ -1066,7 +1143,7 @@ Lookup* OldMadina::defaultmarkposition() {
   newsubtable->base = {"bases"};
   newsubtable->classes["maddahabove"].mark = {"maddahabove"};
   newsubtable->classes["maddahabove"].basefunction = Defaulbaseanchorfortop(*this, *newsubtable);
-  newsubtable->classes["maddahabove"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["maddahabove"].markfunction = oldmadina::topMarkAnchor(*this);
 
   // hamzaabove
 
@@ -1077,7 +1154,7 @@ Lookup* OldMadina::defaultmarkposition() {
   newsubtable->base = {"alef|waw|yehshape|behshape"};
   newsubtable->classes["hamzaabove"].mark = {"hamzaabove", "hamzaabove.small"};
   newsubtable->classes["hamzaabove"].basefunction = Defaulbaseanchorfortop(*this, *newsubtable);
-  newsubtable->classes["hamzaabove"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["hamzaabove"].markfunction = oldmadina::topMarkAnchor(*this);
 
   // smallalef.replacement
 
@@ -1088,7 +1165,7 @@ Lookup* OldMadina::defaultmarkposition() {
   newsubtable->base = {"alef|waw|yehshape|behshape"};
   newsubtable->classes["smallalefreplacement"].mark = {"smallalef.replacement"};
   newsubtable->classes["smallalefreplacement"].basefunction = Defaulbaseanchorfortop(*this, *newsubtable);
-  newsubtable->classes["smallalefreplacement"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["smallalefreplacement"].markfunction = oldmadina::topMarkAnchor(*this);
 
   // roundedfilledhigh
 
@@ -1099,7 +1176,7 @@ Lookup* OldMadina::defaultmarkposition() {
   newsubtable->base = {"alef[.]isol.*|meem[.]init.*"};
   newsubtable->classes["roundedfilledhigh"].mark = {"roundedfilledhigh"};
   newsubtable->classes["roundedfilledhigh"].basefunction = Defaulbaseanchorforsmallalef(*this, *newsubtable);
-  newsubtable->classes["roundedfilledhigh"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["roundedfilledhigh"].markfunction = oldmadina::topMarkAnchor(*this);
 
   // smallhighnoon
   newsubtable = new MarkBaseSubtable(lookup);
@@ -1109,7 +1186,7 @@ Lookup* OldMadina::defaultmarkposition() {
   newsubtable->base = {"behshape[.]init.*"};
   newsubtable->classes["smallhighnoon"].mark = {"smallhighnoon"};
   newsubtable->classes["smallhighnoon"].basefunction = Defaulbaseanchorforsmallalef(*this, *newsubtable);
-  newsubtable->classes["smallhighnoon"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["smallhighnoon"].markfunction = oldmadina::topMarkAnchor(*this);
 
   // smallhighseen
   newsubtable = new MarkBaseSubtable(lookup);
@@ -1119,7 +1196,7 @@ Lookup* OldMadina::defaultmarkposition() {
   newsubtable->base = {"sad[.]medi|^alef.fina|^heh.fina|^lam.fina|^noon.fina"};
   newsubtable->classes["smallhighseen"].mark = {"smallhighseen"};
   newsubtable->classes["smallhighseen"].basefunction = Defaulbaseanchorfortop(*this, *newsubtable);
-  newsubtable->classes["smallhighseen"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["smallhighseen"].markfunction = oldmadina::topMarkAnchor(*this);
 
   // hamzaabove.lamalef
   newsubtable = new MarkBaseSubtable(lookup);
@@ -1129,7 +1206,7 @@ Lookup* OldMadina::defaultmarkposition() {
   newsubtable->base = {"lam.init.lamalef", "^lam.medi.laf"};
   newsubtable->classes["hamzaabove"].mark = {"hamzaabove.lamalef"};
   newsubtable->classes["hamzaabove"].basefunction = Defaulbaseanchorfortop(*this, *newsubtable);
-  newsubtable->classes["hamzaabove"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["hamzaabove"].markfunction = oldmadina::topMarkAnchor(*this);
 
   // hamzabelow
   newsubtable = new MarkBaseSubtable(lookup);
@@ -1149,7 +1226,7 @@ Lookup* OldMadina::defaultmarkposition() {
   newsubtable->base = {"^alef[.]"};
   newsubtable->classes["wasla"].mark = {"wasla"};
   newsubtable->classes["wasla"].basefunction = Defaulbaseanchorfortop(*this, *newsubtable);
-  newsubtable->classes["wasla"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["wasla"].markfunction = oldmadina::topMarkAnchor(*this);
 
   // smalllowseen
   newsubtable = new MarkBaseSubtable(lookup);
@@ -1161,7 +1238,50 @@ Lookup* OldMadina::defaultmarkposition() {
   newsubtable->classes["smalllowseen"].basefunction = Defaulbaseanchorforlow(*this, *newsubtable);
   newsubtable->classes["smalllowseen"].markfunction = Defaullowmarkanchor(*this, *newsubtable);
 
+  addStretchedFathaBaseSubtables(lookup);
   return lookup;
+}
+
+void OldMadina::addStretchedFathaBaseSubtables(Lookup* lookup) {
+  using oldmadina::FathaAnchorStyle;
+  const std::array<std::pair<std::vector<std::string>, FathaAnchorStyle>, 4> profiles{{
+      {{"noon.isol.expa", "noon.fina.expa", "noon.fina.expa.afterbeh"}, FathaAnchorStyle::Noon},
+      {{"kaf.fina.expa", "kaf.fina.afterlam.expa"}, FathaAnchorStyle::FinalKaf},
+      {{"kaf.init.ii", "kaf.medi.ii"}, FathaAnchorStyle::InitialKaf},
+      {{"behshape.isol.expa", "behshape.fina.expa", "alefmaksura.isol.expa", "yehshape.isol.expa", "yehshape.fina.ii.expa", "yehshape.fina.afterbeh.expa", "yehshape.fina.expa"}, FathaAnchorStyle::Centered}}};
+  std::vector<Subtable*> aliasSubtables;
+  const auto naturalFatha = m_layout->glyphCodePerName.at("fatha");
+  for (auto* raw : lookup->subtables) {
+    auto* source = static_cast<MarkBaseSubtable*>(raw);
+    std::unordered_set<std::uint16_t> bases;
+    for (const auto& name : source->base) {
+      const auto codes = m_layout->classtoUnicode(name);
+      bases.insert(codes.begin(), codes.end());
+    }
+    for (const auto& [className, markClass] : source->classes) {
+      bool hasFatha = false;
+      for (const auto& name : markClass.mark) hasFatha |= m_layout->classtoUnicode(name).contains(naturalFatha);
+      if (!hasFatha) continue;
+      auto add = [&](std::vector<std::string> coverage, FathaAnchorStyle style) {
+        if (coverage.empty()) return;
+        auto* subtable = new MarkBaseSubtable(lookup);
+        subtable->name = source->name + ".fatha." + std::to_string(static_cast<int>(style));
+        subtable->base = std::move(coverage);
+        auto& row = subtable->classes[className];
+        row.mark = {"fatha.stretched"};
+        row.basefunction = oldmadina::fathaBaseAnchor(*this, *source, className, style == FathaAnchorStyle::Noon || style == FathaAnchorStyle::FinalKaf || style == FathaAnchorStyle::Centered);
+        row.markfunction = oldmadina::fathaMarkAnchor(*this, *source, className, style);
+        aliasSubtables.push_back(subtable);
+      };
+      for (const auto& [names, style] : profiles) {
+        std::vector<std::string> coverage;
+        for (const auto& name : names) if (bases.contains(m_layout->glyphCodePerName.at(name))) coverage.push_back(name);
+        add(std::move(coverage), style);
+      }
+      add(source->base, FathaAnchorStyle::Right);
+    }
+  }
+  lookup->subtables.insert(lookup->subtables.begin(), aliasSubtables.begin(), aliasSubtables.end());
 }
 Lookup* OldMadina::defaultwaqfmarktobase() {
   Lookup* lookup = new Lookup(m_layout);
@@ -1195,7 +1315,7 @@ Lookup* OldMadina::defaultdotmarks() {
   newsubtable->base = {"^behshape|^hah|^feh|^dal|^reh|^sad|^tah|^ain|^noon"};
   newsubtable->classes["onedotup"].mark = {"onedotup"};
   newsubtable->classes["onedotup"].basefunction = Defaulbaseanchorfortopdots(*this, *newsubtable);
-  newsubtable->classes["onedotup"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["onedotup"].markfunction = oldmadina::topMarkAnchor(*this);
 
   newsubtable = new MarkBaseSubtable(lookup);
   lookup->subtables.push_back(newsubtable);
@@ -1203,7 +1323,7 @@ Lookup* OldMadina::defaultdotmarks() {
   newsubtable->base = {"^behshape|^fehshape|^heh|^qaf"};
   newsubtable->classes["twodotsup"].mark = {"twodotsup"};
   newsubtable->classes["twodotsup"].basefunction = Defaulbaseanchorfortopdots(*this, *newsubtable);
-  newsubtable->classes["twodotsup"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["twodotsup"].markfunction = oldmadina::topMarkAnchor(*this);
 
   newsubtable = new MarkBaseSubtable(lookup);
   lookup->subtables.push_back(newsubtable);
@@ -1211,7 +1331,7 @@ Lookup* OldMadina::defaultdotmarks() {
   newsubtable->base = {"^behshape|^seen"};
   newsubtable->classes["three_dots"].mark = {"three_dots"};
   newsubtable->classes["three_dots"].basefunction = Defaulbaseanchorfortopdots(*this, *newsubtable);
-  newsubtable->classes["three_dots"].markfunction = Defaultopmarkanchor(*this, *newsubtable);
+  newsubtable->classes["three_dots"].markfunction = oldmadina::topMarkAnchor(*this);
 
   newsubtable = new MarkBaseSubtable(lookup);
   lookup->subtables.push_back(newsubtable);
@@ -1244,9 +1364,11 @@ Lookup* OldMadina::defaultmkmk() {
   subtable->name = "defaultmkmktop";
   subtable->base = {"hamzaabove", "hamzaabove.small", "hamzaabove.joined", "hamzaabove.lamalef", "shadda", "smallalef", "smallalef.joined", "smallalef.replacement", "smallhighseen", "smallhighwaw", "smallhighyeh"};
 
-  subtable->classes["topmarks"].mark = {"topmarks"};
+  auto ordinaryTopMarks = classes["topmarks"];
+  ordinaryTopMarks.erase("fatha.stretched");
+  subtable->classes["topmarks"].mark = toStdStringSet(ordinaryTopMarks);
   subtable->classes["topmarks"].basefunction = Defaultmarkabovemark(*this, *subtable);
-  subtable->classes["topmarks"].markfunction = Defaultopmarkanchor(*this, *subtable);
+  subtable->classes["topmarks"].markfunction = oldmadina::topMarkAnchor(*this);
 
   subtable = new MarkBaseSubtable(lookup);
   lookup->subtables.push_back(subtable);
@@ -1262,11 +1384,11 @@ Lookup* OldMadina::defaultmkmk() {
   lookup->subtables.push_back(subtable);
 
   subtable->name = "defaultmkmkmeemiqlab";
-  subtable->base = {"fatha", "damma"};  // "kasra"
+  subtable->base = {"fatha", "fatha.stretched", "damma"};  // "kasra"
 
   subtable->classes["meemiqlab"].mark = {"meemiqlab"};
   subtable->classes["meemiqlab"].basefunction = Defaultmarkabovemark(*this, *subtable);
-  subtable->classes["meemiqlab"].markfunction = Defaultopmarkanchor(*this, *subtable);
+  subtable->classes["meemiqlab"].markfunction = oldmadina::topMarkAnchor(*this);
 
   subtable = new MarkBaseSubtable(lookup);
   lookup->subtables.push_back(subtable);
@@ -1312,7 +1434,7 @@ Lookup* OldMadina::defaultmkmk() {
 
   subtable->classes["waqf"].mark = {"waqfmarks"};
   subtable->classes["waqf"].basefunction = basefunctionwaqf;
-  subtable->classes["waqf"].markfunction = Defaultopmarkanchor(*this, *subtable);*/
+  subtable->classes["waqf"].markfunction = oldmadina::topMarkAnchor(*this);*/
 
   m_layout->addLookup(lookup);
 
@@ -1364,14 +1486,15 @@ Lookup* OldMadina::defaultmarkdotmarks() {
 
   auto topmarks = classes["topmarks"];
   topmarks.erase("shadda");
+  topmarks.erase("fatha.stretched");
 
   topsubtable->classes["topmarks"].mark = toStdStringSet(topmarks);
   topsubtable->classes["topmarks"].basefunction = basetopfunction;
-  topsubtable->classes["topmarks"].markfunction = Defaultopmarkanchor(*this, *topsubtable);
+  topsubtable->classes["topmarks"].markfunction = oldmadina::topMarkAnchor(*this);
 
   topsubtable->classes["shadda"].mark = {"shadda"};
   topsubtable->classes["shadda"].basefunction = basetopfunction;
-  topsubtable->classes["shadda"].markfunction = Defaultopmarkanchor(*this, *topsubtable);
+  topsubtable->classes["shadda"].markfunction = oldmadina::topMarkAnchor(*this);
 
   m_layout->addLookup(lookup);
 
@@ -1406,6 +1529,86 @@ Lookup* OldMadina::defaultmarkdotmarks() {
 
   return lookup;
 }
+
+Lookup* OldMadina::stretchedFathaMkmk() {
+  using oldmadina::FathaAnchorStyle;
+  auto* selector = new Lookup(m_layout);
+  selector->name = "fatha.stretched.mkmk";
+  selector->feature = "mkmk";
+  selector->type = Lookup::chainingpos;
+  selector->flags = 0;  // The context explicitly includes marks and their base.
+  const std::array<std::pair<std::unordered_set<std::string>, FathaAnchorStyle>, 4> profiles{{
+      {{"noon.isol.expa", "noon.fina.expa", "noon.fina.expa.afterbeh"}, FathaAnchorStyle::Noon},
+      {{"kaf.fina.expa", "kaf.fina.afterlam.expa"}, FathaAnchorStyle::FinalKaf},
+      {{"kaf.init.ii", "kaf.medi.ii"}, FathaAnchorStyle::InitialKaf},
+      {{"behshape.isol.expa", "behshape.fina.expa", "alefmaksura.isol.expa", "yehshape.isol.expa", "yehshape.fina.ii.expa", "yehshape.fina.afterbeh.expa", "yehshape.fina.expa"}, FathaAnchorStyle::Centered}}};
+  auto compileCoverage = [&](const auto& names) {
+    std::unordered_set<std::uint16_t> codes;
+    for (const auto& name : names) {
+      const auto glyphs = m_layout->classtoUnicode(name);
+      codes.insert(glyphs.begin(), glyphs.end());
+    }
+    return codes;
+  };
+  auto addRule = [&](std::vector<std::unordered_set<std::string>> backtrack, const std::string& helper) {
+    auto* rule = new ChainingSubtable(selector);
+    rule->name = helper + ".context." + std::to_string(selector->subtables.size());
+    rule->rule.input = {{"fatha.stretched"}};
+    // ChainingSubtable stores logical order and reverses it for OpenType.
+    std::reverse(backtrack.begin(), backtrack.end());
+    rule->rule.backtrack = std::move(backtrack);
+    rule->rule.lookupRecords = {{0, helper}};
+    rule->compiledRule.input = {compileCoverage(rule->rule.input[0])};
+    for (const auto& coverage : rule->rule.backtrack) rule->compiledRule.backtrack.push_back(compileCoverage(coverage));
+    rule->compiledRule.lookupRecords = rule->rule.lookupRecords;
+    selector->subtables.push_back(rule);
+  };
+  for (const auto* sourceName : {"defaultmarkdotmarkstop", "defaultmkmktop"}) {
+    MarkBaseSubtable* source = nullptr;
+    for (const auto* lookup : m_layout->lookups) {
+      if (lookup->type != Lookup::mark2mark) continue;
+      for (auto* raw : lookup->subtables) if (raw->name == sourceName) source = static_cast<MarkBaseSubtable*>(raw);
+    }
+    if (!source) throw std::runtime_error(std::string("Missing Fatha attachment subtable: ") + sourceName);
+    auto addHelper = [&](FathaAnchorStyle style) {
+      auto* helper = new Lookup(m_layout);
+      helper->name = "fatha.stretched." + std::string(sourceName) + "." + std::to_string(static_cast<int>(style));
+      helper->type = Lookup::mark2mark;
+      helper->flags = 0;
+      // No feature: only the selector invokes this helper, once per matched mark.
+      auto addSubtable = [&](std::vector<std::string> parents, bool overShadda) {
+        if (parents.empty()) return;
+        auto* subtable = new MarkBaseSubtable(helper);
+        subtable->name = std::string(sourceName) + (overShadda ? ".shadda" : "");
+        subtable->base = std::move(parents);
+        auto& row = subtable->classes["topmarks"];
+        row.mark = {"fatha.stretched"};
+        row.basefunction = oldmadina::fathaBaseAnchor(*this, *source, "topmarks", false);
+        row.markfunction = oldmadina::fathaMarkAnchor(*this, *source, "topmarks", style, overShadda);
+        helper->subtables.push_back(subtable);
+      };
+      auto parents = source->base;
+      if (std::erase(parents, "shadda")) addSubtable({"shadda"}, true);
+      addSubtable(std::move(parents), false);
+      m_layout->addLookup(helper);
+      return helper->name;
+    };
+    const std::unordered_set<std::string> parents(source->base.begin(), source->base.end());
+    for (const auto& [bases, style] : profiles) {
+      const auto helper = addHelper(style);
+      // Fatha search permits Shadda and generated dots. The extra slots also
+      // cover explicitly authored compound stacks, never skipping another base.
+      for (int intervening = 2; intervening >= 0; --intervening) {
+        std::vector<std::unordered_set<std::string>> context{parents};
+        for (int i = 0; i < intervening; ++i) context.push_back({"marks"});
+        context.push_back(bases);
+        addRule(std::move(context), helper);
+      }
+    }
+    addRule({parents}, addHelper(FathaAnchorStyle::Right));
+  }
+  return selector;
+}
 Lookup* OldMadina::defaultwaqfmarkabovemarkprecise() {
   Lookup* lookup = new Lookup(m_layout);
   lookup->name = "defaultwaqfmarkabovemarkprecise";
@@ -1433,7 +1636,7 @@ Lookup* OldMadina::defaultwaqfmarkabovemarkprecise() {
 
     marksubtable->classes["waqfmarks"].mark = {"waqfmarks"};
     marksubtable->classes["waqfmarks"].basefunction = Defaulbaseanchorfortop(*this, *marksubtable);
-    marksubtable->classes["waqfmarks"].markfunction = Defaultopmarkanchor(*this, *marksubtable);
+    marksubtable->classes["waqfmarks"].markfunction = oldmadina::topMarkAnchor(*this);
 
     ChainingSubtable* newsubtable = new ChainingSubtable(lookup);
     lookup->subtables.push_back(newsubtable);
@@ -1584,7 +1787,7 @@ Lookup* OldMadina::pointmarks() {
 
     marksubtable->classes["topmarks"].mark = {"topmarks"};
     marksubtable->classes["topmarks"].basefunction = Defaulbaseanchorfortop(*this, *marksubtable);
-    marksubtable->classes["topmarks"].markfunction = Defaultopmarkanchor(*this, *marksubtable);
+    marksubtable->classes["topmarks"].markfunction = oldmadina::topMarkAnchor(*this);
 
     marksubtable->classes["lowmarks"].mark = {"lowmarks"};
     marksubtable->classes["lowmarks"].basefunction = Defaulbaseanchorforlow(*this, *marksubtable);

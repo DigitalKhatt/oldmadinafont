@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(Source_Files
     oldmadina.cpp
     oldmadina.h
+    fathamarkpositions.h
     shared.h
     shared.cpp)
 
@@ -74,4 +75,13 @@ else()
   target_link_libraries(${FONT_TARGET_NAME} PRIVATE digitalkhatt::otlayout)
 
   install(TARGETS ${FONT_TARGET_NAME} DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
+
+  if(BUILD_TESTING AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../visualmetafont/src/Resources/metafont/vmf.mp")
+    add_executable(oldmadina_test_fatha_anchors tests/FathaAnchorsTest.cpp)
+    target_link_libraries(oldmadina_test_fatha_anchors PRIVATE digitalkhatt::otlayout)
+    target_include_directories(oldmadina_test_fatha_anchors PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../visualmetafont/lib/digitalkhatt/src/justify")
+    add_dependencies(oldmadina_test_fatha_anchors ${FONT_TARGET_NAME})
+    set_target_properties(oldmadina_test_fatha_anchors PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tests/$<CONFIG>")
+    add_test(NAME oldmadina.fatha_anchors COMMAND oldmadina_test_fatha_anchors "${CMAKE_CURRENT_SOURCE_DIR}/oldmadina.mp" "${CMAKE_CURRENT_SOURCE_DIR}/../visualmetafont/src/Resources/metafont")
+  endif()
 endif()
