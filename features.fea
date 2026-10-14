@@ -2544,35 +2544,7 @@ lookup shrink.space.2.cont {
 
 } shrink.space.2.cont ;
 
-lookup shrink.space.3 {
 
-  feature inherited; 
-  
-  pos [/^endofaya/]'<-80 0 -80 0> space' [waw.isol]';
-  pos [alef.fina.laf]' space'<-50 0 -50 0> [behshape.init]' [onedotdown]' [@FathaPosition]' ;
-  pos [heh.fina.afterlam]' [twodotsup]' [@FathaPosition]' [space]'<-40 0 -40 0> [/^endofaya/];
-  pos [smallwaw]'<-30 0 -30 0> /^space/' /^endofaya/;
-  pos [yehshape.fina.ii]'<-50 0 -50 0> [smallalef.replacement]' /^space/' /^endofaya/;
-
-} shrink.space.3 ;
-
-lookup shrink.space.alt1 {
-
-  feature inherited; 
-  
-  pos [space]'<-50 0 -50 0>;
-  pos [/[.]isol/ /[.]fina/ smallwaw smallyeh rubelhizb]'<-8 0 -8 0>  [/[.]init/ /[.]isol/ smallwaw smallyeh];
-
-} shrink.space.alt1 ;
-
-lookup shrink.space.alt2 {
-
-  feature inherited; 
-  
-  pos [space]'<-50 0 -50 0>;
-  pos [/[.]isol/ /[.]fina/ smallwaw smallyeh rubelhizb]'<-8 0 -8 0>  [/[.]init/ /[.]isol/ smallwaw smallyeh];
-
-} shrink.space.alt2 ;
 
 feature sk01 {
   lookup shrink.gsub1;
@@ -2581,6 +2553,7 @@ feature sk01 {
 feature sk02 {
   lookup shrink.gsub2;
   lookup shrink.gsub2.gpos;
+  lookup shrink.gsub3;
 } sk02;
 
 feature sk03 {
@@ -2607,8 +2580,7 @@ feature sk07 {
   lookup shrink4;
 } sk07;
 
-feature sk08 {
-  lookup shrink.gsub3;
+feature sk08 {  
   lookup shrink2.double;
   lookup shrink.kern2;
 } sk08;
@@ -2627,18 +2599,6 @@ feature sk10 {
   lookup shrink.space.2.cont;
   lookup shrink.space.adjustmarks;
 } sk10;
-
-feature sk11 {
-  lookup shrink.space.3;
-} sk11;
-
-feature sk12 {
-  lookup shrink.space.alt1;
-} sk12;
-
-feature sk13 {
-  lookup shrink.space.alt2;
-} sk13;
 #endif;
 
 # External DigitalKhatt justification catalog. This block is declarative: it
@@ -3621,7 +3581,7 @@ table(justdfa) oldmadina.experimental2 {
   # Each `stretchpolicy` block is one selectable complete justification.
   stretchpolicy staged_pool {
     candidate_width advance;
-    cap_spaces 250 250;
+    cap_spaces 400 400;
     #stage InitialShortStretch;
     stage PreferredStretch;
     stage DecomposeConnections;
@@ -3661,8 +3621,7 @@ table(justdfa) oldmadina.experimental2 {
 
   # Whole-line baseline retained for direct comparison.
   shrinkpolicy standard {
-    fit_features [sk01 sk02 sk03 sk04 sk05 sk06 sk07 sk08 sk09 sk10 sk11];
-    reduce_spaces 0.95;
+    fit_features [sk01 sk02 sk03 sk04 sk05 sk06 sk07 sk08 sk09 sk10];
     balance;
   }
 
@@ -3671,7 +3630,7 @@ table(justdfa) oldmadina.experimental2 {
   }
 
   shrinkpolicy all_sk01_20 {
-    all_features [sk01 sk02 sk03 sk04 sk05 sk06 sk07 sk08 sk09 sk10 sk11 sk12 sk13 sk14 sk15 sk16 sk17 sk18 sk19 sk20];
+    all_features [sk01 sk02 sk03 sk04 sk05 sk06 sk07 sk08 sk09 sk10];
   }
 
   shrinkpolicy scale {
@@ -3684,8 +3643,7 @@ table(justdfa) oldmadina.experimental2 {
     fit_features [sk01 sk02 sk03];
     stage ShrinkSpread;
     stage ShrinkRemaining;
-    fit_features [sk06 sk07 sk08 sk09 sk10 sk11];
-    reduce_spaces 0.95;
+    fit_features [sk06 sk07 sk08 sk09 sk10];
     balance;
   }
 
@@ -3693,20 +3651,20 @@ table(justdfa) oldmadina.experimental2 {
     candidate_width advance;
     fit_features [sk01 sk02 sk03];
     stage NativeShrinkSpread;
-    stage NativeShrinkRemaining;
-    fit_features [sk06 sk07 sk08 sk09 sk10 sk11];
-    reduce_spaces 0.95;
+    stage NativeShrinkRemaining;    
+    fit_features [sk06 sk07 sk08 sk09 sk10];
+    #fit_features [sk06 sk07 sk08 sk09];
+    #fit_features [sk10]; # Spaces
     balance;
   }
 
   shrinkpolicy weighted_native_spacebefore {
     candidate_width advance;
     fit_features [sk01 sk02 sk03];
-    fit_features [sk10 sk11]; # Spaces
+    fit_features [sk10]; # Spaces
     stage NativeShrinkSpread;
     stage NativeShrinkRemaining;
     fit_features [sk06 sk07 sk08 sk09];
-    reduce_spaces 0.95;
     balance;
   }
 
@@ -3715,8 +3673,7 @@ table(justdfa) oldmadina.experimental2 {
     fit_features [sk01 sk02 sk03];
     stage NativeShrinkSpread;
     stage NativeShrinkRemaining;
-    fit_features [sk06 sk07 sk08 sk09 sk10 sk11];
-    reduce_spaces 0.95;
+    fit_features [sk06 sk07 sk08 sk09 sk10];
     balance;
   }
 

@@ -14,7 +14,7 @@ enum class FathaAnchorStyle { Right,
                               InitialKaf,
                               Centered };
 
-inline constexpr double FathaShaddaCenterLimit = 1.5;
+inline constexpr double FathaShaddaCenterLimit = 1;
 inline constexpr double FathaBaselineMinClearance = 100;
 inline constexpr double FathaBaselineMaxClearance = 200;
 inline constexpr double FathaBaselineRampStart = 3;

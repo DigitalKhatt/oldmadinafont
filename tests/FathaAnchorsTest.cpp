@@ -228,6 +228,7 @@ unsigned u16(const digitalkhatt::ByteBuffer& table, std::size_t offset) {
 }
 
 void checkShaddaCenterTransition(OtLayout& layout) {
+  const double centerLimit = oldmadina::FathaShaddaCenterLimit;
   MarkBaseSubtable* source = nullptr;
   for (auto* lookup : layout.lookups) {
     if (lookup->name != "defaultmkmk") continue;
@@ -248,7 +249,7 @@ void checkShaddaCenterTransition(OtLayout& layout) {
     const auto* limit = layout.getGlyph(layout.glyphCodePerName.at("fatha"), atLimit);
     const auto limitAnchor = centered.getMarkAnchor("fatha.stretched", "topmarks", atLimit);
     const double limitRight = limit->bbox.urx - limitAnchor.x();
-    for (double left : {0.0625, 0.5, 1.0, 1.499999, 1.5, 1.500001, 2.0, 5.0}) {
+    for (double left : {0.0625, 0.5, centerLimit - 1e-6, centerLimit, centerLimit + 1e-6, 1.5, 2.0, 5.0}) {
       GlyphParameters parameters;
       parameters.lefttatweel = left;
       const auto* current = layout.getGlyph(layout.glyphCodePerName.at("fatha"), parameters);
@@ -264,7 +265,7 @@ void checkShaddaCenterTransition(OtLayout& layout) {
         require(anchor.x() == std::lround(expected), "Short stretched Fatha must remain centered with its original GUI calibration");
       } else {
         require(std::abs(current->bbox.urx - anchor.x() - limitRight) <= 1, "Long stretched Fatha must preserve the right edge of its centered threshold placement");
-        require(std::abs(anchor.x() - limitAnchor.x()) <= 1 || left > 1.500001, "The threshold transition must not jump at 1.5");
+        require(std::abs(anchor.x() - limitAnchor.x()) <= 1 || left > centerLimit + 1e-6, "The transition must not jump at the Shadda centering limit");
       }
     }
   }
@@ -818,7 +819,7 @@ int main(int argc, char** argv) {
     checkShrinkAlefAboveDal(layout, provider, font);
     for (const auto& [root, style] : {std::pair{"noon.fina.expa", 1}, {"kaf.fina.expa", 2}, {"kaf.init.ii", 3}, {"behshape.isol", 0}}) {
       for (const auto parent : {Parent::Base, Parent::Dot, Parent::Shadda}) checkDispatch(layout, provider, font, root, style, parent, 1);
-      for (double left : {0.0625, 1.5, 1.5625, 5.0}) checkDispatch(layout, provider, font, root, style, Parent::Shadda, left);
+      for (double left : {0.0625, oldmadina::FathaShaddaCenterLimit, oldmadina::FathaShaddaCenterLimit + 0.0625, 5.0}) checkDispatch(layout, provider, font, root, style, Parent::Shadda, left);
     }
     for (const auto* root : {"behshape.isol.expa", "behshape.fina.expa", "alefmaksura.isol.expa", "yehshape.isol.expa", "yehshape.fina.ii.expa", "yehshape.fina.afterbeh.expa", "yehshape.fina.expa"}) {
       for (const auto parent : {Parent::Base, Parent::Dot, Parent::Shadda}) checkDispatch(layout, provider, font, root, 4, parent, 3);
