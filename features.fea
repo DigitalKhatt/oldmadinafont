@@ -2625,6 +2625,12 @@ table(justdfa) oldmadina.experimental2 {
     sizing style SameSizeByPage { min_fit 1; }
     # lower threshold, upper threshold, maximum shrink, maximum stretch
     sizing style FontSizeXScale { bounded_fit 0.95 1.2 0.02 0.02; }
+    # Per-page width, allowing each nominal margin to decrease/increase by
+    # these physical font units. Headings/short lines do not choose the frame.
+    sizing style AdaptiveMargins {
+      margins decrease 150 increase 150;
+      bounded_fit 0.95 1.3 0 0;
+    }
     sizing default { fixed_size 1; }
 
     # First matching line rule wins. Features here affect final shaping only.
@@ -2635,6 +2641,7 @@ table(justdfa) oldmadina.experimental2 {
 
     render style FontSize { font_scale; normal_output; }
     render style FontSizeXScale { xscale_output; }
+    render style AdaptiveMargins { xscale_output; }
     render style SCLX { axis_output; }
     render style XScale { xscale_output; }
     render default { normal_output; }
@@ -3796,9 +3803,9 @@ table(justdfa) oldmadina.experimental2 {
   # Comparison only: same surrounding stages as staged_pool_full_shape.
   # Allocate preferred lengths first, then reuse the same rules up to their maxima.
   stretchpolicy staged_pool_continue {
-    candidate_width full_shape;
-    stage PreferredStretch;
+    candidate_width advance;    
     cap_spaces 250 250;
+    stage PreferredStretch;    
     stage DecomposeConnections;
     stage RareTerminalStretch;
     stage DecomposeLastResort;    

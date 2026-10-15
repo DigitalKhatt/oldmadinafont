@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -9,6 +10,7 @@
 #include <hb-ot.h>
 #include "MPFont.h"
 #include "Layout/OtLayout.h"
+#include "Layout/MushafLayout.h"
 #include "Layout/Lookup.h"
 #include "Layout/Subtable.h"
 #include "Layout/GlyphVis.h"
@@ -803,6 +805,22 @@ void checkLateBaselineSpacing(OtLayout& layout) {
   catalog.stretchPolicies.pop_back();
 }
 
+void checkRelativeMarginSyntax() {
+  const auto source = [](std::string_view step) {
+    return "table(justdfa) margin_syntax { pagepolicy { measure [Line]; sizing style AdaptiveMargins { " + std::string(step) + " bounded_fit 0.95 1.2 0 0; } } facts {} opportunities {} selections {} stretchpolicy normal { fill_spaces; } shrinkpolicy normal { balance; } };";
+  };
+  feayy::FeaContext context(nullptr);
+  feayy::Driver driver(context);
+  require(driver.parse_string(source("margins decrease 300 increase 900;")), "Parser must accept explicit relative margin adjustments");
+  const auto& step = context.justificationDfas.at("margin_syntax").pagePolicy->branches.at(0).steps.at(0);
+  require(step.operation == "relative_margins" && step.arguments == std::vector<double>{300, 900}, "Parser must preserve the decrease/increase order and values");
+  for (const auto invalid : {"margins increase 300 decrease 900;", "margins decrease 300 increase;", "margins decrease 300 900;", "margins decrease 300 grow 900;", "other decrease 300 increase 900;"}) {
+    feayy::FeaContext invalidContext(nullptr);
+    feayy::Driver invalidDriver(invalidContext);
+    require(!invalidDriver.parse_string(source(invalid)), "Parser must reject malformed relative margin syntax: " + std::string(invalid));
+  }
+}
+
 void checkContinuationSyntax() {
   const auto source = [](std::string_view steps) {
     return "table(justdfa) test { linepolicy { stretch test; shrink test; } facts {} opportunities {} selections {} stretchpolicy test { " + std::string(steps) + " } shrinkpolicy test { balance; } };";
@@ -861,6 +879,170 @@ void checkOpportunitySyntax(OtLayout& layout) {
     feayy::Driver invalidDriver(invalidContext);
     require(!invalidDriver.parse_string(source(invalid)), "Parser must reject removed or ambiguous opportunity syntax");
   }
+}
+
+void checkAdaptiveMargins(OtLayout& layout) {
+  using namespace digitalkhatt;
+  using namespace digitalkhatt::justify;
+  auto& policy = *layout.compiledJustificationCatalog->pagePolicy;
+  const auto saved = policy;
+  const auto originalGeometry = layout.pageLayout();
+  auto geometry = originalGeometry;
+  geometry.leftMargin = 400;
+  geometry.rightMargin = 800;
+  layout.setPageLayout(geometry);
+  auto rule = std::find_if(policy.sizing.begin(), policy.sizing.end(), [](const auto& value) { return value.style == JustStyle::AdaptiveMargins; });
+  require(rule != policy.sizing.end(), "Missing AdaptiveMargins page policy");
+  rule->relativeMargins = false;  // Retain absolute-margin compatibility coverage.
+  rule->margins = {600, 600};
+  const int unit = 1 << OtLayout::SCALEBY;
+  const int width = geometry.textWidth() * unit;
+  const double scale = unit * OtLayout::EMSCALE;
+  const JustOption options{JustType::DeclPolicy, JustStyle::AdaptiveMargins, ShrinkType::None};
+  const std::vector<LineToJustify> input{
+      {u"بِسْمِ ٱللَّهِ", width, LineJustification::Distribute, LineType::Line},
+      {u"عَلِيمٌ", width / 2, LineJustification::Center, LineType::Line},
+      {u"بِسْمِ ٱللَّهِ", width, LineJustification::Center, LineType::Bism},
+      {u"عَلِيمٌ", 0, LineJustification::Center, LineType::Line}};
+  const auto output = layout.justifyPage(scale, width, input, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS, options, "qpc_v1_layout");
+  const auto rightReference = (geometry.pageWidth - geometry.rightMargin) * unit;
+  require(output[0].desiredLineWidth == width, "Equal margin bounds must produce the expected frame");
+  require(output[0].xstartposition == -200 * unit, "Adaptive frame must compensate asymmetric reference margins");
+  require(std::abs(output[0].renderedOverflow()) < 1, "Adaptive body must fit its selected frame");
+  require(output[1].desiredLineWidth == width / 2 && output[3].desiredLineWidth == 0, "Short and natural line targets must retain their meaning");
+  for (std::size_t i = 1; i < output.size(); ++i) {
+    const double center = rightReference - output[i].xstartposition - output[i].renderedWidth() / 2;
+    require(std::abs(center - geometry.pageWidth * unit / 2.0) <= 1, "Headings and centered lines must remain at the physical page center");
+  }
+  require(layout.textWidth() == geometry.textWidth() && layout.pageLayout().rightMargin == 800, "Adaptive fitting must not mutate global geometry");
+  rule->margins = {800, 800};
+  const auto narrower = layout.justifyPage(scale * 0.9, width, input, false, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS, options, "qpc_v1_layout");
+  require(narrower[0].desiredLineWidth == (geometry.pageWidth - 1600) * unit, "Physical margin bounds must not change with font size");
+  require(narrower[1].desiredLineWidth == narrower[0].desiredLineWidth / 2, "Short lines must track the selected frame proportionally");
+  policy = saved;
+  layout.setPageLayout(originalGeometry);
+}
+
+void checkAdaptivePreview(OtLayout& layout) {
+  using namespace digitalkhatt;
+  const auto saved = layout.pageLayout();
+  auto geometry = saved;
+  geometry.pageWidth = 17600;
+  geometry.leftMargin = geometry.rightMargin = 600;
+  layout.setPageLayout(geometry);
+  const int unit = 1 << OtLayout::SCALEBY;
+  const int width = geometry.textWidth() * unit;
+  const auto& sizing = layout.compiledJustificationCatalog->pagePolicy->sizing;
+  const auto rule = std::find_if(sizing.begin(), sizing.end(), [](const auto& value) { return value.style == JustStyle::AdaptiveMargins; });
+  require(rule != sizing.end() && rule->relativeMargins, "OldMadina must declare relative margin adjustments");
+  const int decrease = static_cast<int>(std::floor(std::min(rule->margins->first, 600.0) * unit));
+  // All of page 577, including its shortest and longest lines. A subset misses
+  // the raw-interval conflict that individual margin clamping must resolve.
+  const std::vector<std::string> text{
+      "فَمَا تَنفَعُهُمْ شَفَٰعَةُ ٱلشَّٰفِعِينَ \u06dd٤٨ فَمَا لَهُمْ عَنِ ٱلتَّذْكِرَةِ مُعْرِضِينَ",
+      "۝٤٩ كَا͏ٔ͏َنَّهُمْ حُمُرࣱ مُّسْتَنفِرَةࣱ ۝٥٠ فَرَّتْ مِن قَسْوَرَةِۭ ۝٥١ بَلْ يُرِيدُ",
+      "كُلُّ ٱمْرِي͏ٔ͏ࣲ مِّنْهُمْ ا͏ٔ͏َن يُو͏ٔ͏ْتَىٰ صُحُفࣰا مُّنَشَّرَةࣰ ۝٥٢ كَلَّاۖ بَل لَّا يَخَافُونَ",
+      "ٱلْـٔ͏َاخِرَةَ ۝٥٣ كَلَّا͏ٓ إ͏ِنَّهُۥ تَذْكِرَةࣱ ۝٥٤ فَمَن شَا͏ٓءَ ذَكَرَهُۥ ۝٥٥",
+      "وَمَا يَذْكُرُونَ إ͏ِلَّا͏ٓ ا͏ٔ͏َن يَشَا͏ٓءَ ٱللَّهُۚ هُوَ ا͏ٔ͏َهْلُ ٱلتَّقْوَىٰ وَا͏ٔ͏َهْلُ ٱلْمَغْفِرَةِ ۝٥٦",
+      "سُورَةُ القِيَامَةِ",
+      "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+      "لَا͏ٓ ا͏ٔ͏ُقْسِمُ بِيَوْمِ ٱلْقِيَٰمَةِ ۝١ وَلَا͏ٓ ا͏ٔ͏ُقْسِمُ بِٱلنَّفْسِ ٱللَّوَّامَةِ ۝٢ ا͏ٔ͏َيَحْسَبُ",
+      "ٱلْإ͏ِنسَٰنُ ا͏ٔ͏َلَّن نَّجْمَعَ عِظَامَهُۥ ۝٣ بَلَىٰ قَٰدِرِينَ عَلَىٰٓ ا͏ٔ͏َن نُّسَوِّيَ بَنَانَهُۥ ۝٤ بَلْ",
+      "يُرِيدُ ٱلْإ͏ِنسَٰنُ لِيَفْجُرَ ا͏ٔ͏َمَامَهُۥ \u06dd٥ يَسْـٔ͏َلُ ا͏ٔ͏َيَّانَ يَوْمُ ٱلْقِيَٰمَةِ \u06dd٦ فَإ͏ِذَا بَرِقَ ٱلْبَصَرُ",
+      "۝٧ وَخَسَفَ ٱلْقَمَرُ ۝٨ وَجُمِعَ ٱلشَّمْسُ وَٱلْقَمَرُ ۝٩ يَقُولُ ٱلْإ͏ِنسَٰنُ يَوْمَي͏ٔ͏ِذٍ",
+      "ا͏ٔ͏َيْنَ ٱلْمَفَرُّ ۝١٠ كَلَّا لَا وَزَرَ ۝١١ إ͏ِلَىٰ رَبِّكَ يَوْمَي͏ٔ͏ِذٍ ٱلْمُسْتَقَرُّ ۝١٢ يُنَبَّو͏ٔ͏ُا۟ ٱلْإ͏ِنسَٰنُ",
+      "يَوْمَي͏ٔ͏ِذِۭ بِمَا قَدَّمَ وَا͏ٔ͏َخَّرَ \u06dd١٣ بَلِ ٱلْإ͏ِنسَٰنُ عَلَىٰ نَفْسِهِۦ بَصِيرَةࣱ \u06dd١٤ وَلَوْ ا͏ٔ͏َلْقَىٰ",
+      "مَعَاذِيرَهُۥ ۝١٥ لَا تُحَرِّكْ بِهِۦ لِسَانَكَ لِتَعْجَلَ بِهِۦٓ ۝١٦ إ͏ِنَّ عَلَيْنَا جَمْعَهُۥ",
+      "وَقُرْءَانَهُۥ ۝١٧ فَإ͏ِذَا قَرَا͏ٔ͏ْنَٰهُ فَٱتَّبِعْ قُرْءَانَهُۥ ۝١٨ ثُمَّ إ͏ِنَّ عَلَيْنَا بَيَانَهُۥ ۝١٩"};
+  const JustOption options{JustType::DeclPolicy, JustStyle::AdaptiveMargins, ShrinkType::None};
+  const auto output = layout.justifyPage(unit, width, width, text, LineJustification::Distribute, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS, options, "qpc_v1_layout");
+  require(output.size() == 15 && output[0].desiredLineWidth == width + 2 * decrease && output[0].xstartposition == -decrease, "Full page-577 GUI preview must decrease the nominal margins by the configured allowance");
+  require(output[5].type == LineType::Sura && output[6].type == LineType::Bism, "GUI preview must classify Sura and Basmala before adaptive measurement");
+  require(output[5].desiredLineWidth == 0 && output[6].desiredLineWidth == 0, "Preview headings must use natural centered treatment");
+  std::vector<TextString> decoded;
+  auto* buffer = hb_buffer_create();
+  for (const auto& line : text) {
+    hb_buffer_clear_contents(buffer);
+    hb_buffer_add_utf8(buffer, line.data(), static_cast<int>(line.size()), 0, static_cast<int>(line.size()));
+    unsigned count = 0;
+    const auto* info = hb_buffer_get_glyph_infos(buffer, &count);
+    TextString value;
+    for (unsigned i = 0; i < count; ++i) value += static_cast<char16_t>(info[i].codepoint);
+    decoded.push_back(std::move(value));
+  }
+  hb_buffer_destroy(buffer);
+  const auto corpus = layout.justifyPage(unit, width, mushafLineInputs(decoded, 577, width, "qpc_v1_layout"), true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS, options, "qpc_v1_layout");
+  for (std::size_t i = 0; i < output.size(); ++i)
+    require(output[i].desiredLineWidth == corpus[i].desiredLineWidth && output[i].xstartposition == corpus[i].xstartposition && output[i].currentLineWidth == corpus[i].currentLineWidth && output[i].xscale == corpus[i].xscale, "GUI and corpus page-577 geometry differs at line " + std::to_string(i + 1));
+  std::cout << "Page 577: GUI and corpus targets = " << output[0].desiredLineWidth / unit << "; margins = " << 600 - decrease / unit << "; all 15 line geometries match\n";
+  const JustOption legacy{JustType::DeclPolicy, JustStyle::FontSizeXScale, ShrinkType::None};
+  const auto previous = layout.justifyPage(unit, width, width, text, LineJustification::Distribute, false, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS, legacy, "qpc_v1_layout");
+  require(previous[5].type == LineType::Line && previous[5].desiredLineWidth == width, "Legacy preview input semantics must remain unchanged");
+  layout.setPageLayout(saved);
+}
+
+void checkAdaptiveLastPage(OtLayout& layout) {
+  using namespace digitalkhatt;
+  const auto saved = layout.pageLayout();
+  auto geometry = saved;
+  geometry.pageWidth = 17600;
+  geometry.leftMargin = geometry.rightMargin = 600;
+  layout.setPageLayout(geometry);
+  const int unit = 1 << OtLayout::SCALEBY;
+  const int width = geometry.textWidth() * unit;
+  const auto& sizing = layout.compiledJustificationCatalog->pagePolicy->sizing;
+  const auto rule = std::find_if(sizing.begin(), sizing.end(), [](const auto& value) { return value.style == JustStyle::AdaptiveMargins; });
+  require(rule != sizing.end() && rule->relativeMargins, "OldMadina must declare relative margin adjustments");
+  const int increase = static_cast<int>(std::floor(rule->margins->second * unit));
+  // qpc_v1_layout page 604, including its three intentionally short endings.
+  std::vector<TextString> text{
+      u"سُورَةُ الإِخْلَاصِ",
+      u"بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+      u"قُلْ هُوَ ٱللَّهُ أَحَدٌ ۝١ ٱللَّهُ ٱلصَّمَدُ ۝٢ لَمْ يَلِدْ",
+      u"وَلَمْ يُولَدْ ۝٣ وَلَمْ يَكُن لَّهُۥ كُفُوًا أَحَدُۢ ۝٤",
+      u"سُورَةُ الفَلَقِ",
+      u"بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+      u"قُلْ أَعُوذُ بِرَبِّ ٱلْفَلَقِ ۝١ مِن شَرِّ مَا خَلَقَ ۝٢ وَمِن",
+      u"شَرِّ غَاسِقٍ إِذَا وَقَبَ ۝٣ وَمِن شَرِّ ٱلنَّفَّٰثَٰتِ فِي",
+      u"ٱلْعُقَدِ ۝٤ وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ ۝٥",
+      u"سُورَةُ النَّاسِ",
+      u"بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+      u"قُلْ أَعُوذُ بِرَبِّ ٱلنَّاسِ ۝١ مَلِكِ ٱلنَّاسِ ۝٢ إِلَٰهِ",
+      u"ٱلنَّاسِ ۝٣ مِن شَرِّ ٱلْوَسْوَاسِ ٱلْخَنَّاسِ ۝٤ ٱلَّذِي",
+      u"يُوَسْوِسُ فِي صُدُورِ ٱلنَّاسِ ۝٥",
+      u"مِنَ ٱلْجِنَّةِ وَٱلنَّاسِ ۝٦"};
+  std::vector<std::string> strings;
+  for (auto& line : text) {
+    normalizeMushafWord(line, "dk_v1");
+    // This Arabic fixture contains BMP characters only.
+    std::string encoded;
+    for (char16_t ch : line) {
+      if (ch < 0x80) encoded += char(ch);
+      else if (ch < 0x800) { encoded += char(0xc0 | (ch >> 6)); encoded += char(0x80 | (ch & 0x3f)); }
+      else { encoded += char(0xe0 | (ch >> 12)); encoded += char(0x80 | ((ch >> 6) & 0x3f)); encoded += char(0x80 | (ch & 0x3f)); }
+    }
+    strings.push_back(std::move(encoded));
+  }
+  const JustOption options{JustType::DeclPolicy, JustStyle::AdaptiveMargins, ShrinkType::None};
+  const auto preview = layout.justifyPage(unit, width, width, strings, LineJustification::Distribute, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS, options, "qpc_v1_layout", 604);
+  const auto input = mushafLineInputs(text, 604, width, "qpc_v1_layout");
+  const auto corpus = layout.justifyPage(unit, width, input, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS, options, "qpc_v1_layout");
+  require(preview.size() == 15 && preview.size() == corpus.size(), "Both page-604 entry points must retain all 15 lines");
+  require(preview[2].desiredLineWidth == width - 2 * increase && preview[2].xstartposition == increase, "Page 604 GUI preview must increase the nominal margins by the configured allowance");
+  for (std::size_t i = 0; i < preview.size(); ++i) {
+    const auto& a = preview[i];
+    const auto& b = corpus[i];
+    require(a.type == b.type && a.desiredLineWidth == b.desiredLineWidth && a.currentLineWidth == b.currentLineWidth && a.xstartposition == b.xstartposition && a.fontSize == b.fontSize && a.xscale == b.xscale, "GUI and corpus page-604 geometry differs at line " + std::to_string(i + 1));
+    require(a.glyphs.size() == b.glyphs.size(), "GUI and corpus page-604 glyph counts differ");
+    for (std::size_t j = 0; j < a.glyphs.size(); ++j) {
+      const auto& x = a.glyphs[j];
+      const auto& y = b.glyphs[j];
+      require(x.codepoint == y.codepoint && x.parameters == y.parameters && x.x_advance == y.x_advance && x.y_advance == y.y_advance && x.x_offset == y.x_offset && x.y_offset == y.y_offset, "GUI and corpus page-604 glyph shaping differs");
+    }
+  }
+  require(preview[8].desiredLineWidth < preview[2].desiredLineWidth && preview[13].desiredLineWidth < preview[2].desiredLineWidth && preview[14].desiredLineWidth < preview[2].desiredLineWidth, "Short page-604 endings must not become full-width lines");
+  std::cout << "Page 604: GUI and corpus targets = " << preview[2].desiredLineWidth / unit << "; margins = " << 600 + increase / unit << "; all 15 lines match\n";
+  layout.setPageLayout(saved);
 }
 
 void checkPreferredContinuation(OtLayout& layout) {
@@ -1029,6 +1211,7 @@ void checkSerialization(OtLayout& layout) {
 int main(int argc, char** argv) {
   try {
     require(argc == 3, "Usage: FathaAnchorsTest FONT.mp RESOURCES");
+    checkRelativeMarginSyntax();
     checkContinuationSyntax();
     MPFont mpFont;
     initializeFont(mpFont, fs::absolute(argv[1]), fs::absolute(argv[2]));
@@ -1066,6 +1249,9 @@ int main(int argc, char** argv) {
     checkLastResortDecomposition(layout);
     checkLateBaselineSpacing(layout);
     checkPreferredContinuation(layout);
+    checkAdaptiveMargins(layout);
+    checkAdaptivePreview(layout);
+    checkAdaptiveLastPage(layout);
     checkSerialization(layout);
     std::cout << "Attachment/native/GSUB regressions, local no-lift anchors, expanded Beh/Yeh centring, baseline metadata, Shadda threshold transitions and 15 serialized anchor subtables passed\n";
   } catch (const std::exception& error) {
