@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <string_view>
 #include <tuple>
@@ -12,6 +13,8 @@
 #include "Layout/Subtable.h"
 #include "Layout/GlyphVis.h"
 #include "automedina/automedina.h"
+#include "FeaParser/driver.h"
+#include "FeaParser/feaast.h"
 #include "JustificationShaping.h"
 #include "../fathamarkpositions.h"
 
@@ -517,7 +520,7 @@ void checkLamMeemStretching(OtLayout& layout) {
   using namespace digitalkhatt;
   const int width = 1800 << OtLayout::SCALEBY;
   const double scale = (1 << OtLayout::SCALEBY) * OtLayout::EMSCALE;
-  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard};
+  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard, layout.compiledJustificationCatalog->stretchPolicyIndex("staged_pool")};
   const std::vector<LineToJustify> input{{u"وَلَمْ", width, LineJustification::Distribute, LineType::Line}};
   bool preferred = false, continued = false;
   layout.setJustificationTraceCallback([&](const auto& trace) {
@@ -542,7 +545,7 @@ void checkHehMeemStretching(OtLayout& layout) {
   using namespace digitalkhatt;
   const int width = 2400 << OtLayout::SCALEBY;
   const double scale = (1 << OtLayout::SCALEBY) * OtLayout::EMSCALE;
-  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard};
+  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard, layout.compiledJustificationCatalog->stretchPolicyIndex("staged_pool")};
   for (const auto& [text, hehName] : std::vector<std::pair<std::u16string, std::string>>{{u"هَمْ", "heh.init"}, {u"مَهَمْ", "heh.medi"}}) {
     const std::vector<LineToJustify> input{{text, width, LineJustification::Distribute, LineType::Line}};
     bool preferred = false;
@@ -579,7 +582,7 @@ void checkFinalAscendantPrecedence(OtLayout& layout) {
   using namespace digitalkhatt;
   const int width = 5000 << OtLayout::SCALEBY;
   const double scale = (1 << OtLayout::SCALEBY) * OtLayout::EMSCALE;
-  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard};
+  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard, layout.compiledJustificationCatalog->stretchPolicyIndex("staged_pool")};
   const std::vector<LineToJustify> input{{u"أَحْبَارَهُمْ", width, LineJustification::Distribute, LineType::Line}};
   bool behAlef = false, hehMeem = false, continued = false;
   layout.setJustificationTraceCallback([&](const auto& trace) {
@@ -606,7 +609,7 @@ void checkLastResortDecomposition(OtLayout& layout) {
   using namespace digitalkhatt;
   const int width = 5000 << OtLayout::SCALEBY;
   const double scale = (1 << OtLayout::SCALEBY) * OtLayout::EMSCALE;
-  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard};
+  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard, layout.compiledJustificationCatalog->stretchPolicyIndex("staged_pool")};
   const std::vector<LineToJustify> input{{u"تَحُسُّونَهُم", width, LineJustification::Distribute, LineType::Line}};
   bool preferredHeh = false, regularDecomposition = false;
   layout.setJustificationTraceCallback([&](const auto& trace) {
@@ -730,6 +733,223 @@ void checkLastResortDecomposition(OtLayout& layout) {
   require(minimalAin && minimalAlef, "Final Ain-Alef parameters must remain 1 / 0.5 after the complete staged-pool recipe");
 }
 
+void checkLateBaselineSpacing(OtLayout& layout) {
+  using namespace digitalkhatt;
+  using namespace digitalkhatt::justify;
+  auto& catalog = *layout.compiledJustificationCatalog;
+  const int source = catalog.stretchPolicyIndex("staged_pool_full_shape");
+  require(source >= 0, "Missing full-shape stretch policy");
+  const auto& steps = catalog.stretchPolicies.at(source).steps;
+  const auto preferred = std::find_if(steps.begin(), steps.end(), [](const auto& step) { return step.stage == "PreferredStretch"; });
+  const auto baselineSelection = std::find_if(catalog.selections.begin(), catalog.selections.end(), [](const auto& selection) { return selection.name == "InitialShortJoins"; });
+  require(preferred != steps.end() && baselineSelection != catalog.selections.end(), "Missing preferred/baseline stages");
+  auto probe = catalog.stretchPolicies.at(source);
+  probe.name = "test.late_baseline";
+  const LinePolicyStep baselineStep{.operation = LineStepOp::Stage, .stage = "InitialShortStretch", .phases = {{.selection = static_cast<JustificationSelectionId>(baselineSelection - catalog.selections.begin()), .levels = 1, .allocator = PolicyPhase::Allocator::BaselinePool}}};
+  probe.steps = {*preferred};
+  const int index = static_cast<int>(catalog.stretchPolicies.size());
+  catalog.stretchPolicies.push_back(probe);
+  const int width = 10000 << OtLayout::SCALEBY;
+  const double scale = (1 << OtLayout::SCALEBY) * OtLayout::EMSCALE;
+  const JustOption options{JustType::DeclPolicy, JustStyle::None, ShrinkType::Standard, index};
+  const std::vector<LineToJustify> input{{u"بل مم", width, LineJustification::Distribute, LineType::Line}};
+  const auto before = layout.justifyPage(scale, width, input, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS, options, "qpc_v1_layout");
+  catalog.stretchPolicies.back().steps.push_back(baselineStep);
+  bool skipped = false, applied = false;
+  layout.setJustificationTraceCallback([&](const auto& trace) {
+    if (trace.selection != "InitialShortJoins") return;
+    skipped |= trace.decision == "rejected" && trace.reason == "baseline_unsupported_or_nonzero";
+    applied |= trace.decision == "applied" && trace.reason == "baseline_spacing";
+  });
+  const auto after = layout.justifyPage(scale, width, input, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS, options, "qpc_v1_layout");
+  layout.setJustificationTraceCallback({});
+  require(before.size() == 1 && after.size() == 1 && before[0].glyphs.size() == after[0].glyphs.size(), "Late baseline spacing must preserve glyph identities");
+  require(skipped && applied, "Late baseline spacing must skip stretched connections and still apply to untouched ones");
+  bool preserved = false, added = false;
+  for (std::size_t i = 0; i < before[0].glyphs.size(); ++i) {
+    const auto& first = before[0].glyphs[i];
+    const auto& second = after[0].glyphs[i];
+    require(first.codepoint == second.codepoint && first.cluster == second.cluster, "Late baseline spacing must not substitute glyphs");
+    for (const auto axis : {LeftTatweelAxis, RightTatweelAxis}) {
+      const auto value = first.parameters.value(axis);
+      if (value != 0) {
+        require(second.parameters.value(axis) == value, "Late baseline spacing must preserve prior stretching exactly");
+        preserved = true;
+      } else {
+        added |= second.parameters.value(axis) > 0;
+      }
+    }
+  }
+  require(preserved && added, "Late baseline proof must contain both existing and newly added stretching");
+  const auto opportunity = std::find_if(catalog.rules.begin(), catalog.rules.end(), [](const auto& rule) { return rule.name == "InitialShortJoin"; });
+  require(opportunity != catalog.rules.end(), "Missing baseline opportunity");
+  const auto binding = std::find_if(catalog.actions.begin(), catalog.actions.end(), [&](const auto& action) { return action.rule == opportunity->id; });
+  require(binding != catalog.actions.end() && binding->definition >= 0, "Missing baseline opportunity body");
+  const auto action = catalog.actionDefinitions.begin() + binding->definition;
+  const auto vary = std::find_if(action->effects.begin(), action->effects.end(), [](const auto& effect) { return effect.kind == JustEffectKind::Vary; });
+  require(vary != action->effects.end(), "Missing baseline endpoint");
+  const auto endpoint = vary->value;
+  for (const double invalid : {0.0, -0.5, std::numeric_limits<double>::infinity()}) {
+    vary->value = {{.literal = invalid}};
+    bool rejected = false;
+    try {
+      (void)layout.justifyPage(scale, width, input, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS, options, "qpc_v1_layout");
+    } catch (const std::runtime_error& error) {
+      rejected = std::string_view(error.what()).find("baseline_pool requires native vary ranges") != std::string_view::npos;
+    }
+    require(rejected, "Late baseline spacing must still reject invalid endpoints");
+  }
+  vary->value = endpoint;
+  catalog.stretchPolicies.pop_back();
+}
+
+void checkContinuationSyntax() {
+  const auto source = [](std::string_view steps) {
+    return "table(justdfa) test { linepolicy { stretch test; shrink test; } facts {} opportunities {} selections {} stretchpolicy test { " + std::string(steps) + " } shrinkpolicy test { balance; } };";
+  };
+  feayy::FeaContext context(nullptr);
+  feayy::Driver driver(context);
+  require(driver.parse_string(source("stage Preferred; stage Preferred continue by 1; stage Preferred continue to 9; stage Preferred continue;")), "Parser must accept all three continuation forms");
+  const auto& steps = context.justificationDfas.at("test").stretchPolicies.at(0).steps;
+  require(steps.size() == 4 && steps[0].continuation.empty() && steps[1].continuation == "by" && steps[1].continuationLimit == 1 && steps[2].continuation == "to" && steps[2].continuationLimit == 9 && steps[3].continuation == "maximum", "Parser must preserve relative, absolute and full continuation modes");
+  for (const auto invalid : {"stage Preferred increment 1;", "stage Preferred continue by 0;", "stage Preferred continue to -1;", "stage Preferred continue 9;"}) {
+    feayy::FeaContext invalidContext(nullptr);
+    feayy::Driver invalidDriver(invalidContext);
+    require(!invalidDriver.parse_string(source(invalid)), "Parser must reject invalid or removed stage syntax: " + std::string(invalid));
+  }
+}
+
+void checkOpportunitySyntax(OtLayout& layout) {
+  using namespace digitalkhatt::justify;
+  const auto source = [](std::string_view body) {
+    return "table(justdfa) syntax { facts { fact Named form terminal chars [\"ن\"]; } " + std::string(body) + " selections { selection Pick { choose Inline last selected_only; } } stages { stage Main { phase Pick 1 candidate_pool; } } stretchpolicy normal { stage Main; } shrinkpolicy normal { balance; } };";
+  };
+  const std::string shared = "actions { action Shared { prepare { forbid $self:righttatweel > 0; } range $self:lefttatweel minimum 1 preferred 3 maximum 9; } } ";
+  const std::string patterns = "patterns { pattern Terminal [{ form terminal chars [\"ن\"] }]; pattern Connection [Named { form medi position first glyphs [meem.init meem.medi] }]; } ";
+  const std::string opportunities = "opportunities { opportunity Inline { match Terminal; action Shared; } opportunity Mixed { match Connection; prepare { update $1:third = 1; } range $1:third preferred 4; } opportunity Local { match [Named]; prepare { lookup $self justify.expand_terminal; } range $self:lefttatweel minimum 1 preferred 3 maximum 9; } opportunity Direct { match [{ form terminal chars [\"ن\"] }]; action Shared; } }";
+  feayy::FeaContext context(&layout);
+  feayy::Driver driver(context);
+  require(driver.parse_string(source(patterns + shared + opportunities)), "Parser must accept named and inline patterns, shared/inline opportunity bodies and mixed fact slots");
+  const auto& authored = context.justificationDfas.at("syntax");
+  require(authored.rules.empty() && authored.actions.empty() && authored.opportunities.size() == 4 && authored.patterns.size() == 2 && authored.opportunities[0].patternName == "Terminal", "Opportunity parsing must preserve named pattern references without separate rule or bind declarations");
+  auto compiled = compileJustificationCatalog(authored);
+  require(compiled.facts.size() == 2 && compiled.rules[1].pattern.size() == 2 && compiled.facts[1].glyphSetRef >= 0, "Inline facts must intern with named facts and preserve deferred glyph-set resolution");
+  require(compiled.rules[0].pattern == compiled.rules[3].pattern && compiled.rules[0].id != compiled.rules[3].id, "Named and inline pattern spellings must compile to identical predicates with independent opportunity IDs");
+  resolveJustificationGlyphSets(compiled, [&](int ref) {
+    std::vector<std::string> names;
+    for (const auto code : context.justificationGlyphSets.at(ref)->getCodes(&layout)) names.push_back(layout.glyphNamePerCode.at(code));
+    return names;
+  });
+  const auto inlineMask = std::uint64_t{1} << 1;
+  require((glyphFacts({.glyphName = "meem.medi", .firstInSubword = true}, compiled.facts) & inlineMask) != 0 &&
+              (glyphFacts({.glyphName = "meem.medi", .firstInSubword = false}, compiled.facts) & inlineMask) == 0 &&
+              (glyphFacts({.glyphName = "behshape.medi", .firstInSubword = true}, compiled.facts) & inlineMask) == 0,
+          "Inline glyph-set, form and position constraints must be ANDed after live coverage resolution");
+  const auto& effects = compiled.actionDefinitions.front().effects;
+  require(effects.size() == 3 && effects[0].kind == JustEffectKind::Forbid && effects[1].kind == JustEffectKind::Update && effects[2].kind == JustEffectKind::Vary && !effects[2].maximum.empty(), "prepare/range must lower to the existing ordered guard, minimum update and bounded range");
+  for (const auto invalid : {
+           "rules { rule Inline [Named]; } actions { bind Inline Old; }",
+           "opportunities { opportunity Inline { match [Named]; update $self:third = 1; } }",
+           "opportunities { opportunity Inline { match [Named]; range $self:third minimum 1; } }",
+           "opportunities { opportunity Inline { match [Named]; range $self:third preferred 2 preferred 3; } }",
+           "opportunities { opportunity Inline { match [Named]; action Shared; prepare { update $self:third = 1; } } }",
+           "opportunities { opportunity Inline { match []; prepare { update $self:third = 1; } } }",
+           "opportunities { opportunity Inline { match [Named]; prepare { vary $self:third to 4; } } }",
+           "patterns { pattern Empty []; } opportunities {}",
+           "patterns { pattern Terminal [Named]; } opportunities { opportunity Inline { match Terminal [Named]; action Shared; } }"}) {
+    feayy::FeaContext invalidContext(&layout);
+    feayy::Driver invalidDriver(invalidContext);
+    require(!invalidDriver.parse_string(source(invalid)), "Parser must reject removed or ambiguous opportunity syntax");
+  }
+}
+
+void checkPreferredContinuation(OtLayout& layout) {
+  using namespace digitalkhatt;
+  using namespace digitalkhatt::justify;
+  auto& catalog = *layout.compiledJustificationCatalog;
+  auto probe = catalog.stretchPolicies.at(catalog.stretchPolicyIndex("staged_pool_full_shape"));
+  const auto preferred = std::find_if(probe.steps.begin(), probe.steps.end(), [](const auto& step) { return step.stage == "PreferredStretch"; });
+  require(preferred != probe.steps.end(), "Missing reusable preferred stage");
+  auto step = *preferred;
+  step.continuation = {StageContinuation::Mode::By, 1};
+  probe.name = "test.continuation";
+  probe.steps = {step};
+  const int index = static_cast<int>(catalog.stretchPolicies.size());
+  catalog.stretchPolicies.push_back(std::move(probe));
+  const int width = 10000 << OtLayout::SCALEBY;
+  const double scale = (1 << OtLayout::SCALEBY) * OtLayout::EMSCALE;
+  const JustOption options{JustType::DeclPolicy, JustStyle::None, ShrinkType::Standard, index};
+  const auto run = [&](std::u16string text) {
+    return layout.justifyPage(scale, width, {{text, width, LineJustification::Distribute, LineType::Line}}, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS, options, "qpc_v1_layout").at(0);
+  };
+  const auto find = [&](const auto& line, std::string_view name) -> const GlyphLayoutInfo& {
+    const auto glyph = std::find_if(line.glyphs.begin(), line.glyphs.end(), [&](const auto& value) { return layout.glyphNamePerCode.at(value.codepoint) == name; });
+    require(glyph != line.glyphs.end(), "Missing continuation proof glyph " + std::string(name));
+    return *glyph;
+  };
+  for (const auto& [text, name, axis, maximum] : std::vector<std::tuple<std::u16string, std::string, GlyphAxisId, double>>{{u"ن", "noon.isol.expa", LeftTatweelAxis, 9}, {u"بل", "behshape.init", LeftTatweelAxis, 5}, {u"كب", "kaf.init.ii", ThirdAxis, 4}}) {
+    catalog.stretchPolicies.back().steps = {step};
+    const auto first = run(text);
+    require(find(first, name).parameters.value(axis) == 1, "First continuation must include activation, not add another unit after it");
+    catalog.stretchPolicies.back().steps = {step, step};
+    bool continued = false;
+    layout.setJustificationTraceCallback([&](const auto& trace) { continued |= trace.decision == "applied" && trace.reason == "continued"; });
+    const auto second = run(text);
+    layout.setJustificationTraceCallback({});
+    require(continued && find(second, name).parameters.value(axis) == 2, "Repeating the same preferred stage must continue its accepted site despite its own record");
+    require(find(first, name).codepoint == find(second, name).codepoint, "Continuation must retain the prepared glyph");
+    if (text == u"بل") require(find(second, "lam.fina").parameters.righttatweel == 1, "Ascendant incoming stretch must remain half the outgoing stretch");
+    catalog.stretchPolicies.back().steps.assign(12, step);
+    const auto saturated = run(text);
+    require(find(saturated, name).parameters.value(axis) == maximum, "Repeated relative continuation must stop at the authored full maximum");
+
+    auto ordinary = step;
+    ordinary.continuation = {};
+    catalog.stretchPolicies.back().steps = {ordinary};
+    const auto initial = find(run(text), name).parameters.value(axis);
+    catalog.stretchPolicies.back().steps = {ordinary, step};
+    require(find(run(text), name).parameters.value(axis) == std::min(maximum, initial + 1), "Ordinary allocation must retain its accepted site for relative continuation");
+    auto absolute = step;
+    absolute.continuation = {StageContinuation::Mode::To, 3.5};
+    catalog.stretchPolicies.back().steps = {ordinary, absolute};
+    require(find(run(text), name).parameters.value(axis) == std::max(initial, std::min(maximum, 3.5)), "Absolute continuation must target the supplied value rather than add it");
+    absolute.continuation.limit = 0;
+    catalog.stretchPolicies.back().steps = {ordinary, absolute};
+    require(find(run(text), name).parameters.value(axis) == initial, "An absolute limit below the accepted value must leave it unchanged");
+    auto full = step;
+    full.continuation = {StageContinuation::Mode::Maximum};
+    catalog.stretchPolicies.back().steps = {ordinary, full};
+    require(find(run(text), name).parameters.value(axis) == maximum, "Bare continuation must use the action's declared maximum");
+  }
+  // Page 51, line 15: baseline Beh-Sad spacing changes Sad's incoming axis,
+  // while the accepted Sad-Yeh opportunity owns its outgoing axis only.
+  const auto shortSelection = std::find_if(catalog.selections.begin(), catalog.selections.end(), [](const auto& selection) { return selection.name == "InitialShortJoins"; });
+  require(shortSelection != catalog.selections.end(), "Missing short-joining selection");
+  const LinePolicyStep baseline{.operation = LineStepOp::Stage, .stage = "test.baseline", .phases = {{.selection = static_cast<JustificationSelectionId>(shortSelection - catalog.selections.begin()), .levels = 1, .allocator = PolicyPhase::Allocator::BaselinePool}}};
+  auto ordinary = step;
+  ordinary.continuation = {};
+  auto full = step;
+  full.continuation = {StageContinuation::Mode::Maximum};
+  catalog.stretchPolicies.back().steps = {ordinary, baseline};
+  const auto withBaseline = run(u"بَصِيرُۢ");
+  require(find(withBaseline, "sad.medi").parameters.lefttatweel == 1.75 && find(withBaseline, "sad.medi").parameters.righttatweel == 0.5, "Proof must combine preferred Sad-Yeh stretching with incoming baseline spacing");
+  catalog.stretchPolicies.back().steps = {ordinary, baseline, full};
+  bool resumedAfterBaseline = false;
+  layout.setJustificationTraceCallback([&](const auto& trace) { resumedAfterBaseline |= trace.rule == "PreferredBehKashida" && trace.decision == "applied" && trace.reason == "continued"; });
+  const auto afterBaseline = run(u"بَصِيرُۢ");
+  layout.setJustificationTraceCallback({});
+  require(resumedAfterBaseline && find(afterBaseline, "sad.medi").parameters.lefttatweel == 4 && find(afterBaseline, "behshape.medi.beforereh").parameters.righttatweel == 4, "Changing an unrelated incoming axis must not block Sad-Yeh continuation");
+  require(find(afterBaseline, "sad.medi").parameters.righttatweel == 0.5 && find(afterBaseline, "behshape.init").parameters.lefttatweel == 0.5, "Continuation must preserve the adjacent connection's baseline spacing");
+  // An intervening writer takes ownership: the cached range must not resume
+  // simply because the final parameter is still positive.
+  const auto parameterSelection = std::find_if(catalog.selections.begin(), catalog.selections.end(), [](const auto& selection) { return selection.name == "ParameterAlternateGroup1"; });
+  require(parameterSelection != catalog.selections.end(), "Missing intervening fixed-step selection");
+  const LinePolicyStep intervening{.operation = LineStepOp::Stage, .stage = "test.intervening", .phases = {{.selection = static_cast<JustificationSelectionId>(parameterSelection - catalog.selections.begin()), .levels = 1}}};
+  catalog.stretchPolicies.back().steps = {step, intervening, step};
+  require(find(run(u"ن"), "noon.isol.expa").parameters.lefttatweel == 2, "An intervening parameter change must invalidate continuation ownership");
+  catalog.stretchPolicies.pop_back();
+}
+
 void checkSerialization(OtLayout& layout) {
   layout.setExtended(false);  // Standard OTF reads parameters from materialized glyph IDs.
   GlyphParameters parameters;
@@ -809,11 +1029,13 @@ void checkSerialization(OtLayout& layout) {
 int main(int argc, char** argv) {
   try {
     require(argc == 3, "Usage: FathaAnchorsTest FONT.mp RESOURCES");
+    checkContinuationSyntax();
     MPFont mpFont;
     initializeFont(mpFont, fs::absolute(argv[1]), fs::absolute(argv[2]));
     OtLayout layout(&mpFont, true, false);
     layout.useNormAxisValues = false;
     layout.loadLookupFile((fs::absolute(argv[1]).parent_path() / "features.fea").string());
+    checkOpportunitySyntax(layout);
     auto* font = layout.createFont(1, false);
     FontProvider provider(layout);
     checkShrinkAlefAboveDal(layout, provider, font);
@@ -842,6 +1064,8 @@ int main(int argc, char** argv) {
     checkHehMeemStretching(layout);
     checkFinalAscendantPrecedence(layout);
     checkLastResortDecomposition(layout);
+    checkLateBaselineSpacing(layout);
+    checkPreferredContinuation(layout);
     checkSerialization(layout);
     std::cout << "Attachment/native/GSUB regressions, local no-lift anchors, expanded Beh/Yeh centring, baseline metadata, Shadda threshold transitions and 15 serialized anchor subtables passed\n";
   } catch (const std::exception& error) {

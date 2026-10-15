@@ -853,7 +853,8 @@ lookup isolkern {
   pos [alef.fina.lamalef]'<70 0 70 0> [/^lam.init/];
   pos [alef.fina.lamalef]'<120 0 120 0> [alef.isol];
   pos [alef.fina.lamalef alef.fina alef.isol ]'<200 0 200 0> /^kaf.init(?![.]ii)/;
-  pos [alef.fina.lamalef]'<-100 0 -100 0>;
+  # Tighten before a following glyph, but keep the line-final alef at the advance endpoint.
+  pos [alef.fina.lamalef]'<-100 0 -100 0> /.*/;
   #pos [alef.fina.lamalef]' [ain.init]' 
 
   pos [alef.fina.laf]'<-100 0 -100 0> [hah.init]';
@@ -2599,6 +2600,20 @@ feature sk10 {
   lookup shrink.space.2.cont;
   lookup shrink.space.adjustmarks;
 } sk10;
+
+lookup shrink.space.sk11 {
+
+  feature inherited; 
+
+  lookupflag IgnoreMarks;    
+
+  sub /^space/ add -0.3 0;  
+
+} shrink.space.sk11;
+
+feature sk11 {
+  lookup shrink.space.sk11;
+} sk11;
 #endif;
 
 # External DigitalKhatt justification catalog. This block is declarative: it
@@ -2628,8 +2643,9 @@ table(justdfa) oldmadina.experimental2 {
   linepolicy {
     # These are the font-declared defaults. Runtime callers may explicitly
     # override either named policy for comparison.
-    stretch staged_pool;
-    shrink weighted_native_spacebefore;
+    #stretch staged_pool_full_shape;
+    stretch staged_pool_continue;
+    shrink weighted_native_full_shape;
   }
 
   facts {
@@ -2707,83 +2723,20 @@ table(justdfa) oldmadina.experimental2 {
     fact ExpandedLam glyphs [lam.isol.expa];
   }
 
-  rules {
-    rule NativeShrinkOnce [Shrinkable];
-    rule ShrinkOnce [Shrinkable];
-    rule NativeShrinkTwice [Shrinkable];
-    rule ShrinkTwice [Shrinkable];
-    rule NativeShrinkOnceConnection [ShrinkConnection];
-    rule ShrinkOnceConnection [ShrinkConnection];
-    rule NativeShrinkTwiceConnection [ShrinkConnection];
-    rule ShrinkTwiceConnection [ShrinkConnection];
-    rule InitialShortJoin [JoinedRight JoinedLeft];
-    rule BehKashida [BehFirst BehSecond];
-    rule FinalAscendantKashida [FinalRightKashida FinalAscendant];
-    rule OtherRehKashida [RightKashida RehOrZay];
-    rule OtherJoinedKashida [RightKashida OtherJoinedLeft];
-    rule KafAction [KafRight JoinedLeft];
-    rule KafBody [KafBody];
-    rule AlternateGroup1 [Alternate1];
-    rule AlternateGroup2 [Alternate2];
-
-    # Full-range fallback connections used after the preferred/decomposition
-    # stages. Separate bindings preserve the discrete/OTF comparison baseline.
-    rule CandidateOtherRehKashida [RightKashida RehOrZay];
-    # FinalRightKashida also admits Lam; the action limits it to final Meem.
-    rule CandidateOtherJoinedKashida [FinalRightKashida OtherJoinedLeft];
-
-    # Preparation and body deformation are one optional scored candidate.
-    rule CandidateKaf [KafRight JoinedLeft];
-    rule CandidateBeforeHah [DecomposableBeforeHah DecomposableHah];
-    rule CandidateSadReh [SadBeforeReh RehAfterSad];
-    rule LastResortBeforeHah [LigatureBeforeHah LigatureHah];
-    rule LastResortSadReh [SadBeforeReh RehAfterSad];
-    rule LastResortAinAlef [FinjaniAin FinalAlef];
-
-    # Separate bindings keep the comparison policies unchanged. Continuation
-    # is ordinary current-state matching, guarded by the existing parameters.
-    rule PreferredAlternateGroup1 [Alternate1];
-    rule PreferredAlternateGroup2 [Alternate2];
-    rule PreferredKaf [KafRight JoinedLeft];
-    rule PreferredBehKashida [BehFirst BehSecond];
-    rule PreferredFinalMeemKashida [BehFirst FinalMeem];
-    rule PreferredLamMeemKashida [JoiningLam FinalMeem];
-    rule PreferredHehMeemKashida [JoiningHeh FinalMeem];
-    rule PreferredFinalAscendantKashida [FinalRightKashida FinalAscendant];
-    rule PreferredLamLafKashida [RightKashida LamLaf];
-    rule PreferredMedialLamKashida [RightKashida MedialLam];
-    rule PreferredRehKashida [RightKashida RehOrZay];
-    rule ContinueAlternateGroup1 [Alternate1];
-    rule ContinueAlternateGroup2 [Alternate2];
-    rule ContinueKaf [KafBody JoinedLeft];
-    rule ContinueBehKashida [BehFirst BehSecond];
-    rule ContinueFinalMeemKashida [BehFirst FinalMeem];
-    rule ContinueLamMeemKashida [JoiningLam FinalMeem];
-    rule ContinueHehMeemKashida [JoiningHeh FinalMeem];
-    rule ContinueFinalAscendantKashida [FinalRightKashida FinalAscendant];
-    rule ContinueLamLafKashida [RightKashida LamLaf];
-    rule ContinueMedialLamKashida [RightKashida MedialLam];
-    rule ContinueRehKashida [RightKashida RehOrZay];
-    rule ContinueBeforeHah [DecomposedBeforeHah DecomposedHah];
-    rule ContinueSadReh [DecomposedSad DecomposedReh];
-    rule ContinueShortReh [ShortRehStart ShortRehEnd];
-    rule KafCompanionReh [RightKashida RehOrZay];
-    rule KafCompanionJoined [RightKashida OtherJoinedLeft];
-    rule KafCompanionFinalAscendant [FinalRightKashida FinalAscendant];
-    rule RareLamAlternate [IsolatedLam];
-    rule ContinueLamAlternate [ExpandedLam];
-
-    # Discrete native-parameter counterparts used by native_fixed_steps. They
-    # duplicate the matching rules so the existing cvXX baseline remains
-    # independently selectable.
-    rule ParameterBehKashida [BehFirst BehSecond];
-    rule ParameterFinalAscendantKashida [FinalRightKashida FinalAscendant];
-    rule ParameterOtherRehKashida [RightKashida RehOrZay];
-    rule ParameterOtherJoinedKashida [RightKashida OtherJoinedLeft];
-    rule ParameterKafAction [KafRight JoinedLeft];
-    rule ParameterKafBody [KafBody];
-    rule ParameterAlternateGroup1 [Alternate1];
-    rule ParameterAlternateGroup2 [Alternate2];
+  # Shared recognition only: opportunities keep their own preparation, ranges,
+  # weights and records. Simple one-slot matches remain inline.
+  patterns {
+    pattern BehConnection [BehFirst BehSecond];
+    pattern FinalAscendantConnection [FinalRightKashida FinalAscendant];
+    pattern RehConnection [RightKashida RehOrZay];
+    pattern JoinedConnection [RightKashida OtherJoinedLeft];
+    pattern KafConnection [KafRight JoinedLeft];
+    pattern SadRehLigature [SadBeforeReh RehAfterSad];
+    pattern FinalMeemConnection [BehFirst FinalMeem];
+    pattern LamFinalMeemConnection [JoiningLam FinalMeem];
+    pattern HehFinalMeemConnection [JoiningHeh FinalMeem];
+    pattern LamLafConnection [RightKashida LamLaf];
+    pattern MedialLamConnection [RightKashida MedialLam];
   }
 
   attachments {
@@ -2823,41 +2776,34 @@ table(justdfa) oldmadina.experimental2 {
     # The query attributes preserve each lookup's contextual exclusions.
     # Deltas compose with GSUB parameters instead of replacing their values.
     action NativeShrinkOnce {
-      forbid has($self:lefttatweel_delta) or has($self:righttatweel_delta);
-      forbid not ($self:sk04_lefttatweel < 0 or $self:sk04_righttatweel < 0);
-      update $self:lefttatweel_delta = $self:sk04_lefttatweel;
-      update $self:righttatweel_delta = $self:sk04_righttatweel;
+      prepare {
+        forbid has($self:lefttatweel_delta) or has($self:righttatweel_delta);
+        forbid not ($self:sk04_lefttatweel < 0 or $self:sk04_righttatweel < 0);
+        update $self:lefttatweel_delta = $self:sk04_lefttatweel;
+        update $self:righttatweel_delta = $self:sk04_righttatweel;
+      }
     }
     action NativeShrinkTwice {
-      forbid not has($self:lefttatweel_delta);
-      forbid ne($self:lefttatweel_delta, $self:sk04_lefttatweel)
-             or ne($self:righttatweel_delta, $self:sk04_righttatweel);
-      forbid not ($self:sk05_lefttatweel < 0 or $self:sk05_righttatweel < 0);
-      update $self:lefttatweel_delta = sum($self:lefttatweel_delta, $self:sk05_lefttatweel);
-      update $self:righttatweel_delta = sum($self:righttatweel_delta, $self:sk05_righttatweel);
+      prepare {
+        forbid not has($self:lefttatweel_delta);
+        forbid ne($self:lefttatweel_delta, $self:sk04_lefttatweel)
+               or ne($self:righttatweel_delta, $self:sk04_righttatweel);
+        forbid not ($self:sk05_lefttatweel < 0 or $self:sk05_righttatweel < 0);
+        update $self:lefttatweel_delta = sum($self:lefttatweel_delta, $self:sk05_lefttatweel);
+        update $self:righttatweel_delta = sum($self:righttatweel_delta, $self:sk05_righttatweel);
+      }
     }
     action ShrinkOnce {
-      forbid has($self:sk04);
-      update $self:sk04 = 1;
+      prepare {
+        forbid has($self:sk04);
+        update $self:sk04 = 1;
+      }
     }
     action ShrinkTwice {
-      forbid not has($self:sk04) or has($self:sk05);
-      update $self:sk05 = 1;
-    }
-    # Baseline spacing, not a selected Horizontal opportunity. Adjacent joins
-    # may share a glyph; the runtime checks both native expansion limits and
-    # fits all endpoints together without decomposing any ligature.
-    action InitialShortKashida {
-      forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
-      forbid isfact($2, CompactNoon);
-      forbid isfact($2, Qaf) and isfact($2, SubwordLast);
-      forbid isfact($1, Lam)
-             and (isfact($2, Kaf) or isfact($2, TehMarbuta)
-                  or (isfact($2, Heh) and isfact($2, SubwordLast)));
-      forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
-             and isfact($2, RehZay);
-      vary $1:lefttatweel to 0.5;
-      vary $2:righttatweel to select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.25, 0.5);
+      prepare {
+        forbid not has($self:sk04) or has($self:sk05);
+        update $self:sk05 = 1;
+      }
     }
     # Feature actions stage values; normal shaping applies the GSUB
     # lookups. cv01/cv02 control stretch, cv03 handles kaf, and jdcl/jdcr/jdld
@@ -2865,219 +2811,139 @@ table(justdfa) oldmadina.experimental2 {
 
     # Declarative replacement for the applyAlternate C++ action.
     action IncrementAlternate {
-      forbid $self:cv02 > 0;
-      add $self:cv01 1 clamp 12;
-      # Reads the just-staged cv01 above, exactly as the C++ reads the merged
-      # value rather than the value before this action ran.
-      replace $self@Fatha { cv01 = sum(1, floordiv($self:cv01, 3)); }
-    }
-
-    # cv04 carries the body parameter in the extended lookup and selects the
-    # equivalent generated outline in a standard OTF.
-    action StretchKafBody {
-      add $self:cv04 1 clamp 20;
-    }
-
-    # Declarative replacement for the applyKaf C++ action.
-    action ApplyKafPair {
-      forbid isfact($2, Noon) and $2:cv01 > 0;
-      update $1:cv03 = 1;
-      update $2:cv03 = 1;
-      # Scale the fatha from the first slot, which it is attached to.
-      replace $1@Fatha { cv01 = sum(1, floordiv($1:cv01, 3)); }
+      prepare {
+        forbid $self:cv02 > 0;
+        add $self:cv01 1 clamp 12;
+        # Reads the just-staged cv01 above, exactly as the C++ reads the merged
+        # value rather than the value before this action ran.
+        replace $self@Fatha { cv01 = sum(1, floordiv($self:cv01, 3)); }
+      }
     }
 
     # The shaped glyphs select the decomposition through lookup coverage;
     # the action only chooses which connection of each slot to open.
     action StretchKashidaPair {
-      forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
-      forbid has($2:cv01);
-      forbid isfact($2, Qaf) and isfact($2, SubwordLast);
-      forbid isfact($1, Lam)
-             and (isfact($2, Kaf) or isfact($2, TehMarbuta)
-                  or (isfact($2, Heh) and isfact($2, SubwordLast)));
-      forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
-             and isfact($2, RehZay);
+      prepare {
+        forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
+        forbid has($2:cv01);
+        forbid isfact($2, Qaf) and isfact($2, SubwordLast);
+        forbid isfact($1, Lam)
+               and (isfact($2, Kaf) or isfact($2, TehMarbuta)
+                    or (isfact($2, Heh) and isfact($2, SubwordLast)));
+        forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
+               and isfact($2, RehZay);
 
-      add $1:cv01 1 clamp 6;
+        add $1:cv01 1 clamp 6;
 
-      update $1:jdcl = 1;
+        update $1:jdcl = 1;
 
-      # The C++ built the second slot's features from scratch.
-      clear $2;
+        # The C++ built the second slot's features from scratch.
+        clear $2;
 
-      update $2:jdcr = 1;
-      # Dal and dhal share base glyphs, and dal.fina.afterlam also occurs
-      # after medial lam, but this branch works from characters, not glyphs.
-      when isfact($1, Lam) and isfact($1, SubwordFirst) and isfact($2, Dal) {
-        update $1:jdld = 1;
-        update $2:jdld = 1;
+        update $2:jdcr = 1;
+        # Dal and dhal share base glyphs, and dal.fina.afterlam also occurs
+        # after medial lam, but this branch works from characters, not glyphs.
+        when isfact($1, Lam) and isfact($1, SubwordFirst) and isfact($2, Dal) {
+          update $1:jdld = 1;
+          update $2:jdld = 1;
+        }
+
+        update $2:cv02 = select(isfact($2, FinalAscendantChar) and isfact($2, SubwordLast),
+                                $1:cv01, prod(2, $1:cv01));
       }
-
-      update $2:cv02 = select(isfact($2, FinalAscendantChar) and isfact($2, SubwordLast),
-                              $1:cv01, prod(2, $1:cv01));
-    }
-
-    # Full-range candidates used by the final staged-pool pass. Structural
-    # lookups select glyphs; native parameters carry the deformation ranges.
-    # cv02 advances in half-units: equal cv01/cv02 means right = left / 2
-    # for terminal ascendants; doubled cv02 means right = left otherwise.
-    # Preserve that relationship at both ends of each range, including
-    # continuation. These are native coordinates, not feature indices.
-    action CandidateKaf4 {
-      forbid isfact($2, Noon) and $2:lefttatweel > 0;
-      lookup $1 justify.prepare_kaf;
-      lookup $2 justify.prepare_kaf;
-      update $1:third = 1;
-      vary $1:third to 4;
     }
 
     action CandidateKashida4 {
-      forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
-      forbid isfact($2, CompactNoon);
-      forbid has($2:lefttatweel);
-      forbid isfact($2, Qaf) and isfact($2, SubwordLast);
-      # The joined fallback adds Lam-Meem, not all outgoing Lam connections.
-      forbid isfact($1, Lam) and not isfact($2, FinalMeem);
-      forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
-             and isfact($2, RehZay);
+      prepare {
+        forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
+        forbid isfact($2, CompactNoon);
+        forbid has($2:lefttatweel);
+        forbid isfact($2, Qaf) and isfact($2, SubwordLast);
+        # The joined fallback adds Lam-Meem, not all outgoing Lam connections.
+        forbid isfact($1, Lam) and not isfact($2, FinalMeem);
+        forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
+               and isfact($2, RehZay);
 
-      lookup $1 justify.decompose_left;
-      update $1:lefttatweel = 1;
-      vary $1:lefttatweel to 4;
-
-      clear $2;
-      lookup $2 justify.decompose_right;
-      when isfact($1, Lam) and isfact($1, SubwordFirst) and isfact($2, Dal) {
-        lookup $1 justify.decompose_lam_dal;
-        lookup $2 justify.decompose_lam_dal;
+        lookup $1 justify.decompose_left;
       }
-      update $2:righttatweel = select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.5, 1);
-      vary $2:righttatweel to select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 2, 4);
-    }
+      range $1:lefttatweel minimum 1 preferred 4;
+      prepare {
 
-    # Preferred maxima are explicit font design choices; continuation offers
-    # the full range after the preferred/decomposition stages.
-    # Open Sad-Reh modestly before offering its full range in continuation.
-    # This leaves room to open another Sad-Reh rather than spending the
-    # remaining width on the first connection's preferred range.
-    action PreferredSadRehPair {
-      forbid has($2:lefttatweel);
-      forbid $1:lefttatweel > 0 or $2:righttatweel > 0;
-      lookup $1 justify.decompose_left;
-      update $1:lefttatweel = 1;
-      vary $1:lefttatweel to 1.25;
-      clear $2;
-      lookup $2 justify.decompose_right;
-      update $2:righttatweel = 1;
-      vary $2:righttatweel to 1.25;
+        clear $2;
+        lookup $2 justify.decompose_right;
+        when isfact($1, Lam) and isfact($1, SubwordFirst) and isfact($2, Dal) {
+          lookup $1 justify.decompose_lam_dal;
+          lookup $2 justify.decompose_lam_dal;
+        }
+      }
+      range $2:righttatweel minimum select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.5, 1) preferred select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 2, 4);
     }
 
     # Open a remaining ligature modestly, without clearing other parameters.
     # No vary: later allocation must not grow this last-resort connection.
     action SmallDecomposition {
-      lookup $1 justify.decompose_left;
-      lookup $2 justify.decompose_right;
-      update $1:lefttatweel = max($1:lefttatweel, 1);
-      # Ascendants retain the half-length incoming connection.
-      update $2:righttatweel = max($2:righttatweel, select(isfact($2, FinalAscendantChar) and isfact($2, SubwordLast), 0.5, 1));
-    }
-
-    action PreferredKaf1_75 {
-      forbid isfact($2, Noon) and $2:lefttatweel > 0;
-      forbid $1:third > 0;
-      lookup $1 justify.prepare_kaf;
-      lookup $2 justify.prepare_kaf;
-      update $1:third = 1;
-      vary $1:third to 1.75;
-    }
-
-    action PreferredAlternate3 {
-      forbid $self:righttatweel > 0;
-      forbid $self:lefttatweel > 0;
-      lookup $self justify.expand_terminal;
-      update $self:lefttatweel = 1;
-      vary $self:lefttatweel to 3;
-    }
-
-    action PreferredAlternate2_5 {
-      forbid $self:righttatweel > 0;
-      forbid $self:lefttatweel > 0;
-      lookup $self justify.expand_terminal;
-      update $self:lefttatweel = 1;
-      vary $self:lefttatweel to 2.5;
-    }
-
-    action ExpandIsolatedLam {
-      forbid $self:lefttatweel > 0 or $self:righttatweel > 0;
-      lookup $self justify.expand_terminal;
-      # The glyph itself starts at the minimum corpus width (11.29 qalams).
-      update $self:lefttatweel = 0;
-      vary $self:lefttatweel to 6;
-      # The top mark stays over the fixed head, not over the lengthened tail.
-    }
-    action ContinueIsolatedLam {
-      # ExpandedLam recognition also permits continuation from parameter 0.
-      forbid $self:righttatweel > 0;
-      vary $self:lefttatweel to max($self:lefttatweel, 8);
+      prepare {
+        lookup $1 justify.decompose_left;
+        lookup $2 justify.decompose_right;
+        update $1:lefttatweel = max($1:lefttatweel, 1);
+        # Ascendants retain the half-length incoming connection.
+        update $2:righttatweel = max($2:righttatweel, select(isfact($2, FinalAscendantChar) and isfact($2, SubwordLast), 0.5, 1));
+      }
     }
 
     action PreferredKashida {
-      forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
-      forbid isfact($2, CompactNoon);
-      forbid has($2:lefttatweel);
-      forbid $1:lefttatweel > 0 or $2:righttatweel > 0;
-      forbid isfact($2, Qaf) and isfact($2, SubwordLast);
-      forbid isfact($1, Lam)
-             and (isfact($2, Kaf) or isfact($2, TehMarbuta)
-                  or (isfact($2, Heh) and isfact($2, SubwordLast)));
-      forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
-             and isfact($2, RehZay);
+      prepare {
+        forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
+        forbid isfact($2, CompactNoon);
+        forbid has($2:lefttatweel);
+        forbid $1:lefttatweel > 0 or $2:righttatweel > 0;
+        forbid isfact($2, Qaf) and isfact($2, SubwordLast);
+        forbid isfact($1, Lam)
+               and (isfact($2, Kaf) or isfact($2, TehMarbuta)
+                    or (isfact($2, Heh) and isfact($2, SubwordLast)));
+        forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
+               and isfact($2, RehZay);
 
-      lookup $1 justify.decompose_left;
-      # Heh-final-Meem is limited to 0.5..1.5 on both endpoints.
-      update $1:lefttatweel = 0.5;
-      vary $1:lefttatweel to select(isfact($1, JoiningHeh) and isfact($2, FinalMeem), 1.5, 1.75);
-
-      clear $2;
-      lookup $2 justify.decompose_right;
-      when isfact($1, Lam) and isfact($1, SubwordFirst) and isfact($2, Dal) {
-        lookup $1 justify.decompose_lam_dal;
-        lookup $2 justify.decompose_lam_dal;
+        lookup $1 justify.decompose_left;
+        # Heh-final-Meem is limited to 0.5..1.5 on both endpoints.
       }
-      update $2:righttatweel = select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.25, 0.5);
-      vary $2:righttatweel to select(isfact($1, JoiningHeh) and isfact($2, FinalMeem), 1.5, select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.875, 1.75));
+      range $1:lefttatweel minimum 0.5 preferred select(isfact($1, JoiningHeh) and isfact($2, FinalMeem), 1.5, 1.75) maximum select(isfact($1, JoiningHeh) and isfact($2, FinalMeem), 1.5, 4);
+      prepare {
+
+        clear $2;
+        lookup $2 justify.decompose_right;
+        when isfact($1, Lam) and isfact($1, SubwordFirst) and isfact($2, Dal) {
+          lookup $1 justify.decompose_lam_dal;
+          lookup $2 justify.decompose_lam_dal;
+        }
+      }
+      range $2:righttatweel minimum select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.25, 0.5) preferred select(isfact($1, JoiningHeh) and isfact($2, FinalMeem), 1.5, select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.875, 1.75)) maximum select(isfact($1, JoiningHeh) and isfact($2, FinalMeem), 1.5, select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 2, 4));
     }
 
     action PreferredFinalAscendant2 {
-      forbid has($2:lefttatweel);
-      forbid $1:lefttatweel > 0 or $2:righttatweel > 0;
-      forbid isfact($2, Qaf) and isfact($2, SubwordLast);
-      forbid isfact($1, Lam)
-             and (isfact($2, Kaf) or isfact($2, TehMarbuta)
-                  or (isfact($2, Heh) and isfact($2, SubwordLast)));
-      forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
-             and isfact($2, RehZay);
+      prepare {
+        forbid has($2:lefttatweel);
+        forbid $1:lefttatweel > 0 or $2:righttatweel > 0;
+        forbid isfact($2, Qaf) and isfact($2, SubwordLast);
+        forbid isfact($1, Lam)
+               and (isfact($2, Kaf) or isfact($2, TehMarbuta)
+                    or (isfact($2, Heh) and isfact($2, SubwordLast)));
+        forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
+               and isfact($2, RehZay);
 
-      lookup $1 justify.decompose_left;
-      update $1:lefttatweel = 1;
-      vary $1:lefttatweel to 2;
-
-      clear $2;
-      lookup $2 justify.decompose_right;
-      when isfact($1, Lam) and isfact($1, SubwordFirst) and isfact($2, Dal) {
-        lookup $1 justify.decompose_lam_dal;
-        lookup $2 justify.decompose_lam_dal;
+        lookup $1 justify.decompose_left;
       }
-      update $2:righttatweel = 0.5;
-      vary $2:righttatweel to 1;
-    }
+      range $1:lefttatweel minimum 1 preferred 2 maximum 5;
+      prepare {
 
-    # No lookup, clear, or mandatory update in these actions. A positive
-    # current parameter identifies a stretch accepted by an earlier stage.
-    action ContinueKaf4 {
-      forbid not ($1:third > 0);
-      vary $1:third to max($1:third, 4);
+        clear $2;
+        lookup $2 justify.decompose_right;
+        when isfact($1, Lam) and isfact($1, SubwordFirst) and isfact($2, Dal) {
+          lookup $1 justify.decompose_lam_dal;
+          lookup $2 justify.decompose_lam_dal;
+        }
+      }
+      range $2:righttatweel minimum 0.5 preferred 1 maximum 2.5;
     }
 
     # A small horizontal companion to an accepted Kaf body in this word.
@@ -3086,151 +2952,445 @@ table(justdfa) oldmadina.experimental2 {
     # Final ascendants keep half-length incoming stretch and may reach 3 on
     # the outgoing side; other companions retain their maximum of 1.
     action LimitedKafCompanion {
-      forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
-      forbid isfact($2, CompactNoon);
-      forbid has($2:lefttatweel);
-      forbid $1:lefttatweel > 0 or $2:righttatweel > 0;
-      forbid isfact($2, Qaf) and isfact($2, SubwordLast);
-      forbid isfact($1, Lam)
-             and (isfact($2, Kaf) or isfact($2, TehMarbuta)
-                  or (isfact($2, Heh) and isfact($2, SubwordLast)));
-      forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
-             and isfact($2, RehZay);
-      lookup $1 justify.decompose_left;
-      lookup $2 justify.decompose_right;
-      update $1:lefttatweel = 0.5;
-      vary $1:lefttatweel to select(isfact($2, FinalAscendant), 3, 1);
-      update $2:righttatweel = select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.25, 0.5);
-      vary $2:righttatweel to select(isfact($2, FinalAscendant), 1.5, select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.5, 1));
-    }
-    action ContinueAlternate9 {
-      forbid not ($self:lefttatweel > 0) or $self:righttatweel > 0;
-      vary $self:lefttatweel to max($self:lefttatweel, 9);
-    }
-    action ContinueAlternate7 {
-      forbid not ($self:lefttatweel > 0) or $self:righttatweel > 0;
-      vary $self:lefttatweel to max($self:lefttatweel, 7);
+      prepare {
+        forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
+        forbid isfact($2, CompactNoon);
+        forbid has($2:lefttatweel);
+        forbid $1:lefttatweel > 0 or $2:righttatweel > 0;
+        forbid isfact($2, Qaf) and isfact($2, SubwordLast);
+        forbid isfact($1, Lam)
+               and (isfact($2, Kaf) or isfact($2, TehMarbuta)
+                    or (isfact($2, Heh) and isfact($2, SubwordLast)));
+        forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
+               and isfact($2, RehZay);
+        lookup $1 justify.decompose_left;
+        lookup $2 justify.decompose_right;
+      }
+      range $1:lefttatweel minimum 0.5 preferred select(isfact($2, FinalAscendant), 3, 1);
+      range $2:righttatweel minimum select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.25, 0.5) preferred select(isfact($2, FinalAscendant), 1.5, select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.5, 1));
     }
     action ContinueKashida4 {
-      forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
-      forbid isfact($2, CompactNoon);
-      forbid not ($1:lefttatweel > 0) or not ($2:righttatweel > 0);
-      forbid $2:lefttatweel > 0;
-      vary $1:lefttatweel to max($1:lefttatweel, select(isfact($1, JoiningHeh) and isfact($2, FinalMeem), 1.2, 4));
-      vary $2:righttatweel to max($2:righttatweel, select(isfact($1, JoiningHeh) and isfact($2, FinalMeem), 1.2, select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 2, 4)));
+      prepare {
+        forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
+        forbid isfact($2, CompactNoon);
+        forbid not ($1:lefttatweel > 0) or not ($2:righttatweel > 0);
+        forbid $2:lefttatweel > 0;
+      }
+      range $1:lefttatweel preferred max($1:lefttatweel, select(isfact($1, JoiningHeh) and isfact($2, FinalMeem), 1.2, 4));
+      range $2:righttatweel preferred max($2:righttatweel, select(isfact($1, JoiningHeh) and isfact($2, FinalMeem), 1.2, select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 2, 4)));
     }
     action ContinueFinalAscendant5 {
-      forbid not ($1:lefttatweel > 0) or not ($2:righttatweel > 0);
-      forbid $2:lefttatweel > 0;
-      vary $1:lefttatweel to max($1:lefttatweel, 5);
-      vary $2:righttatweel to max($2:righttatweel, 2.5);
+      prepare {
+        forbid not ($1:lefttatweel > 0) or not ($2:righttatweel > 0);
+        forbid $2:lefttatweel > 0;
+      }
+      range $1:lefttatweel preferred max($1:lefttatweel, 5);
+      range $2:righttatweel preferred max($2:righttatweel, 2.5);
     }
 
     # Exact fixed-step schedule using native glyph parameters. cv01 units map
     # directly to lefttatweel; cv02 units are half a righttatweel unit.
     action ParameterIncrementAlternate {
-      forbid $self:righttatweel > 0;
-      lookup $self justify.expand_terminal;
-      add $self:lefttatweel 1 clamp 12;
-    }
-
-    action ParameterStretchKafBody {
-      add $self:third 1 clamp 20;
-    }
-
-    action ParameterApplyKafPair {
-      forbid isfact($2, Noon) and $2:lefttatweel > 0;
-      lookup $1 justify.prepare_kaf;
-      lookup $2 justify.prepare_kaf;
+      prepare {
+        forbid $self:righttatweel > 0;
+        lookup $self justify.expand_terminal;
+        add $self:lefttatweel 1 clamp 12;
+      }
     }
 
     action ParameterStretchKashidaPair {
-      forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
-      forbid has($2:lefttatweel);
-      forbid isfact($2, Qaf) and isfact($2, SubwordLast);
-      forbid isfact($1, Lam)
-             and (isfact($2, Kaf) or isfact($2, TehMarbuta)
-                  or (isfact($2, Heh) and isfact($2, SubwordLast)));
-      forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
-             and isfact($2, RehZay);
+      prepare {
+        forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
+        forbid has($2:lefttatweel);
+        forbid isfact($2, Qaf) and isfact($2, SubwordLast);
+        forbid isfact($1, Lam)
+               and (isfact($2, Kaf) or isfact($2, TehMarbuta)
+                    or (isfact($2, Heh) and isfact($2, SubwordLast)));
+        forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
+               and isfact($2, RehZay);
 
-      lookup $1 justify.decompose_left;
-      add $1:lefttatweel 1 clamp 6;
+        lookup $1 justify.decompose_left;
+        add $1:lefttatweel 1 clamp 6;
 
-      clear $2;
-      lookup $2 justify.decompose_right;
-      when isfact($1, Lam) and isfact($1, SubwordFirst) and isfact($2, Dal) {
-        lookup $1 justify.decompose_lam_dal;
-        lookup $2 justify.decompose_lam_dal;
+        clear $2;
+        lookup $2 justify.decompose_right;
+        when isfact($1, Lam) and isfact($1, SubwordFirst) and isfact($2, Dal) {
+          lookup $1 justify.decompose_lam_dal;
+          lookup $2 justify.decompose_lam_dal;
+        }
+
+        update $2:righttatweel = select(isfact($2, FinalAscendantChar) and isfact($2, SubwordLast),
+                                        prod(0.5, $1:lefttatweel), $1:lefttatweel);
       }
+    }
+  }
 
-      update $2:righttatweel = select(isfact($2, FinalAscendantChar) and isfact($2, SubwordLast),
-                                      prod(0.5, $1:lefttatweel), $1:lefttatweel);
+  opportunities {
+    opportunity NativeShrinkOnce {
+      match [Shrinkable];
+      action NativeShrinkOnce;
+    }
+    opportunity ShrinkOnce {
+      match [Shrinkable];
+      action ShrinkOnce;
+    }
+    opportunity NativeShrinkTwice {
+      match [Shrinkable];
+      action NativeShrinkTwice;
+    }
+    opportunity ShrinkTwice {
+      match [Shrinkable];
+      action ShrinkTwice;
+    }
+    opportunity NativeShrinkOnceConnection {
+      match [ShrinkConnection];
+      action NativeShrinkOnce;
+    }
+    opportunity ShrinkOnceConnection {
+      match [ShrinkConnection];
+      action ShrinkOnce;
+    }
+    opportunity NativeShrinkTwiceConnection {
+      match [ShrinkConnection];
+      action NativeShrinkTwice;
+    }
+    opportunity ShrinkTwiceConnection {
+      match [ShrinkConnection];
+      action ShrinkTwice;
     }
 
-    bind BehKashida StretchKashidaPair;
-    bind FinalAscendantKashida StretchKashidaPair;
-    bind OtherRehKashida StretchKashidaPair;
-    bind OtherJoinedKashida StretchKashidaPair;
-    bind KafAction ApplyKafPair;
-    bind KafBody StretchKafBody;
-    bind AlternateGroup1 IncrementAlternate;
-    bind AlternateGroup2 IncrementAlternate;
-    bind CandidateOtherRehKashida CandidateKashida4;
-    bind CandidateOtherJoinedKashida CandidateKashida4;
-    bind CandidateKaf CandidateKaf4;
-    bind CandidateBeforeHah PreferredKashida;
-    bind CandidateSadReh PreferredSadRehPair;
-    bind LastResortBeforeHah SmallDecomposition;
-    bind LastResortSadReh SmallDecomposition;
-    bind LastResortAinAlef SmallDecomposition;
-    bind PreferredAlternateGroup1 PreferredAlternate3;
-    bind InitialShortJoin InitialShortKashida;
-    bind PreferredAlternateGroup2 PreferredAlternate2_5;
-    bind PreferredKaf PreferredKaf1_75;
-    bind PreferredBehKashida PreferredKashida;
-    bind PreferredFinalMeemKashida PreferredKashida;
-    bind PreferredLamMeemKashida PreferredKashida;
-    bind PreferredHehMeemKashida PreferredKashida;
-    bind PreferredFinalAscendantKashida PreferredFinalAscendant2;
-    bind PreferredLamLafKashida PreferredFinalAscendant2;
-    bind PreferredMedialLamKashida PreferredKashida;
-    bind PreferredRehKashida PreferredKashida;
-    bind ContinueAlternateGroup1 ContinueAlternate9;
-    bind ContinueAlternateGroup2 ContinueAlternate7;
-    bind ContinueKaf ContinueKaf4;
-    bind ContinueBehKashida ContinueKashida4;
-    bind ContinueFinalMeemKashida ContinueKashida4;
-    bind ContinueLamMeemKashida ContinueKashida4;
-    bind ContinueHehMeemKashida ContinueKashida4;
-    bind ContinueFinalAscendantKashida ContinueFinalAscendant5;
-    bind ContinueLamLafKashida ContinueFinalAscendant5;
-    bind ContinueMedialLamKashida ContinueKashida4;
-    bind ContinueRehKashida ContinueKashida4;
-    bind ContinueBeforeHah ContinueKashida4;
-    bind ContinueSadReh ContinueKashida4;
-    bind ContinueShortReh ContinueKashida4;
-    bind KafCompanionReh LimitedKafCompanion;
-    bind KafCompanionJoined LimitedKafCompanion;
-    bind KafCompanionFinalAscendant LimitedKafCompanion;
-    bind RareLamAlternate ExpandIsolatedLam;
-    bind ContinueLamAlternate ContinueIsolatedLam;
-    bind ShrinkOnce ShrinkOnce;
-    bind NativeShrinkOnce NativeShrinkOnce;
-    bind ShrinkTwice ShrinkTwice;
-    bind NativeShrinkTwice NativeShrinkTwice;
-    bind ShrinkOnceConnection ShrinkOnce;
-    bind NativeShrinkOnceConnection NativeShrinkOnce;
-    bind ShrinkTwiceConnection ShrinkTwice;
-    bind NativeShrinkTwiceConnection NativeShrinkTwice;
-    bind ParameterBehKashida ParameterStretchKashidaPair;
-    bind ParameterFinalAscendantKashida ParameterStretchKashidaPair;
-    bind ParameterOtherRehKashida ParameterStretchKashidaPair;
-    bind ParameterOtherJoinedKashida ParameterStretchKashidaPair;
-    bind ParameterKafAction ParameterApplyKafPair;
-    bind ParameterKafBody ParameterStretchKafBody;
-    bind ParameterAlternateGroup1 ParameterIncrementAlternate;
-    bind ParameterAlternateGroup2 ParameterIncrementAlternate;
+    # Baseline spacing, not a selected Horizontal opportunity. Adjacent joins
+    # may share a glyph; the runtime checks both native expansion limits and
+    # fits all endpoints together without decomposing any ligature.
+    opportunity InitialShortJoin {
+      match [JoinedRight JoinedLeft];
+      prepare {
+        forbid isfact($1, PackedSinna) or isfact($2, PackedSinna);
+        forbid isfact($2, CompactNoon);
+        forbid isfact($2, Qaf) and isfact($2, SubwordLast);
+        forbid isfact($1, Lam)
+               and (isfact($2, Kaf) or isfact($2, TehMarbuta)
+                    or (isfact($2, Heh) and isfact($2, SubwordLast)));
+        forbid isfact($1, YehGroupRight) and not isfact($1, SubwordFirst)
+               and isfact($2, RehZay);
+      }
+      range $1:lefttatweel preferred 0.5;
+      range $2:righttatweel preferred select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 0.25, 0.5);
+    }
+    opportunity BehKashida {
+      match BehConnection;
+      action StretchKashidaPair;
+    }
+    opportunity FinalAscendantKashida {
+      match FinalAscendantConnection;
+      action StretchKashidaPair;
+    }
+    opportunity OtherRehKashida {
+      match RehConnection;
+      action StretchKashidaPair;
+    }
+    opportunity OtherJoinedKashida {
+      match JoinedConnection;
+      action StretchKashidaPair;
+    }
+
+    # Declarative replacement for the applyKaf C++ action.
+    opportunity KafAction {
+      match KafConnection;
+      prepare {
+        forbid isfact($2, Noon) and $2:cv01 > 0;
+        update $1:cv03 = 1;
+        update $2:cv03 = 1;
+        # Scale the fatha from the first slot, which it is attached to.
+        replace $1@Fatha { cv01 = sum(1, floordiv($1:cv01, 3)); }
+      }
+    }
+
+    # cv04 carries the body parameter in the extended lookup and selects the
+    # equivalent generated outline in a standard OTF.
+    opportunity KafBody {
+      match [KafBody];
+      prepare {
+        add $self:cv04 1 clamp 20;
+      }
+    }
+    opportunity AlternateGroup1 {
+      match [Alternate1];
+      action IncrementAlternate;
+    }
+    opportunity AlternateGroup2 {
+      match [Alternate2];
+      action IncrementAlternate;
+    }
+
+    # Full-range fallback connections used after the preferred/decomposition
+    # stages. Separate bindings preserve the discrete/OTF comparison baseline.
+    opportunity CandidateOtherRehKashida {
+      match RehConnection;
+      action CandidateKashida4;
+    }
+    # FinalRightKashida also admits Lam; the action limits it to final Meem.
+    opportunity CandidateOtherJoinedKashida {
+      match [FinalRightKashida OtherJoinedLeft];
+      action CandidateKashida4;
+    }
+
+    # Preparation and body deformation are one optional scored candidate.
+
+    # Full-range candidates used by the final staged-pool pass. Structural
+    # lookups select glyphs; native parameters carry the deformation ranges.
+    # cv02 advances in half-units: equal cv01/cv02 means right = left / 2
+    # for terminal ascendants; doubled cv02 means right = left otherwise.
+    # Preserve that relationship at both ends of each range, including
+    # continuation. These are native coordinates, not feature indices.
+    opportunity CandidateKaf {
+      match KafConnection;
+      prepare {
+        forbid isfact($2, Noon) and $2:lefttatweel > 0;
+        lookup $1 justify.prepare_kaf;
+        lookup $2 justify.prepare_kaf;
+      }
+      range $1:third minimum 1 preferred 4;
+    }
+    opportunity CandidateBeforeHah {
+      match [DecomposableBeforeHah DecomposableHah];
+      action PreferredKashida;
+    }
+
+    # Preferred maxima are explicit font design choices; continuation offers
+    # the full range after the preferred/decomposition stages.
+    # Open Sad-Reh modestly before offering its full range in continuation.
+    # This leaves room to open another Sad-Reh rather than spending the
+    # remaining width on the first connection's preferred range.
+    opportunity CandidateSadReh {
+      match SadRehLigature;
+      prepare {
+        forbid has($2:lefttatweel);
+        forbid $1:lefttatweel > 0 or $2:righttatweel > 0;
+        lookup $1 justify.decompose_left;
+      }
+      range $1:lefttatweel minimum 1 preferred 1.25;
+      prepare {
+        clear $2;
+        lookup $2 justify.decompose_right;
+      }
+      range $2:righttatweel minimum 1 preferred 1.25;
+    }
+    opportunity LastResortBeforeHah {
+      match [LigatureBeforeHah LigatureHah];
+      action SmallDecomposition;
+    }
+    opportunity LastResortSadReh {
+      match SadRehLigature;
+      action SmallDecomposition;
+    }
+    opportunity LastResortAinAlef {
+      match [FinjaniAin FinalAlef];
+      action SmallDecomposition;
+    }
+
+    # Separate bindings keep the comparison policies unchanged. Continuation
+    # is ordinary current-state matching, guarded by the existing parameters.
+    opportunity PreferredAlternateGroup1 {
+      match [{ form terminal chars ["بتثكن"] }];
+      prepare {
+        forbid $self:righttatweel > 0;
+        forbid $self:lefttatweel > 0;
+        lookup $self justify.expand_terminal;
+      }
+      range $self:lefttatweel minimum 1 preferred 3 maximum 9;
+    }
+    opportunity PreferredAlternateGroup2 {
+      match [{ form terminal chars ["ىصضسشفقيئ"] }];
+      prepare {
+        forbid $self:righttatweel > 0;
+        forbid $self:lefttatweel > 0;
+        lookup $self justify.expand_terminal;
+      }
+      range $self:lefttatweel minimum 1 preferred 2.5 maximum 7;
+    }
+    opportunity PreferredKaf {
+      match KafConnection;
+      prepare {
+        forbid isfact($2, Noon) and $2:lefttatweel > 0;
+        forbid $1:third > 0;
+        lookup $1 justify.prepare_kaf;
+        lookup $2 justify.prepare_kaf;
+      }
+      range $1:third minimum 1 preferred 1.75 maximum 4;
+    }
+    opportunity PreferredBehKashida {
+      match BehConnection;
+      action PreferredKashida;
+    }
+    opportunity PreferredFinalMeemKashida {
+      match FinalMeemConnection;
+      action PreferredKashida;
+    }
+    opportunity PreferredLamMeemKashida {
+      match LamFinalMeemConnection;
+      action PreferredKashida;
+    }
+    opportunity PreferredHehMeemKashida {
+      match HehFinalMeemConnection;
+      action PreferredKashida;
+    }
+    opportunity PreferredFinalAscendantKashida {
+      match FinalAscendantConnection;
+      action PreferredFinalAscendant2;
+    }
+    opportunity PreferredLamLafKashida {
+      match LamLafConnection;
+      action PreferredFinalAscendant2;
+    }
+    opportunity PreferredMedialLamKashida {
+      match MedialLamConnection;
+      action PreferredKashida;
+    }
+    opportunity PreferredRehKashida {
+      match RehConnection;
+      action PreferredKashida;
+    }
+    opportunity ContinueAlternateGroup1 {
+      match [Alternate1];
+      prepare {
+        forbid not ($self:lefttatweel > 0) or $self:righttatweel > 0;
+      }
+      range $self:lefttatweel preferred max($self:lefttatweel, 9);
+    }
+    opportunity ContinueAlternateGroup2 {
+      match [Alternate2];
+      prepare {
+        forbid not ($self:lefttatweel > 0) or $self:righttatweel > 0;
+      }
+      range $self:lefttatweel preferred max($self:lefttatweel, 7);
+    }
+
+    # No lookup, clear, or mandatory update in these actions. A positive
+    # current parameter identifies a stretch accepted by an earlier stage.
+    opportunity ContinueKaf {
+      match [KafBody JoinedLeft];
+      prepare {
+        forbid not ($1:third > 0);
+      }
+      range $1:third preferred max($1:third, 4);
+    }
+    opportunity ContinueBehKashida {
+      match BehConnection;
+      action ContinueKashida4;
+    }
+    opportunity ContinueFinalMeemKashida {
+      match FinalMeemConnection;
+      action ContinueKashida4;
+    }
+    opportunity ContinueLamMeemKashida {
+      match LamFinalMeemConnection;
+      action ContinueKashida4;
+    }
+    opportunity ContinueHehMeemKashida {
+      match HehFinalMeemConnection;
+      action ContinueKashida4;
+    }
+    opportunity ContinueFinalAscendantKashida {
+      match FinalAscendantConnection;
+      action ContinueFinalAscendant5;
+    }
+    opportunity ContinueLamLafKashida {
+      match LamLafConnection;
+      action ContinueFinalAscendant5;
+    }
+    opportunity ContinueMedialLamKashida {
+      match MedialLamConnection;
+      action ContinueKashida4;
+    }
+    opportunity ContinueRehKashida {
+      match RehConnection;
+      action ContinueKashida4;
+    }
+    opportunity ContinueBeforeHah {
+      match [DecomposedBeforeHah DecomposedHah];
+      action ContinueKashida4;
+    }
+    opportunity ContinueSadReh {
+      match [DecomposedSad DecomposedReh];
+      action ContinueKashida4;
+    }
+    opportunity ContinueShortReh {
+      match [ShortRehStart ShortRehEnd];
+      action ContinueKashida4;
+    }
+    opportunity KafCompanionReh {
+      match RehConnection;
+      action LimitedKafCompanion;
+    }
+    opportunity KafCompanionJoined {
+      match JoinedConnection;
+      action LimitedKafCompanion;
+    }
+    opportunity KafCompanionFinalAscendant {
+      match FinalAscendantConnection;
+      action LimitedKafCompanion;
+    }
+    opportunity RareLamAlternate {
+      match [IsolatedLam];
+      prepare {
+        forbid $self:lefttatweel > 0 or $self:righttatweel > 0;
+        lookup $self justify.expand_terminal;
+        # The glyph itself starts at the minimum corpus width (11.29 qalams).
+      }
+      range $self:lefttatweel minimum 0 preferred 6;
+      # The top mark stays over the fixed head, not over the lengthened tail.
+    }
+    opportunity ContinueLamAlternate {
+      match [ExpandedLam];
+      prepare {
+        # ExpandedLam recognition also permits continuation from parameter 0.
+        forbid $self:righttatweel > 0;
+      }
+      range $self:lefttatweel preferred max($self:lefttatweel, 8);
+    }
+
+    # Discrete native-parameter counterparts used by native_fixed_steps. They
+    # duplicate the matching rules so the existing cvXX baseline remains
+    # independently selectable.
+    opportunity ParameterBehKashida {
+      match BehConnection;
+      action ParameterStretchKashidaPair;
+    }
+    opportunity ParameterFinalAscendantKashida {
+      match FinalAscendantConnection;
+      action ParameterStretchKashidaPair;
+    }
+    opportunity ParameterOtherRehKashida {
+      match RehConnection;
+      action ParameterStretchKashidaPair;
+    }
+    opportunity ParameterOtherJoinedKashida {
+      match JoinedConnection;
+      action ParameterStretchKashidaPair;
+    }
+    opportunity ParameterKafAction {
+      match KafConnection;
+      prepare {
+        forbid isfact($2, Noon) and $2:lefttatweel > 0;
+        lookup $1 justify.prepare_kaf;
+        lookup $2 justify.prepare_kaf;
+      }
+    }
+    opportunity ParameterKafBody {
+      match [KafBody];
+      prepare {
+        add $self:third 1 clamp 20;
+      }
+    }
+    opportunity ParameterAlternateGroup1 {
+      match [Alternate1];
+      action ParameterIncrementAlternate;
+    }
+    opportunity ParameterAlternateGroup2 {
+      match [Alternate2];
+      action ParameterIncrementAlternate;
+    }
   }
 
   selections {
@@ -3390,6 +3550,10 @@ table(justdfa) oldmadina.experimental2 {
       choose ContinueBeforeHah last all_non_overlapping weight 3;
       traversal last_first;
     }
+    selection CandidateContinueRareTerminal {
+      choose ContinueLamAlternate last all_non_overlapping weight 0.5 decay 0.75;
+      traversal last_first;
+    }
     selection CandidateRemainingKaf {
       choose CandidateKaf last all_non_overlapping weight 3 decay 0.85 record KafBody forbid_recorded [KafBody Horizontal];
       traversal last_first;
@@ -3515,6 +3679,15 @@ table(justdfa) oldmadina.experimental2 {
       phase CandidateKafCompanion 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
       phase CandidateOther 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
     }
+    # Preferred sites are continued by repeating PreferredStretch itself.
+    # These phases introduce/continue other opportunity families only.
+    stage RemainingStretch {
+      phase CandidateContinueRareTerminal 1 candidate_pool word_position 0.25;
+      phase CandidateContinueDecomposition 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
+      phase CandidateRemainingKaf 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
+      phase CandidateKafCompanion 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
+      phase CandidateOther 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
+    }
     stage DecomposeLastResort {
       # Use positioned width: nominal advances can misclassify decomposition
       # as shrinking even when its cursive-adjusted width increases.
@@ -3581,7 +3754,7 @@ table(justdfa) oldmadina.experimental2 {
   # Each `stretchpolicy` block is one selectable complete justification.
   stretchpolicy staged_pool {
     candidate_width advance;
-    cap_spaces 400 400;
+    cap_spaces 250 250;
     #stage InitialShortStretch;
     stage PreferredStretch;
     stage DecomposeConnections;
@@ -3592,13 +3765,15 @@ table(justdfa) oldmadina.experimental2 {
   }
   # Exact endpoint shaping retained for regression and visual comparison.
   stretchpolicy staged_pool_full_shape {
-    candidate_width full_shape;
-    cap_spaces 250 250;
-    stage InitialShortStretch;
+    candidate_width full_shape;    
+    #stage InitialShortStretch;
     stage PreferredStretch;
+    cap_spaces 250 250;
     stage DecomposeConnections;
     stage RareTerminalStretch;
     stage DecomposeLastResort;
+    stage InitialShortStretch;
+    cap_spaces 400 400;
     stage ContinueStretch;
     fill_spaces;
   }
@@ -3615,6 +3790,23 @@ table(justdfa) oldmadina.experimental2 {
   stretchpolicy native_fixed_steps {
     cap_spaces 250 250;
     stage ParameterFixedSteps;
+    fill_spaces;
+  }
+
+  # Comparison only: same surrounding stages as staged_pool_full_shape.
+  # Allocate preferred lengths first, then reuse the same rules up to their maxima.
+  stretchpolicy staged_pool_continue {
+    candidate_width full_shape;
+    stage PreferredStretch;
+    cap_spaces 250 250;
+    stage DecomposeConnections;
+    stage RareTerminalStretch;
+    stage DecomposeLastResort;    
+    stage PreferredStretch continue to 6;
+    stage InitialShortStretch;    
+    stage PreferredStretch continue to 9;
+    cap_spaces 400 400;
+    stage RemainingStretch;
     fill_spaces;
   }
 
