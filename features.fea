@@ -2629,7 +2629,8 @@ table(justdfa) oldmadina.experimental2 {
     # these physical font units. Headings/short lines do not choose the frame.
     sizing style AdaptiveMargins {
       margins decrease 150 increase 150;
-      bounded_fit 0.95 1.3 0 0;
+      #bounded_fit 0.9 1.3 0 0;
+      bounded_fit 0.9 1.3 0.02 0.02;
     }
     sizing default { fixed_size 1; }
 
