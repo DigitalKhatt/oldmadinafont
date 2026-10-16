@@ -3033,6 +3033,21 @@ table(justdfa) oldmadina.experimental2 {
                                         prod(0.5, $1:lefttatweel), $1:lefttatweel);
       }
     }
+    # Noon shares the terminal range, but has its own mutual-exclusion record.
+    action PreferredTerminalGroup1 {
+      prepare {
+        forbid $self:righttatweel > 0;
+        forbid $self:lefttatweel > 0;
+        lookup $self justify.expand_terminal;
+      }
+      range $self:lefttatweel minimum 1 preferred 3 maximum 9;
+    }
+    action ContinueTerminalGroup1 {
+      prepare {
+        forbid not ($self:lefttatweel > 0) or $self:righttatweel > 0;
+      }
+      range $self:lefttatweel preferred max($self:lefttatweel, 9);
+    }
   }
 
   opportunities {
@@ -3202,13 +3217,12 @@ table(justdfa) oldmadina.experimental2 {
     # Separate bindings keep the comparison policies unchanged. Continuation
     # is ordinary current-state matching, guarded by the existing parameters.
     opportunity PreferredAlternateGroup1 {
-      match [{ form terminal chars ["بتثكن"] }];
-      prepare {
-        forbid $self:righttatweel > 0;
-        forbid $self:lefttatweel > 0;
-        lookup $self justify.expand_terminal;
-      }
-      range $self:lefttatweel minimum 1 preferred 3 maximum 9;
+      match [{ form terminal chars ["بتثك"] }];
+      action PreferredTerminalGroup1;
+    }
+    opportunity PreferredNoon {
+      match [{ form terminal chars ["ن"] }];
+      action PreferredTerminalGroup1;
     }
     opportunity PreferredAlternateGroup2 {
       match [{ form terminal chars ["ىصضسشفقيئ"] }];
@@ -3222,7 +3236,19 @@ table(justdfa) oldmadina.experimental2 {
     opportunity PreferredKaf {
       match KafConnection;
       prepare {
+        # The adjacent terminal-Noon case has a lower-scored Kaf fallback.
+        forbid isfact($2, Noon) and isfact($2, SubwordLast);
         forbid isfact($2, Noon) and $2:lefttatweel > 0;
+        forbid $1:third > 0;
+        lookup $1 justify.prepare_kaf;
+        lookup $2 justify.prepare_kaf;
+      }
+      range $1:third minimum 1 preferred 1.75 maximum 4;
+    }
+    opportunity PreferredKafBeforeNoon {
+      match [KafRight { form final chars ["ن"] }];
+      prepare {
+        forbid $2:lefttatweel > 0;
         forbid $1:third > 0;
         lookup $1 justify.prepare_kaf;
         lookup $2 justify.prepare_kaf;
@@ -3262,11 +3288,12 @@ table(justdfa) oldmadina.experimental2 {
       action PreferredKashida;
     }
     opportunity ContinueAlternateGroup1 {
-      match [Alternate1];
-      prepare {
-        forbid not ($self:lefttatweel > 0) or $self:righttatweel > 0;
-      }
-      range $self:lefttatweel preferred max($self:lefttatweel, 9);
+      match [{ form terminal chars ["بتثك"] }];
+      action ContinueTerminalGroup1;
+    }
+    opportunity ContinueNoon {
+      match [{ form terminal chars ["ن"] }];
+      action ContinueTerminalGroup1;
     }
     opportunity ContinueAlternateGroup2 {
       match [Alternate2];
@@ -3491,10 +3518,16 @@ table(justdfa) oldmadina.experimental2 {
     # Stage one includes limited kaf preparation/body stretching alongside
     # the other preferred opportunities; generic decomposition is postponed.
     # Preferred maxima are written directly in its dedicated actions.
+    # Noon keeps group one's occurrence decay, but excludes alternate Kaf
+    # only when immediately adjacent, independently of selection order.
+    # Intervening base glyphs (e.g. Kaf-Yeh-Noon) allow both bodies to expand.
     selection CandidatePreferred {
-      choose PreferredAlternateGroup1 last selected_only weight 6 decay 0.85 record Terminal;
+      choose PreferredAlternateGroup1 last selected_only weight 6 decay 0.85 decay_group TerminalGroup1 record Terminal;
+      choose PreferredNoon last selected_only weight 6 decay 0.85 decay_group TerminalGroup1 record TerminalNoon not_adjacent [KafBody];
       choose PreferredAlternateGroup2 last selected_only weight 4 decay 0.85 record Terminal;
-      choose PreferredKaf last all_non_overlapping weight 7.5 decay 0.9 record KafBody forbid_recorded [KafBody Horizontal];
+      choose PreferredKaf last all_non_overlapping weight 7.5 decay 0.9 record KafBody forbid_recorded [KafBody Horizontal] not_adjacent [TerminalNoon];
+      # Prefer Noon's existing terminal score; Kaf remains a fit fallback.
+      choose PreferredKafBeforeNoon last all_non_overlapping weight 1 decay 0.9 record KafBody forbid_recorded [KafBody Horizontal] not_adjacent [TerminalNoon];
       choose PreferredBehKashida first selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredFinalMeemKashida first selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredLamMeemKashida first selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
@@ -3539,10 +3572,11 @@ table(justdfa) oldmadina.experimental2 {
       # Continue earlier stretches, but leave a minimally opened site alone.
       different_position [MinimalDecomposition];
       choose ContinueShortReh last all_non_overlapping weight 5 decay 0.85 forbid_recorded [KafBody];
-      choose ContinueAlternateGroup1 last all_non_overlapping weight 5 decay 0.85;
+      choose ContinueAlternateGroup1 last all_non_overlapping weight 5 decay 0.85 decay_group TerminalGroup1;
+      choose ContinueNoon last all_non_overlapping weight 5 decay 0.85 decay_group TerminalGroup1 record TerminalNoon not_adjacent [KafBody];
       choose ContinueAlternateGroup2 last all_non_overlapping weight 4 decay 0.85;
       choose ContinueLamAlternate last all_non_overlapping weight 0.5 decay 0.75;
-      choose ContinueKaf last all_non_overlapping weight 3 decay 0.85;
+      choose ContinueKaf last all_non_overlapping weight 3 decay 0.85 not_adjacent [TerminalNoon];
       choose ContinueBehKashida first all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
       choose ContinueFinalMeemKashida first all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
       choose ContinueLamMeemKashida first all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
@@ -3565,7 +3599,7 @@ table(justdfa) oldmadina.experimental2 {
       traversal last_first;
     }
     selection CandidateRemainingKaf {
-      choose CandidateKaf last all_non_overlapping weight 3 decay 0.85 record KafBody forbid_recorded [KafBody Horizontal];
+      choose CandidateKaf last all_non_overlapping weight 3 decay 0.85 record KafBody forbid_recorded [KafBody Horizontal] not_adjacent [TerminalNoon];
       traversal last_first;
     }
 

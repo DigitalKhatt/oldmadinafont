@@ -18,6 +18,7 @@
 #include "FeaParser/driver.h"
 #include "FeaParser/feaast.h"
 #include "JustificationShaping.h"
+#include "digitalkhatt/justify/declpolicy/DeclPolicyJustifier.h"
 #include "../fathamarkpositions.h"
 
 namespace {
@@ -1178,6 +1179,114 @@ void checkAdaptiveLastPage(OtLayout& layout) {
   layout.setPageLayout(saved);
 }
 
+void checkKafNoonExclusion(OtLayout& layout) {
+  using namespace digitalkhatt::justify;
+  const auto& catalog = *layout.compiledJustificationCatalog;
+  const DeclPolicyJustifier engine(catalog);
+  const auto input = [&](std::string_view name, char16_t character, int base, bool last) {
+    return FixedSlotGlyphInput{.facts = glyphFacts({.glyphName = name, .sourceCharacter = character, .firstInSubword = base == 0, .lastInSubword = last}, catalog.facts), .wordIndex = 0, .subwordIndex = 0, .baseIndex = base, .indexInLine = base};
+  };
+  const std::vector<FixedSlotGlyphInput> noon{input("noon.fina", u'ن', 1, true)};
+  const std::vector<FixedSlotGlyphInput> kaf{input("kaf.medi.ii", u'ك', 0, false), input("noon.fina", u'ن', 1, true)};
+  const std::vector<FixedSlotGlyphInput> kafYehNoon{input("kaf.init.ii", u'ك', 0, false), input("behshape.medi", u'ي', 1, false), input("noon.fina", u'ن', 2, true)};
+  const std::vector<FixedSlotGlyphInput> beh{input("behshape.fina.expa", u'ب', 0, true)};
+  const auto ruleId = [&](std::string_view name) {
+    const auto rule = std::find_if(catalog.rules.begin(), catalog.rules.end(), [&](const auto& value) { return value.name == name; });
+    require(rule != catalog.rules.end(), "Missing Kaf/Noon opportunity " + std::string(name));
+    return rule->id;
+  };
+  const auto count = [&](std::string_view selectionName, std::string_view ruleName, const auto& glyphs, const DeclPolicyExecutionState& state) {
+    const auto selection = std::find_if(catalog.selections.begin(), catalog.selections.end(), [&](const auto& value) { return value.name == selectionName; });
+    require(selection != catalog.selections.end(), "Missing Kaf/Noon selection");
+    const std::array phases{PolicyPhase{.selection = static_cast<JustificationSelectionId>(selection - catalog.selections.begin()), .levels = 1, .allocator = PolicyPhase::Allocator::CandidatePool}};
+    const auto wanted = ruleId(ruleName);
+    int found = 0;
+    engine.collectStageCandidates(2, glyphs, phases, state, [&](const auto& site, auto, const auto&) { found += site.rule == wanted; });
+    return found;
+  };
+  for (const auto& [selection, rule, blockedBy, inputs] : std::vector<std::tuple<std::string, std::string, std::string, std::vector<FixedSlotGlyphInput>>>{
+           {"CandidatePreferred", "PreferredNoon", "KafBody", noon},
+           {"CandidateContinuePreferred", "ContinueNoon", "KafBody", noon},
+           {"CandidatePreferred", "PreferredKaf", "TerminalNoon", kaf},
+           {"CandidatePreferred", "PreferredKafBeforeNoon", "TerminalNoon", kaf},
+           {"CandidateRemainingKaf", "CandidateKaf", "TerminalNoon", kaf},
+           {"CandidateContinuePreferred", "ContinueKaf", "TerminalNoon", kaf}}) {
+    DeclPolicyExecutionState state;
+    state.recordsByWord.resize(2);
+    require(count(selection, rule, inputs, state) == 1, "Unblocked Kaf/Noon opportunity must remain available");
+    const int recordedBase = blockedBy == "KafBody" ? 0 : 1;
+    state.recordsByWord[0][blockedBy] = {0, recordedBase};
+    require(count(selection, rule, inputs, state) == 0, "Adjacent Kaf and terminal Noon must exclude each other, including continuation");
+    state.recordsByWord[0][blockedBy] = {1, 0};
+    require(count(selection, rule, inputs, state) == 1, "A record in another subword must not block Kaf/Noon");
+    state.recordsByWord[0].clear();
+    state.recordsByWord[1][blockedBy] = {0, 0};
+    require(count(selection, rule, inputs, state) == 1, "A record in another word must not block Kaf/Noon");
+    if (rule != "PreferredKafBeforeNoon") {
+      state.recordsByWord[0][blockedBy] = {0, blockedBy == "KafBody" ? 0 : 2};
+      require(count(selection, rule, kafYehNoon, state) == 1, "An intervening Yeh must allow Kaf and expanded Noon in the same subword");
+    }
+  }
+  DeclPolicyExecutionState state;
+  state.recordsByWord.resize(2);
+  state.recordsByWord[0]["KafBody"] = {0, 0};
+  require(count("CandidatePreferred", "PreferredAlternateGroup1", beh, state) == 1, "Other group-one terminal alternates must remain allowed beside Kaf");
+  require(count("CandidatePreferred", "PreferredAlternateGroup1", noon, {}) == 0 && count("CandidateContinuePreferred", "ContinueAlternateGroup1", noon, {}) == 0, "Noon must not bypass its exclusion through the generic terminal rules");
+
+  const auto selection = std::find_if(catalog.selections.begin(), catalog.selections.end(), [](const auto& value) { return value.name == "CandidatePreferred"; });
+  const auto selectionIndex = static_cast<JustificationSelectionId>(selection - catalog.selections.begin());
+  std::array<FixedSlotGlyphInput, 3> terminals{noon.front(), beh.front(), noon.front()};
+  for (int i = 0; i < 3; ++i) terminals[i].wordIndex = terminals[i].indexInLine = i;
+  const auto weights = [&](const auto& source, int phaseCount) {
+    std::vector<PolicyPhase> phases(phaseCount, PolicyPhase{.selection = selectionIndex, .levels = 1, .allocator = PolicyPhase::Allocator::CandidatePool});
+    std::vector<double> found;
+    DeclPolicyJustifier(source).collectStageCandidates(3, terminals, phases, {}, [&](const auto&, auto, const auto& score) { found.push_back(score.total); });
+    return found;
+  };
+  const std::vector<double> expected{6, 6 * 0.85, 6 * std::pow(0.85, 2)};
+  require(weights(catalog, 1) == expected, "Splitting Noon must preserve the original shared terminal occurrence decay");
+  auto repeated = expected;
+  repeated.insert(repeated.end(), expected.begin(), expected.end());
+  require(weights(catalog, 2) == repeated, "A shared decay group must reset for each phase");
+  auto independent = catalog;
+  for (auto& choice : independent.selections.at(selectionIndex).rules) choice.decayGroup.clear();
+  require(weights(independent, 1) == std::vector<double>{6, 6, 6 * 0.85}, "Choices without decay_group must retain independent per-rule counters");
+
+  auto& mutableCatalog = *layout.compiledJustificationCatalog;
+  auto probe = mutableCatalog.stretchPolicies.at(mutableCatalog.stretchPolicyIndex("staged_pool_full_shape"));
+  const auto preferred = std::find_if(probe.steps.begin(), probe.steps.end(), [](const auto& step) { return step.stage == "PreferredStretch"; });
+  require(preferred != probe.steps.end(), "Missing Kaf/Noon preferred stage");
+  probe.steps = {*preferred};
+  probe.name = "test.kaf_noon_preference";
+  const int policy = static_cast<int>(mutableCatalog.stretchPolicies.size());
+  mutableCatalog.stretchPolicies.push_back(std::move(probe));
+  const auto shape = [&](const std::u16string& text) {
+    const int width = 10000 << OtLayout::SCALEBY;
+    const double scale = (1 << OtLayout::SCALEBY) * OtLayout::EMSCALE;
+    return layout.justifyPage(scale, width, {{text, width, LineJustification::Distribute, LineType::Line}}, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS, JustOption{JustType::DeclPolicy, JustStyle::None, ShrinkType::None, policy}, "qpc_v1_layout").at(0);
+  };
+  const auto expanded = [&](const auto& line, bool isKaf) {
+    return std::any_of(line.glyphs.begin(), line.glyphs.end(), [&](const auto& glyph) {
+      const auto& name = layout.glyphNamePerCode.at(glyph.codepoint);
+      return isKaf ? ((name == "kaf.init.ii" || name == "kaf.medi.ii") && glyph.parameters.third > 0) : (name.starts_with("noon.") && name.find(".expa") != std::string::npos && glyph.parameters.lefttatweel > 0);
+    });
+  };
+  for (const auto text : {u"كن", u"يَكُن"}) {
+    const auto line = shape(text);
+    require(expanded(line, false) && !expanded(line, true), "A fitting expanded Noon must outrank alternate Kaf immediately before it, ignoring marks");
+  }
+  const auto separated = shape(u"كِين");
+  require(expanded(separated, false) && expanded(separated, true), "Kaf-Yeh-Noon must permit both Kaf body and terminal Noon expansion");
+  const auto noonBinding = std::find_if(mutableCatalog.actions.begin(), mutableCatalog.actions.end(), [&](const auto& binding) { return binding.rule == ruleId("PreferredNoon"); });
+  auto& noonAction = mutableCatalog.actionDefinitions.at(noonBinding->definition);
+  const auto savedEffects = noonAction.effects;
+  noonAction.effects.insert(noonAction.effects.begin(), JustEffect{.kind = JustEffectKind::Forbid, .condition = {{.op = JustExprOp::Literal, .literal = 1}}});
+  const auto fallback = shape(u"كن");
+  require(expanded(fallback, true) && !expanded(fallback, false), "Alternate Kaf must remain available when the preferred Noon opportunity is unavailable");
+  noonAction.effects = savedEffects;
+  mutableCatalog.stretchPolicies.pop_back();
+}
+
 void checkPreferredContinuation(OtLayout& layout) {
   using namespace digitalkhatt;
   using namespace digitalkhatt::justify;
@@ -1385,6 +1494,7 @@ int main(int argc, char** argv) {
     checkLastResortDecomposition(layout);
     checkLateBaselineSpacing(layout);
     checkPreferredContinuation(layout);
+    checkKafNoonExclusion(layout);
     checkAdaptiveMargins(layout);
     checkAdaptivePreview(layout);
     checkAdaptiveLastPage(layout);
