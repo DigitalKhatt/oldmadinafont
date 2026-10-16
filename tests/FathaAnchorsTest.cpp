@@ -167,6 +167,41 @@ void checkAutomaticAttachment(OtLayout& layout, FontProvider& provider, hb_font_
   require(checked, "Automatic width response did not substitute the Fatha");
 }
 
+void checkIqlabModeration(OtLayout& layout, FontProvider& provider, hb_font_t* font) {
+  using namespace digitalkhatt::justify::runtime;
+  auto& attachment = layout.compiledJustificationCatalog->attachments.at(0);
+  require(attachment.followingMarkGlyphNames == std::vector<std::string>{"meemiqlab"} && attachment.followingGrowthScale == 0.5, "Font must declare half-strength growth before Iqlab");
+  auto width = [&](const std::u16string& text, double scale, bool contextual) {
+    attachment.followingGrowthScale = scale;
+    const std::vector<GlyphParameterAssignment> assignments{{0, digitalkhatt::NoGlyphAxis, 0, layout.glyphCodePerName.at("noon.fina.expa")}, {0, digitalkhatt::LeftTatweelAxis, 9}};
+    std::vector<hb_feature_t> features;
+    if (contextual) features.push_back({HB_TAG('c','v','0','1'), 1, 1, 2});
+    ShapingBuffer buffer(shape(text, font, features, &provider, assignments, true, digitalkhatt::justify::LineJustificationOperation::Stretch));
+    unsigned count = 0;
+    const auto* infos = hb_buffer_get_glyph_infos(buffer.get(), &count);
+    for (unsigned i = 0; i < count; ++i) {
+      if (infos[i].cluster != 1) continue;
+      const auto& name = layout.glyphNamePerCode.at(infos[i].codepoint);
+      if (name != "fatha" && name != "fatha.stretched") continue;
+      auto baseline = layout.glyphParameters(infos[i]);
+      baseline.lefttatweel = contextual ? 1 : 0;
+      const double initial = layout.getGlyph(infos[i].codepoint, baseline)->width;
+      const double current = layout.getGlyph(infos[i].codepoint, layout.glyphParameters(infos[i]))->width;
+      require(layout.glyphParameters(infos[i]).lefttatweel >= baseline.lefttatweel, "Moderation must retain the contextual GSUB deformation");
+      return current - initial;
+    }
+    throw std::runtime_error("Missing Fatha in Iqlab moderation test");
+  };
+  for (const bool contextual : {false, true}) {
+    const double full = width(u"نَۢ", 1, contextual);
+    const double half = width(u"نَۢ", 0.5, contextual);
+    require(half > 0 && std::abs(half - full * 0.5) < 20, "Iqlab must halve actual added width, allowing one quantization step");
+    require(std::abs(width(u"نَ͏ۢ", 0.5, contextual) - half) < 1, "Format controls must not break Fatha/Iqlab moderation");
+    for (const auto text : {u"نَ", u"نَ بۢ", u"نَشۢ", u"نَّۢ"}) require(width(text, 1, contextual) == width(text, 0.5, contextual), "Moderation must not cross a word, base or unrelated mark");
+  }
+  attachment.followingGrowthScale = 0.5;
+}
+
 void checkContextualFatha(OtLayout& layout, FontProvider& provider, hb_font_t* font) {
   using namespace digitalkhatt::justify::runtime;
   for (const auto& [text, cluster, expectedLeft] : {std::tuple{u"فَـٔ͏َاتُوهُنَّ", 1u, 0.0}, std::tuple{u"ٱللَّهَ", 4u, 0.5}}) {
@@ -232,6 +267,67 @@ unsigned u16(const digitalkhatt::ByteBuffer& table, std::size_t offset) {
   return (unsigned(table.data()[offset]) << 8) | table.data()[offset + 1];
 }
 
+void checkIqlabGlyphAnchors(OtLayout& layout) {
+  const auto type = GlyphVis::AnchorType::MarkAnchor;
+  auto* lookup = layout.lookups.at(layout.lookupsIndexByName.at("defaultmkmk"));
+  MarkBaseSubtable* source = nullptr;
+  for (auto* raw : lookup->subtables) {
+    if (raw->name == "defaultmkmkmeemiqlab") source = static_cast<MarkBaseSubtable*>(raw);
+  }
+  require(source, "Missing Iqlab attachment subtable");
+  const auto& row = source->classes.at("meemiqlab");
+  require(!row.basefunction && !row.markfunction, "Iqlab attachment must use glyph anchors without C++ calculators");
+  require(source->base == std::vector<std::string>{"fatha", "fatha.stretched", "damma"}, "Audit the authored anchor whenever another Iqlab parent is added");
+
+  auto* meem = layout.getGlyph(layout.glyphCodePerName.at("meemiqlab"));
+  require(meem->conatinsAnchor("meemiqlab", type), "Meem Iqlab must author its own mating anchor");
+  auto expectedMark = meem->getAnchor("meemiqlab", type);
+  if (const auto offset = row.markparameters.find("meemiqlab"); offset != row.markparameters.end()) expectedMark += offset->second;
+  require(source->getMarkAnchor("meemiqlab", "meemiqlab", {}) == expectedMark, "Meem's own anchor must remain authoritative, with any saved GUI adjustment");
+  auto* dotLookup = layout.lookups.at(layout.lookupsIndexByName.at("defaultmarkdotmarkstop"));
+  bool checkedDot = false;
+  for (auto* raw : dotLookup->subtables) {
+    if (raw->name != "defaultmarkdotmarkstop") continue;
+    auto& dot = *static_cast<MarkBaseSubtable*>(raw);
+    require(!dot.classes.at("topmarks").markparameters.contains("meemiqlab"), "Meem's dot calibration must no longer live in JSON");
+    require(meem->conatinsAnchor("defaultmarkdotmarkstop", type) && dot.getMarkAnchor("meemiqlab", "topmarks", {}) == meem->getAnchor("defaultmarkdotmarkstop", type), "Meem's lookup-specific glyph anchor must supply its upper-dot calibration");
+    checkedDot = true;
+  }
+  require(checkedDot, "Missing upper-dot attachment subtable");
+
+  // Export a single-pair standard GPOS probe: both anchors must be identical
+  // to live resolution, including baked parameterized parent glyphs.
+  Lookup exported(&layout);
+  exported.name = "defaultmkmk";
+  exported.type = Lookup::mark2mark;
+  MarkBaseSubtable table(&exported);
+  table.classes["meemiqlab"] = row;
+  table.classes["meemiqlab"].markCodes = {static_cast<std::uint16_t>(meem->charcode)};
+  for (const auto* parent : {"fatha", "fatha.stretched", "damma"}) {
+    for (const double left : {0.0, 0.5, 1.0, 3.0, 5.0, 10.0}) {
+      GlyphParameters parameters;
+      parameters.lefttatweel = left;
+      auto* glyph = layout.getGlyph(layout.glyphCodePerName.at(parent), parameters);
+      require(glyph->conatinsAnchor("meemiqlab", type), "Every Iqlab parent must retain its authored anchor at every sampled width");
+      const auto authored = glyph->getAnchor("meemiqlab", type);
+      auto expected = authored;
+      if (const auto offset = row.baseparameters.find(parent); offset != row.baseparameters.end()) expected += offset->second;
+      require(source->getBaseAnchor(parent, "meemiqlab", parameters) == expected, "Live Iqlab positioning must resolve the glyph-authored anchor plus any saved GUI adjustment");
+      if (std::string_view(parent) == "fatha.stretched") require(authored == layout.getGlyph(layout.glyphCodePerName.at("fatha"), parameters)->getAnchor("meemiqlab", type), "Stretched Fatha must inherit Fatha's authored anchor");
+      const auto* variant = layout.getAlternate(layout.glyphCodePerName.at(parent), parameters, true, true);
+      table.sortedBaseCodes = {static_cast<std::uint16_t>(variant->charcode)};
+      const auto bytes = table.getOpenTypeTable(false);
+      const auto baseArray = u16(bytes, 10);
+      const auto baseAnchor = baseArray + u16(bytes, baseArray + 2);
+      const auto markArray = u16(bytes, 8);
+      const auto markAnchor = markArray + u16(bytes, markArray + 4);
+      require(u16(bytes, 0) == 1 && u16(bytes, baseAnchor) == 1 && u16(bytes, markAnchor) == 1, "Iqlab glyph anchors must export as standard MarkMarkPos/Anchor format 1");
+      require(std::int16_t(u16(bytes, baseAnchor + 2)) == expected.x() && std::int16_t(u16(bytes, baseAnchor + 4)) == expected.y(), "Exported parent anchor must match the live authored anchor");
+      require(std::int16_t(u16(bytes, markAnchor + 2)) == expectedMark.x() && std::int16_t(u16(bytes, markAnchor + 4)) == expectedMark.y(), "Exported Meem anchor must match live own-anchor resolution");
+    }
+  }
+}
+
 void checkShaddaCenterTransition(OtLayout& layout) {
   const double centerLimit = oldmadina::FathaShaddaCenterLimit;
   MarkBaseSubtable* source = nullptr;
@@ -240,7 +336,7 @@ void checkShaddaCenterTransition(OtLayout& layout) {
     for (auto* raw : lookup->subtables) if (raw->name == "defaultmkmktop") source = static_cast<MarkBaseSubtable*>(raw);
   }
   require(source != nullptr, "Missing ordinary top mark-to-mark source");
-  for (int style = 0; style < 5; ++style) {
+  for (int style = 0; style <= static_cast<int>(oldmadina::FathaAnchorStyle::ExpandedBeh); ++style) {
     auto* helper = layout.lookups.at(layout.lookupsIndexByName.at("fatha.stretched.defaultmkmktop." + std::to_string(style)));
     require(helper->subtables.size() == 2, "Top helpers must split Shadda from other mark parents");
     auto& centered = *static_cast<MarkBaseSubtable*>(helper->subtables[0]);
@@ -254,7 +350,7 @@ void checkShaddaCenterTransition(OtLayout& layout) {
     const auto* limit = layout.getGlyph(layout.glyphCodePerName.at("fatha"), atLimit);
     const auto limitAnchor = centered.getMarkAnchor("fatha.stretched", "topmarks", atLimit);
     const double limitRight = limit->bbox.urx - limitAnchor.x();
-    for (double left : {0.0625, 0.5, centerLimit - 1e-6, centerLimit, centerLimit + 1e-6, 1.5, 2.0, 5.0}) {
+    for (double left : {0.0625, 0.5, centerLimit - 1e-6, centerLimit, centerLimit + 1e-6, 1.5, 2.0, 5.0, 10.0, 20.0}) {
       GlyphParameters parameters;
       parameters.lefttatweel = left;
       const auto* current = layout.getGlyph(layout.glyphCodePerName.at("fatha"), parameters);
@@ -263,14 +359,50 @@ void checkShaddaCenterTransition(OtLayout& layout) {
       const double originalX = style == 3 ? source->getMarkAnchor("fatha", "topmarks", parameters).x() : style == 0 ? neutralAnchor.x() + current->bbox.urx - neutral->bbox.urx : neutralAnchor.x() - neutralCenter + (current->bbox.llx + current->bbox.urx) * 0.5;
       const double lower = style == 3 ? 0.2 : style == 1 ? 0.15 : 0.25;
       const double growth = std::max(0.0, current->width - neutral->width);
-      const double originalY = style == 0 ? neutralAnchor.y() + current->bbox.ury - neutral->bbox.ury : style == 4 ? neutralAnchor.y() : neutralAnchor.y() + lower * growth;
+      const double originalY = style == 0 ? neutralAnchor.y() + current->bbox.ury - neutral->bbox.ury : style == 4 || style == 5 ? neutralAnchor.y() : neutralAnchor.y() + lower * growth;
       require(anchor.y() == unchanged.y() && unchanged.x() == std::lround(originalX) && unchanged.y() == std::lround(originalY), "Shadda transition must leave vertical profiles and other parents unchanged");
-      if (left <= oldmadina::FathaShaddaCenterLimit) {
+      if (style == static_cast<int>(oldmadina::FathaAnchorStyle::Noon) || style == static_cast<int>(oldmadina::FathaAnchorStyle::ExpandedBeh) || left <= oldmadina::FathaShaddaCenterLimit) {
         const double expected = neutralAnchor.x() - neutralCenter + (current->bbox.llx + current->bbox.urx) * 0.5;
-        require(anchor.x() == std::lround(expected), "Short stretched Fatha must remain centered with its original GUI calibration");
+        require(anchor.x() == std::lround(expected), "Fatha above expanded Noon/Beh must remain centered on Shadda at every width; other bases retain the short-Fatha centering limit");
       } else {
         require(std::abs(current->bbox.urx - anchor.x() - limitRight) <= 1, "Long stretched Fatha must preserve the right edge of its centered threshold placement");
         require(std::abs(anchor.x() - limitAnchor.x()) <= 1 || left > centerLimit + 1e-6, "The transition must not jump at the Shadda centering limit");
+      }
+    }
+  }
+}
+
+void checkExpandedShaddaCentering(OtLayout& layout, FontProvider& provider, hb_font_t* font) {
+  using namespace digitalkhatt::justify::runtime;
+  int xScale = 0;
+  hb_font_get_scale(font, &xScale, nullptr);
+  for (const auto& [root, text] : {std::pair{"noon.isol.expa", u"نَّ"}, {"noon.fina.expa", u"نَّ"}, {"noon.fina.expa.afterbeh", u"نَّ"}, {"behshape.isol.expa", u"بَّ"}, {"behshape.fina.expa", u"بَّ"}}) {
+    for (double baseLeft : {3.0, 9.0}) {
+      std::optional<double> calibratedCenter;
+      for (double markLeft : {0.5, 1.0, 1.5, 3.0, 5.0, 10.0, 20.0}) {
+        const std::vector<GlyphParameterAssignment> assignments{
+            {0, digitalkhatt::NoGlyphAxis, 0, layout.glyphCodePerName.at(root)},
+            {0, digitalkhatt::LeftTatweelAxis, baseLeft},
+            {2, digitalkhatt::LeftTatweelAxis, markLeft}};
+        ShapingBuffer buffer(shape(text, font, {}, &provider, assignments, false));
+        unsigned count = 0;
+        const auto* infos = hb_buffer_get_glyph_infos(buffer.get(), &count);
+        const auto* positions = hb_buffer_get_glyph_positions(buffer.get(), nullptr);
+        std::optional<double> fathaCenter, shaddaCenter;
+        double pen = 0;
+        for (unsigned i = 0; i < count; ++i) {
+          const auto& name = layout.glyphNamePerCode.at(infos[i].codepoint);
+          if (name == "fatha.stretched" || name == "shadda") {
+            const auto* glyph = layout.getGlyph(infos[i].codepoint, layout.glyphParameters(infos[i]));
+            const double center = pen + positions[i].x_offset + (glyph->bbox.llx + glyph->bbox.urx) * 0.5 * xScale / 1000;
+            (name == "shadda" ? shaddaCenter : fathaCenter) = center;
+          }
+          pen += positions[i].x_advance;
+        }
+        require(fathaCenter && shaddaCenter, "Missing Fatha/Shadda in expanded Noon/Beh shaping regression");
+        const double relativeCenter = *fathaCenter - *shaddaCenter;
+        if (!calibratedCenter) calibratedCenter = relativeCenter;
+        require(std::abs(relativeCenter - *calibratedCenter) <= std::abs(xScale) / 1000.0, std::string(root) + ": stretched Fatha must keep its calibrated center above Shadda beyond lefttatweel 1");
       }
     }
   }
@@ -307,7 +439,8 @@ void checkLocalAnchorsAndExpandedCentering(OtLayout& layout) {
     require(!layout.markBaselineClearance(layout.glyphCodePerName.at(root), parameters), "Base glyphs must not receive the mark baseline floor");
     for (auto* raw : lookup->subtables) {
       auto& subtable = *static_cast<MarkBaseSubtable*>(raw);
-      if (!subtable.name.ends_with(".fatha.4") || std::find(subtable.base.begin(), subtable.base.end(), root) == subtable.base.end()) continue;
+      const auto style = std::string_view(root).starts_with("behshape.") ? oldmadina::FathaAnchorStyle::ExpandedBeh : oldmadina::FathaAnchorStyle::Centered;
+      if (!subtable.name.ends_with(".fatha." + std::to_string(static_cast<int>(style))) || std::find(subtable.base.begin(), subtable.base.end(), root) == subtable.base.end()) continue;
       const auto className = subtable.classes.begin()->first;
       const auto* neutralBase = layout.getGlyph(layout.glyphCodePerName.at(root));
       const auto* currentBase = layout.getGlyph(layout.glyphCodePerName.at(root), parameters);
@@ -1135,7 +1268,7 @@ void checkPreferredContinuation(OtLayout& layout) {
 void checkSerialization(OtLayout& layout) {
   layout.setExtended(false);  // Standard OTF reads parameters from materialized glyph IDs.
   GlyphParameters parameters;
-  parameters.lefttatweel = 1;
+  parameters.lefttatweel = 3;
   const auto* variant = layout.getAlternate(layout.glyphCodePerName.at("fatha.stretched"), parameters, true, true);
   int checked = 0;
   for (auto* lookup : layout.lookups) {
@@ -1158,7 +1291,7 @@ void checkSerialization(OtLayout& layout) {
       ++checked;
     }
   }
-  require(checked == 15, "Expected five dot styles and five split Shadda/other-parent styles");
+  require(checked == 18, "Expected six dot styles and six split Shadda/other-parent styles");
   const auto* selector = layout.lookups.at(layout.lookupsIndexByName.at("fatha.stretched.mkmk"));
   require(selector->type == Lookup::chainingpos, "Expected standard chained-context positioning");
   for (auto* raw : selector->subtables) require(u16(raw->getOpenTypeTable(false), 0) == 3, "Expected standard ChainContextPos format 3");
@@ -1227,7 +1360,8 @@ int main(int argc, char** argv) {
       for (double left : {0.0625, oldmadina::FathaShaddaCenterLimit, oldmadina::FathaShaddaCenterLimit + 0.0625, 5.0}) checkDispatch(layout, provider, font, root, style, Parent::Shadda, left);
     }
     for (const auto* root : {"behshape.isol.expa", "behshape.fina.expa", "alefmaksura.isol.expa", "yehshape.isol.expa", "yehshape.fina.ii.expa", "yehshape.fina.afterbeh.expa", "yehshape.fina.expa"}) {
-      for (const auto parent : {Parent::Base, Parent::Dot, Parent::Shadda}) checkDispatch(layout, provider, font, root, 4, parent, 3);
+      const auto style = std::string_view(root).starts_with("behshape.") ? oldmadina::FathaAnchorStyle::ExpandedBeh : oldmadina::FathaAnchorStyle::Centered;
+      for (const auto parent : {Parent::Base, Parent::Dot, Parent::Shadda}) checkDispatch(layout, provider, font, root, static_cast<int>(style), parent, 3);
     }
     for (double left : {0.0, -1.0}) {
       checkDispatch(layout, provider, font, "noon.fina.expa", 1, Parent::Dot, left);
@@ -1235,10 +1369,12 @@ int main(int argc, char** argv) {
     }
     checkDispatch(layout, provider, font, "noon.fina.expa", 1, Parent::Dot, 1, true);
     checkAutomaticAttachment(layout, provider, font);
+    checkIqlabModeration(layout, provider, font);
     checkContextualFatha(layout, provider, font);
     checkCompensatedJoinedConnection(layout, provider, font);
     checkAddedMarkStretching(layout, provider, font);
     checkShaddaCenterTransition(layout);
+    checkExpandedShaddaCentering(layout, provider, font);
     checkLocalAnchorsAndExpandedCentering(layout);
     checkSharedGlyphTopAnchor(layout);
     checkFontOwnedGroupAnchors(layout);
@@ -1253,7 +1389,8 @@ int main(int argc, char** argv) {
     checkAdaptivePreview(layout);
     checkAdaptiveLastPage(layout);
     checkSerialization(layout);
-    std::cout << "Attachment/native/GSUB regressions, local no-lift anchors, expanded Beh/Yeh centring, baseline metadata, Shadda threshold transitions and 15 serialized anchor subtables passed\n";
+    checkIqlabGlyphAnchors(layout);
+    std::cout << "Attachment/native/GSUB regressions, local no-lift anchors, expanded Beh/Yeh centring, baseline metadata, Shadda threshold transitions, expanded Noon/Beh Shadda centring and 18 serialized anchor subtables passed\n";
   } catch (const std::exception& error) {
     std::cerr << error.what() << '\n';
     return 1;

@@ -1244,11 +1244,12 @@ Lookup* OldMadina::defaultmarkposition() {
 
 void OldMadina::addStretchedFathaBaseSubtables(Lookup* lookup) {
   using oldmadina::FathaAnchorStyle;
-  const std::array<std::pair<std::vector<std::string>, FathaAnchorStyle>, 4> profiles{{
+  const std::array<std::pair<std::vector<std::string>, FathaAnchorStyle>, 5> profiles{{
       {{"noon.isol.expa", "noon.fina.expa", "noon.fina.expa.afterbeh"}, FathaAnchorStyle::Noon},
       {{"kaf.fina.expa", "kaf.fina.afterlam.expa"}, FathaAnchorStyle::FinalKaf},
       {{"kaf.init.ii", "kaf.medi.ii"}, FathaAnchorStyle::InitialKaf},
-      {{"behshape.isol.expa", "behshape.fina.expa", "alefmaksura.isol.expa", "yehshape.isol.expa", "yehshape.fina.ii.expa", "yehshape.fina.afterbeh.expa", "yehshape.fina.expa"}, FathaAnchorStyle::Centered}}};
+      {{"behshape.isol.expa", "behshape.fina.expa"}, FathaAnchorStyle::ExpandedBeh},
+      {{"alefmaksura.isol.expa", "yehshape.isol.expa", "yehshape.fina.ii.expa", "yehshape.fina.afterbeh.expa", "yehshape.fina.expa"}, FathaAnchorStyle::Centered}}};
   std::vector<Subtable*> aliasSubtables;
   const auto naturalFatha = m_layout->glyphCodePerName.at("fatha");
   for (auto* raw : lookup->subtables) {
@@ -1269,7 +1270,7 @@ void OldMadina::addStretchedFathaBaseSubtables(Lookup* lookup) {
         subtable->base = std::move(coverage);
         auto& row = subtable->classes[className];
         row.mark = {"fatha.stretched"};
-        row.basefunction = oldmadina::fathaBaseAnchor(*this, *source, className, style == FathaAnchorStyle::Noon || style == FathaAnchorStyle::FinalKaf || style == FathaAnchorStyle::Centered);
+        row.basefunction = oldmadina::fathaBaseAnchor(*this, *source, className, style == FathaAnchorStyle::Noon || style == FathaAnchorStyle::FinalKaf || style == FathaAnchorStyle::Centered || style == FathaAnchorStyle::ExpandedBeh);
         row.markfunction = oldmadina::fathaMarkAnchor(*this, *source, className, style);
         aliasSubtables.push_back(subtable);
       };
@@ -1384,11 +1385,10 @@ Lookup* OldMadina::defaultmkmk() {
   lookup->subtables.push_back(subtable);
 
   subtable->name = "defaultmkmkmeemiqlab";
-  subtable->base = {"fatha", "fatha.stretched", "damma"};  // "kasra"
+  subtable->base = {"fatha", "fatha.stretched", "damma"};
 
   subtable->classes["meemiqlab"].mark = {"meemiqlab"};
-  subtable->classes["meemiqlab"].basefunction = Defaultmarkabovemark(*this, *subtable);
-  subtable->classes["meemiqlab"].markfunction = oldmadina::topMarkAnchor(*this);
+  // Both sides of this attachment are authored in glyphs.mp.
 
   subtable = new MarkBaseSubtable(lookup);
   lookup->subtables.push_back(subtable);
@@ -1537,11 +1537,12 @@ Lookup* OldMadina::stretchedFathaMkmk() {
   selector->feature = "mkmk";
   selector->type = Lookup::chainingpos;
   selector->flags = 0;  // The context explicitly includes marks and their base.
-  const std::array<std::pair<std::unordered_set<std::string>, FathaAnchorStyle>, 4> profiles{{
+  const std::array<std::pair<std::unordered_set<std::string>, FathaAnchorStyle>, 5> profiles{{
       {{"noon.isol.expa", "noon.fina.expa", "noon.fina.expa.afterbeh"}, FathaAnchorStyle::Noon},
       {{"kaf.fina.expa", "kaf.fina.afterlam.expa"}, FathaAnchorStyle::FinalKaf},
       {{"kaf.init.ii", "kaf.medi.ii"}, FathaAnchorStyle::InitialKaf},
-      {{"behshape.isol.expa", "behshape.fina.expa", "alefmaksura.isol.expa", "yehshape.isol.expa", "yehshape.fina.ii.expa", "yehshape.fina.afterbeh.expa", "yehshape.fina.expa"}, FathaAnchorStyle::Centered}}};
+      {{"behshape.isol.expa", "behshape.fina.expa"}, FathaAnchorStyle::ExpandedBeh},
+      {{"alefmaksura.isol.expa", "yehshape.isol.expa", "yehshape.fina.ii.expa", "yehshape.fina.afterbeh.expa", "yehshape.fina.expa"}, FathaAnchorStyle::Centered}}};
   auto compileCoverage = [&](const auto& names) {
     std::unordered_set<std::uint16_t> codes;
     for (const auto& name : names) {

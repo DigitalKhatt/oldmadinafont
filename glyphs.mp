@@ -1105,6 +1105,8 @@ tr_ := identity shifted (0,-ypart llcorner currentpicture);
 savepicture:=1;
 enddefchar;
 defchar(fatha,1614,-1,-1,-1);
+%%beginparams
+z.iqlab = (-7,110);
 
 %%beginverbatim
 % Natural outline is unchanged. Maximum width follows the longest clean corpus
@@ -1136,9 +1138,16 @@ fill
 
 %%endpaths
 %%beginbody
+% Follow the right shoulder; fatha.stretched inherits this anchor and deformation.
+setMarkAnchor(meemiqlab,z.iqlab  + fathaUpper);
 leftbearing := 0;
 tr_ := identity shifted (0,-ypart llcorner currentpicture);
 savepicture:=1;
+enddefchar;
+defchar(fatha.stretched,-1,-1,3,-1);
+%%beginbody
+% A positioning identity only: use the approved Fatha outline and all its axes.
+fatha$(params);
 enddefchar;
 defchar(kasra,1616,-1,-1,-1);
 %%beginbody
@@ -1215,6 +1224,8 @@ savepicture:=1;
 enddefchar;
 beginchar(damma,1615,-1,-1,-1);
 %%backgroundimage:images/damma.jpg,-5083.53,-777.698,1,0,0,1
+%%beginparams
+z.iqlab = (5,202);
 
 %%beginpaths
 
@@ -1242,6 +1253,7 @@ fill
 
 %%endpaths
 %%beginbody
+setMarkAnchor(meemiqlab,z.iqlab);
 leftbearing := 0;
 tr_ := identity shifted (0,-ypart llcorner currentpicture);
 savepicture:=1;
@@ -1453,6 +1465,10 @@ leftbearing := 0;
 endchar;
 beginchar(meemiqlab,1762,-1,-1,-1);
 %%backgroundimage:images/meemiqlab.jpg,-9,-1438,1,0,0,1
+%%beginparams
+z.dotmark = z.mark + (22,45);
+z.mark = (115.121,26.5594);
+z.meemiqlab = (133,251);
 
 %%beginpaths
 
@@ -1476,6 +1492,9 @@ fill
 %%endpaths
 %%beginbody
 
+setMarkAnchor(meemiqlab,z.meemiqlab);
+setMarkAnchor(defaultmarkposition,z.mark);
+setMarkAnchor(defaultmarkdotmarkstop,z.dotmark);
 leftbearing := 0;
 
 
@@ -4089,9 +4108,10 @@ fill
 (54.3112,180.097) .. tension 3.49539 and 1 ..
 (38.0912,370.743) .. tension 3.43687 and 13.4898 ..
  {up}(3.05614,666.666) .. tension 1.60026 and 2.03022 ..
- {right}(49.7619,777.557) .. tension 8.67219 and 1 ..
- {down}(58.3333,762.5) .. tension 12.9006 and bldmvi ( 0.75, 20 ) ..
-liii1 ( (146.185,248.51), (15.9722,-31.6666), (-22.3099,-21.9263) ) setranchor
+ {right}(49.7619,777.557) .. tension 0.915945 and 1 ..
+ {down}(62.1111,754.861) .. tension 12.9006 and 2.80332 ..
+(131.944,274.028) .. tension 0.915712 and bldmvi ( 0.75, 20 ) ..
+liii1 ( (157.657,221.399), (75,-8.74993), (-18.1432,-34.4263) ) setranchor
 (209,98) rightjoinii
 (120.485,127.727) .. tension 1 and 0.812571 ..
  {left}(118.171,129.728) .. tension 1 and 1 ..
@@ -4550,11 +4570,6 @@ fill
 
 setMarkAnchor(buttonmark,z.mark1);
 
-enddefchar;
-defchar(fatha.stretched,-1,-1,3,-1);
-%%beginbody
-% A positioning identity only: use the approved Fatha outline and all its axes.
-fatha$(params);
 enddefchar;
 defchar(meem.fina.afterheh,-1,-1,-1,-1);
 %%backgroundimage:images/kaf_meem.jpg,-614,-1096,1,0,0,1

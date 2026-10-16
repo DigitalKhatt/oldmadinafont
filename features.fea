@@ -2762,6 +2762,8 @@ table(justdfa) oldmadina.experimental2 {
       #exclude_marks glyphs [smallalef smallalef.joined smallalef.replacement hamzaabove.joined]
       width_axis lefttatweel
       growth_connection [lefttatweel righttatweel] gain 0.7 max_width 1600 grid 16
+      # Keep the Fatha/Iqlab pair compact; preserve contextual Fatha extension.
+      when followed_by glyphs [meemiqlab] growth_scale 0.5
       substitute fatha.stretched when lefttatweel > 0 otherwise fatha {
         # Fixed Fatha deformation above alternate Kaf, independent of body growth.
         on glyphs [kaf.init.ii kaf.medi.ii] parameter lefttatweel 0.8;

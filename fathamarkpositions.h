@@ -12,7 +12,8 @@ enum class FathaAnchorStyle { Right,
                               Noon,
                               FinalKaf,
                               InitialKaf,
-                              Centered };
+                              Centered,
+                              ExpandedBeh };
 
 inline constexpr double FathaShaddaCenterLimit = 1;
 inline constexpr double FathaBaselineMinClearance = 100;
@@ -51,12 +52,14 @@ inline CalcAnchor fathaMarkAnchor(Automedina& font, MarkBaseSubtable& source, st
     } else {
       anchor = Point(std::lround(neutralAnchor.x() - (neutral->bbox.llx + neutral->bbox.urx) * 0.5 + (current->bbox.llx + current->bbox.urx) * 0.5), neutralAnchor.y());
     }
-    if (style != FathaAnchorStyle::Right && style != FathaAnchorStyle::Centered) {
+    if (style != FathaAnchorStyle::Right && style != FathaAnchorStyle::Centered && style != FathaAnchorStyle::ExpandedBeh) {
       const double lower = style == FathaAnchorStyle::InitialKaf ? 0.2 : style == FathaAnchorStyle::Noon ? 0.15
                                                                                                          : 0.25;
       anchor.setY(std::lround(neutralAnchor.y() + lower * std::max(0.0, current->width - neutral->width)));
     }
-    if (centerThenLeft) {
+    // Expanded Noon/Beh keep Fatha centered on Shadda at every width. Other
+    // bases center only up to the limit, then let the mark grow to the left.
+    if (centerThenLeft && style != FathaAnchorStyle::Noon && style != FathaAnchorStyle::ExpandedBeh) {
       auto* reference = current;
       if (parameters.lefttatweel > FathaShaddaCenterLimit) {
         auto referenceParameters = parameters;

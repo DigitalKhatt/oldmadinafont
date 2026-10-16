@@ -1046,10 +1046,6 @@
                     "dammatanidgham": [
                         -42,
                         -16
-                    ],
-                    "meemiqlab": [
-                        22,
-                        45
                     ]
                 }
             }
@@ -2858,12 +2854,12 @@
             "meemiqlab": {
                 "baseparameters": {
                     "damma": [
-                        -169,
-                        -443
+                        20,
+                        0
                     ],
                     "fatha": [
-                        -111,
-                        -309
+                        40,
+                        -20
                     ]
                 }
             }
