@@ -2651,9 +2651,8 @@ table(justdfa) oldmadina.experimental2 {
   linepolicy {
     # These are the font-declared defaults. Runtime callers may explicitly
     # override either named policy for comparison.
-    #stretch staged_pool_full_shape;
     stretch staged_pool_continue;
-    shrink weighted_native_full_shape;
+    shrink weighted_native;
   }
 
   facts {
@@ -2684,10 +2683,6 @@ table(justdfa) oldmadina.experimental2 {
     # These medial forms have a fixed outgoing connection. Prefer opening
     # their incoming connection instead; ordinary lam.medi is excluded.
     fact MedialLam glyphs [lam.medi.beforeheh lam.medi.beforeyeh];
-    # The first/last constraints make this pair a whole two-base-glyph
-    # subword, irrespective of intervening marks. Reh, not Zay.
-    fact ShortRehStart form joins_right position first chars ["بتثنيئجحخسشصضطظعغفقمه"];
-    fact ShortRehEnd form final position last chars ["ر"];
     # Exact .beforehah suffix: behshape, meem, fehshape and sad. The shared
     # skeletons also cover their dotted letters, so there is no Yeh/Hah-only
     # character restriction. .beforehahyeh is a different compound form.
@@ -2989,14 +2984,6 @@ table(justdfa) oldmadina.experimental2 {
       range $1:lefttatweel preferred max($1:lefttatweel, select(isfact($1, JoiningHeh) and isfact($2, FinalMeem), 1.2, 4));
       range $2:righttatweel preferred max($2:righttatweel, select(isfact($1, JoiningHeh) and isfact($2, FinalMeem), 1.2, select(isfact($2, LamLaf) or (isfact($2, FinalAscendantChar) and isfact($2, SubwordLast)), 2, 4)));
     }
-    action ContinueFinalAscendant5 {
-      prepare {
-        forbid not ($1:lefttatweel > 0) or not ($2:righttatweel > 0);
-        forbid $2:lefttatweel > 0;
-      }
-      range $1:lefttatweel preferred max($1:lefttatweel, 5);
-      range $2:righttatweel preferred max($2:righttatweel, 2.5);
-    }
 
     # Exact fixed-step schedule using native glyph parameters. cv01 units map
     # directly to lefttatweel; cv02 units are half a righttatweel unit.
@@ -3041,12 +3028,6 @@ table(justdfa) oldmadina.experimental2 {
         lookup $self justify.expand_terminal;
       }
       range $self:lefttatweel minimum 1 preferred 3 maximum 9;
-    }
-    action ContinueTerminalGroup1 {
-      prepare {
-        forbid not ($self:lefttatweel > 0) or $self:righttatweel > 0;
-      }
-      range $self:lefttatweel preferred max($self:lefttatweel, 9);
     }
   }
 
@@ -3214,8 +3195,7 @@ table(justdfa) oldmadina.experimental2 {
       action SmallDecomposition;
     }
 
-    # Separate bindings keep the comparison policies unchanged. Continuation
-    # is ordinary current-state matching, guarded by the existing parameters.
+    # Preferred opportunities retain their accepted identity for stage continuation.
     opportunity PreferredAlternateGroup1 {
       match [{ form terminal chars ["بتثك"] }];
       action PreferredTerminalGroup1;
@@ -3287,73 +3267,14 @@ table(justdfa) oldmadina.experimental2 {
       match RehConnection;
       action PreferredKashida;
     }
-    opportunity ContinueAlternateGroup1 {
-      match [{ form terminal chars ["بتثك"] }];
-      action ContinueTerminalGroup1;
-    }
-    opportunity ContinueNoon {
-      match [{ form terminal chars ["ن"] }];
-      action ContinueTerminalGroup1;
-    }
-    opportunity ContinueAlternateGroup2 {
-      match [Alternate2];
-      prepare {
-        forbid not ($self:lefttatweel > 0) or $self:righttatweel > 0;
-      }
-      range $self:lefttatweel preferred max($self:lefttatweel, 7);
-    }
 
-    # No lookup, clear, or mandatory update in these actions. A positive
-    # current parameter identifies a stretch accepted by an earlier stage.
-    opportunity ContinueKaf {
-      match [KafBody JoinedLeft];
-      prepare {
-        forbid not ($1:third > 0);
-      }
-      range $1:third preferred max($1:third, 4);
-    }
-    opportunity ContinueBehKashida {
-      match BehConnection;
-      action ContinueKashida4;
-    }
-    opportunity ContinueFinalMeemKashida {
-      match FinalMeemConnection;
-      action ContinueKashida4;
-    }
-    opportunity ContinueLamMeemKashida {
-      match LamFinalMeemConnection;
-      action ContinueKashida4;
-    }
-    opportunity ContinueHehMeemKashida {
-      match HehFinalMeemConnection;
-      action ContinueKashida4;
-    }
-    opportunity ContinueFinalAscendantKashida {
-      match FinalAscendantConnection;
-      action ContinueFinalAscendant5;
-    }
-    opportunity ContinueLamLafKashida {
-      match LamLafConnection;
-      action ContinueFinalAscendant5;
-    }
-    opportunity ContinueMedialLamKashida {
-      match MedialLamConnection;
-      action ContinueKashida4;
-    }
-    opportunity ContinueRehKashida {
-      match RehConnection;
-      action ContinueKashida4;
-    }
+    # RemainingStretch still recognizes decompositions from their current state.
     opportunity ContinueBeforeHah {
       match [DecomposedBeforeHah DecomposedHah];
       action ContinueKashida4;
     }
     opportunity ContinueSadReh {
       match [DecomposedSad DecomposedReh];
-      action ContinueKashida4;
-    }
-    opportunity ContinueShortReh {
-      match [ShortRehStart ShortRehEnd];
       action ContinueKashida4;
     }
     opportunity KafCompanionReh {
@@ -3564,29 +3485,6 @@ table(justdfa) oldmadina.experimental2 {
       traversal last_first;
     }
 
-    # Inspect all matches: an inactive last match must not hide an earlier
-    # stretched site. Actions reject inactive sites and only vary parameters.
-    # No new record is needed: the original Horizontal record remains in force
-    # for the decomposition/fallback selections that create new connections.
-    selection CandidateContinuePreferred {
-      # Continue earlier stretches, but leave a minimally opened site alone.
-      different_position [MinimalDecomposition];
-      choose ContinueShortReh last all_non_overlapping weight 5 decay 0.85 forbid_recorded [KafBody];
-      choose ContinueAlternateGroup1 last all_non_overlapping weight 5 decay 0.85 decay_group TerminalGroup1;
-      choose ContinueNoon last all_non_overlapping weight 5 decay 0.85 decay_group TerminalGroup1 record TerminalNoon not_adjacent [KafBody];
-      choose ContinueAlternateGroup2 last all_non_overlapping weight 4 decay 0.85;
-      choose ContinueLamAlternate last all_non_overlapping weight 0.5 decay 0.75;
-      choose ContinueKaf last all_non_overlapping weight 3 decay 0.85 not_adjacent [TerminalNoon];
-      choose ContinueBehKashida first all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
-      choose ContinueFinalMeemKashida first all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
-      choose ContinueLamMeemKashida first all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
-      choose ContinueHehMeemKashida first all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
-      choose ContinueFinalAscendantKashida last all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
-      choose ContinueLamLafKashida last all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
-      choose ContinueMedialLamKashida last all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
-      choose ContinueRehKashida last all_non_overlapping weight 3 decay 0.85 forbid_recorded [KafBody];
-      traversal last_first;
-    }
     selection CandidateContinueDecomposition {
       forbid_recorded [KafBody];
       different_position [MinimalDecomposition];
@@ -3716,13 +3614,6 @@ table(justdfa) oldmadina.experimental2 {
       # After preferred/decomposition sites; at most one rare flat Lam.
       phase CandidateRareTerminal 1 candidate_pool limit 1 word_position 0.25;
     }
-    stage ContinueStretch {
-      phase CandidateContinuePreferred 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
-      phase CandidateContinueDecomposition 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
-      phase CandidateRemainingKaf 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
-      phase CandidateKafCompanion 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
-      phase CandidateOther 1 candidate_pool longer_subword 1 central_connection 2 word_position 0.25;
-    }
     # Preferred sites are continued by repeating PreferredStretch itself.
     # These phases introduce/continue other opportunity families only.
     stage RemainingStretch {
@@ -3795,33 +3686,6 @@ table(justdfa) oldmadina.experimental2 {
     }
   }
 
-  # Each `stretchpolicy` block is one selectable complete justification.
-  stretchpolicy staged_pool {
-    candidate_width advance;
-    cap_spaces 250 250;
-    #stage InitialShortStretch;
-    stage PreferredStretch;
-    stage DecomposeConnections;
-    stage RareTerminalStretch;
-    stage DecomposeLastResort;
-    stage ContinueStretch;
-    fill_spaces;
-  }
-  # Exact endpoint shaping retained for regression and visual comparison.
-  stretchpolicy staged_pool_full_shape {
-    candidate_width full_shape;    
-    #stage InitialShortStretch;
-    stage PreferredStretch;
-    cap_spaces 250 250;
-    stage DecomposeConnections;
-    stage RareTerminalStretch;
-    stage DecomposeLastResort;
-    stage InitialShortStretch;
-    cap_spaces 400 400;
-    stage ContinueStretch;
-    fill_spaces;
-  }
-
   # Exact pre-ratio schedule retained as a selectable comparison baseline.
   stretchpolicy fixed_steps {
     cap_spaces 250 250;
@@ -3837,8 +3701,7 @@ table(justdfa) oldmadina.experimental2 {
     fill_spaces;
   }
 
-  # Comparison only: same surrounding stages as staged_pool_full_shape.
-  # Allocate preferred lengths first, then reuse the same rules up to their maxima.
+  # Allocate preferred lengths first, then continue the same accepted opportunities.
   stretchpolicy staged_pool_continue {
     candidate_width advance;    
     cap_spaces 250 250;
