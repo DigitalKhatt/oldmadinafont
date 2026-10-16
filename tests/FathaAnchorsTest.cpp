@@ -652,11 +652,147 @@ void checkShrinkAlefAboveDal(OtLayout& layout, FontProvider& provider, hb_font_t
   }
 }
 
+void checkPreferredAinBehStretching(OtLayout& layout) {
+  using namespace digitalkhatt;
+  using namespace digitalkhatt::justify;
+  auto& catalog = *layout.compiledJustificationCatalog;
+  const auto rule = std::find_if(catalog.rules.begin(), catalog.rules.end(), [](const auto& value) { return value.name == "RightLetterBehKashida"; });
+  require(rule != catalog.rules.end(), "Missing preferred Ain-Beh opportunity");
+  const auto matches = [&](std::string_view first, char16_t character, std::string_view second) {
+    const std::array facts{glyphFacts({.glyphName = first, .sourceCharacter = character}, catalog.facts), glyphFacts({.glyphName = second, .sourceCharacter = u'ب'}, catalog.facts)};
+    const auto found = catalog.dfa->match(facts);
+    return std::any_of(found.begin(), found.end(), [&](const auto& match) { return match.ruleId == rule->id; });
+  };
+  require(matches("ain.init", u'ع', "behshape.medi") && matches("ain.medi", u'ع', "behshape.medi.expa") && matches("ain.medi", u'غ', "behshape.medi"), "Preferred Ain-Beh must cover initial/medial Ain and the shared Ghain shape");
+  require(!matches("ain.fina", u'ع', "behshape.medi") && !matches("ain.medi", u'ع', "behshape.init") && matches("hah.medi", u'ح', "behshape.medi"), "The generic right-letter rule must retain joining forms and include the Hah family");
+  const auto binding = std::find_if(catalog.actions.begin(), catalog.actions.end(), [&](const auto& action) { return action.rule == rule->id; });
+  require(binding != catalog.actions.end() && catalog.actionDefinitions.at(binding->definition).name == "PreferredKashida", "Preferred Ain-Beh must reuse the existing action and its ranges");
+
+  auto probe = catalog.stretchPolicies.at(catalog.stretchPolicyIndex("staged_pool"));
+  const auto preferred = std::find_if(probe.steps.begin(), probe.steps.end(), [](const auto& step) { return step.stage == "PreferredStretch"; });
+  require(preferred != probe.steps.end(), "Missing preferred stage for Ain-Beh regression");
+  auto initial = *preferred;
+  initial.continuation = {};
+  std::erase_if(initial.phases, [&](const auto& phase) { return catalog.selections.at(phase.selection).name != "CandidatePreferred"; });
+  require(initial.phases.size() == 1, "Ain-Beh must compete in the primary selection");
+  initial.phases.front().centralConnection = 20;
+  auto continued = initial;
+  continued.continuation = {StageContinuation::Mode::Maximum};
+  probe.name = "test.ain_beh_preferred";
+  probe.steps = {initial, continued};
+  const int policy = static_cast<int>(catalog.stretchPolicies.size());
+  catalog.stretchPolicies.push_back(std::move(probe));
+  const int width = 10000 << OtLayout::SCALEBY;
+  const double scale = (1 << OtLayout::SCALEBY) * OtLayout::EMSCALE;
+  bool activated = false, resumed = false, competingAscendant = false;
+  layout.setJustificationTraceCallback([&](const auto& trace) {
+    if (trace.decision != "applied") return;
+    activated |= trace.rule == "RightLetterBehKashida" && trace.reason == "accepted";
+    resumed |= trace.rule == "RightLetterBehKashida" && trace.reason == "continued";
+    competingAscendant |= trace.rule == "PreferredFinalAscendantKashida";
+  });
+  const auto page = layout.justifyPage(scale, width, {{u"بِٱلْعِبَادِ", width, LineJustification::Distribute, LineType::Line}}, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS, JustOption{JustType::DeclPolicy, JustStyle::None, ShrinkType::None, policy}, "qpc_v1_layout");
+  layout.setJustificationTraceCallback({});
+  require(page.size() == 1 && activated && resumed && !competingAscendant, "Central Ain-Beh must outrank both Beh-Alef sites and retain its own Horizontal record during continuation");
+  bool ain = false, beh = false;
+  for (const auto& glyph : page.front().glyphs) {
+    const auto& name = layout.glyphNamePerCode.at(glyph.codepoint);
+    if (name == "ain.medi") ain = glyph.parameters.lefttatweel == 4;
+    if (name.starts_with("behshape.medi")) beh |= glyph.parameters.righttatweel == 4 && glyph.parameters.lefttatweel == 0;
+    if (name == "alef.fina") require(glyph.parameters.righttatweel == 0, "The competing Beh-Alef sites must not stretch in this primary-only fixture");
+  }
+  require(ain && beh, "Ain-Beh must apply PreferredKashida's maximum of 4 to both connection endpoints");
+  catalog.stretchPolicies.pop_back();
+}
+
+void checkPreferredJoinedStretching(OtLayout& layout) {
+  using namespace digitalkhatt;
+  using namespace digitalkhatt::justify;
+  auto& catalog = *layout.compiledJustificationCatalog;
+  auto probe = catalog.stretchPolicies.at(catalog.stretchPolicyIndex("staged_pool"));
+  const auto preferred = std::find_if(probe.steps.begin(), probe.steps.end(), [](const auto& step) { return step.stage == "PreferredStretch"; });
+  require(preferred != probe.steps.end(), "Missing preferred stage for secondary joins");
+  auto initial = *preferred;
+  initial.continuation = {};  // Test ordinary preferred allocation, independently of the font's recipe.
+  auto continued = initial;
+  continued.continuation = {StageContinuation::Mode::Maximum};
+  probe.name = "test.secondary_joined";
+  probe.steps = {initial, continued};
+  const int policy = static_cast<int>(catalog.stretchPolicies.size());
+  catalog.stretchPolicies.push_back(std::move(probe));
+  const int width = 10000 << OtLayout::SCALEBY;
+  const double scale = (1 << OtLayout::SCALEBY) * OtLayout::EMSCALE;
+  const JustOption options{JustType::DeclPolicy, JustStyle::None, ShrinkType::None, policy};
+  for (const auto& [text, rule, firstName, secondName] : std::vector<std::tuple<std::u16string, std::string, std::string, std::string>>{{u"غَفُورࣱ", "SecondaryGhFehKashida", "ain.init", "fehshape.medi"}, {u"خَيْرُ", "RightLetterBehKashida", "hah.init", "behshape.medi.beforereh"}, {u"ٱلْفَقِيرَ", "RightLetterBehKashida", "fehshape.medi", "behshape.medi.beforereh"}}) {
+    bool activated = false, resumed = false;
+    double expectedMaximum = 0;
+    int site = -1;
+    layout.setJustificationTraceCallback([&](const auto& trace) {
+      if (trace.rule != rule || trace.decision != "applied") return;
+      activated |= trace.reason == "accepted";
+      resumed |= trace.reason == "continued";
+      site = trace.site;
+      if (trace.reason == "continued") {
+        for (const auto& parameter : trace.parameters) {
+          if (parameter.attribute == "lefttatweel") {
+            expectedMaximum = parameter.maximumValue;
+            require(parameter.appliedValue == expectedMaximum, "With enough width a secondary join must reach its authored maximum");
+          }
+        }
+      }
+    });
+    const auto page = layout.justifyPage(scale, width, {{text, width, LineJustification::Distribute, LineType::Line}}, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS, options, "qpc_v1_layout");
+    layout.setJustificationTraceCallback({});
+    require(page.size() == 1 && activated && resumed && expectedMaximum == 4, "A secondary join must activate and continue with PreferredKashida's unchanged maximum of 4");
+    const auto first = std::find_if(page[0].glyphs.begin(), page[0].glyphs.end(), [&](const auto& glyph) { return glyph.cluster == site && layout.glyphNamePerCode.at(glyph.codepoint) == firstName; });
+    require(first != page[0].glyphs.end() && first->parameters.lefttatweel == expectedMaximum, "Final replay must retain secondary stretching");
+    const auto second = std::find_if(page[0].glyphs.begin(), page[0].glyphs.end(), [&](const auto& glyph) { return layout.glyphNamePerCode.at(glyph.codepoint) == secondName; });
+    require(second != page[0].glyphs.end() && second->parameters.righttatweel == expectedMaximum, "Both ends of a secondary connection must retain the same normal stretch");
+    if (rule == "SecondaryGhFehKashida") require(second->parameters.lefttatweel == 0.5, "Secondary stretching must preserve Feh's intrinsic spacing before Waw");
+  }
+  for (const auto text : {u"حَبْلْ", u"غَفْلْ", u"فِيهَا"}) {
+    bool ascendant = false, secondary = false;
+    layout.setJustificationTraceCallback([&](const auto& trace) {
+      if (trace.decision != "applied") return;
+      ascendant |= trace.rule == "PreferredFinalAscendantKashida";
+      secondary |= trace.rule == "SecondaryGhFehKashida" || trace.rule == "RightLetterBehKashida";
+    });
+    layout.justifyPage(scale, width, {{text, width, LineJustification::Distribute, LineType::Line}}, true, false, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS, options, "qpc_v1_layout");
+    layout.setJustificationTraceCallback({});
+    require(ascendant && !secondary, "A higher-scored final-ascendant stretch must block competing joined sites in the same word, including continuation");
+  }
+  const auto ruleId = [&](std::string_view name) {
+    const auto rule = std::find_if(catalog.rules.begin(), catalog.rules.end(), [&](const auto& value) { return value.name == name; });
+    require(rule != catalog.rules.end(), "Missing secondary joining opportunity");
+    return rule->id;
+  };
+  const auto matches = [&](std::string_view rule, std::string_view left, char16_t leftChar, std::string_view right, char16_t rightChar) {
+    const std::array facts{glyphFacts({.glyphName = left, .sourceCharacter = leftChar}, catalog.facts), glyphFacts({.glyphName = right, .sourceCharacter = rightChar}, catalog.facts)};
+    const auto found = catalog.dfa->match(facts);
+    return std::any_of(found.begin(), found.end(), [&](const auto& match) { return match.ruleId == ruleId(rule); });
+  };
+  const auto actionDefinition = [&](std::string_view rule) {
+    const auto id = ruleId(rule);
+    const auto binding = std::find_if(catalog.actions.begin(), catalog.actions.end(), [&](const auto& action) { return action.rule == id; });
+    require(binding != catalog.actions.end(), "Missing secondary joining action binding");
+    return binding->definition;
+  };
+  for (const auto rule : {"SecondaryGhFehKashida", "RightLetterBehKashida"}) require(actionDefinition(rule) == actionDefinition("PreferredBehKashida"), "Joined patterns must reuse PreferredKashida, not duplicate its preparation or ranges");
+  require(matches("SecondaryGhFehKashida", "ain.init", u'غ', "fehshape.medi", u'ف'), "Gh-Feh must match the secondary joining pool");
+  require(matches("RightLetterBehKashida", "hah.init.ii", u'خ', "behshape.medi.beforereh", u'ي'), "Hah-shape/Beh-shape must cover Khah-Yeh before Reh");
+  require(matches("RightLetterBehKashida", "fehshape.medi", u'ق', "behshape.medi.beforereh", u'ي'), "Right-high/Beh-shape matching must include Qaf-Yeh in Al-Faqir");
+  require(matches("RightLetterBehKashida", "fehshape.init", u'ق', "behshape.medi.beforereh", u'ي') && matches("RightLetterBehKashida", "fehshape.medi", u'ق', "behshape.medi.beforenoon", u'ي'), "The generalized secondary pair must include joining initial forms and Beh before Noon");
+  require(!matches("RightLetterBehKashida", "fehshape.fina", u'ق', "behshape.medi.beforereh", u'ي') && matches("RightLetterBehKashida", "fehshape.medi", u'ق', "behshape.medi", u'ي'), "The generic right-letter rule must retain outgoing joining and allow ordinary medial Beh shapes");
+  require(!matches("SecondaryGhFehKashida", "ain.init", u'ع', "fehshape.medi", u'ف'), "Gh-Feh must not silently include Ain-Feh");
+  require(!matches("SecondaryGhFehKashida", "ain.init", u'غ', "behshape.medi", u'ب') && !matches("RightLetterBehKashida", "hah.init", u'ح', "fehshape.medi", u'ف'), "Separate secondary patterns must not introduce cross-pairs");
+  catalog.stretchPolicies.pop_back();
+}
+
 void checkLamMeemStretching(OtLayout& layout) {
   using namespace digitalkhatt;
   const int width = 1800 << OtLayout::SCALEBY;
   const double scale = (1 << OtLayout::SCALEBY) * OtLayout::EMSCALE;
-  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard, layout.compiledJustificationCatalog->stretchPolicyIndex("staged_pool_continue")};
+  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard, layout.compiledJustificationCatalog->stretchPolicyIndex("staged_pool")};
   const std::vector<LineToJustify> input{{u"وَلَمْ", width, LineJustification::Distribute, LineType::Line}};
   bool preferred = false, continued = false;
   layout.setJustificationTraceCallback([&](const auto& trace) {
@@ -681,7 +817,7 @@ void checkHehMeemStretching(OtLayout& layout) {
   using namespace digitalkhatt;
   const int width = 2400 << OtLayout::SCALEBY;
   const double scale = (1 << OtLayout::SCALEBY) * OtLayout::EMSCALE;
-  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard, layout.compiledJustificationCatalog->stretchPolicyIndex("staged_pool_continue")};
+  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard, layout.compiledJustificationCatalog->stretchPolicyIndex("staged_pool")};
   for (const auto& [text, hehName] : std::vector<std::pair<std::u16string, std::string>>{{u"هَمْ", "heh.init"}, {u"مَهَمْ", "heh.medi"}}) {
     const std::vector<LineToJustify> input{{text, width, LineJustification::Distribute, LineType::Line}};
     bool preferred = false;
@@ -694,7 +830,7 @@ void checkHehMeemStretching(OtLayout& layout) {
         if (parameter.attribute != "lefttatweel" && parameter.attribute != "righttatweel") continue;
         ++endpointCount;
         require(parameter.maximumValue <= 1.5, "Heh-final-Meem continuation must retain its authored maximum");
-        if (trace.reason != "continued") require(parameter.minimumValue == 0.5 && parameter.maximumValue == 1.5, "Heh-final-Meem preferred endpoints must use the 0.5..1.5 range");
+        if (trace.reason == "accepted") require(parameter.minimumValue == 0.5 && parameter.maximumValue == 1.5, "Ordinary Heh-final-Meem preferred endpoints must use the 0.5..1.5 range");
       }
       require(endpointCount == 2, "Heh-final-Meem must limit both kashida endpoints");
     });
@@ -715,7 +851,7 @@ void checkFinalAscendantPrecedence(OtLayout& layout) {
   using namespace digitalkhatt;
   const int width = 5000 << OtLayout::SCALEBY;
   const double scale = (1 << OtLayout::SCALEBY) * OtLayout::EMSCALE;
-  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard, layout.compiledJustificationCatalog->stretchPolicyIndex("staged_pool_continue")};
+  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard, layout.compiledJustificationCatalog->stretchPolicyIndex("staged_pool")};
   const std::vector<LineToJustify> input{{u"أَحْبَارَهُمْ", width, LineJustification::Distribute, LineType::Line}};
   bool behAlef = false, hehMeem = false, continued = false;
   layout.setJustificationTraceCallback([&](const auto& trace) {
@@ -742,7 +878,7 @@ void checkLastResortDecomposition(OtLayout& layout) {
   using namespace digitalkhatt;
   const int width = 5000 << OtLayout::SCALEBY;
   const double scale = (1 << OtLayout::SCALEBY) * OtLayout::EMSCALE;
-  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard, layout.compiledJustificationCatalog->stretchPolicyIndex("staged_pool_continue")};
+  const JustOption options{JustType::DeclPolicy, JustStyle::XScale, ShrinkType::Standard, layout.compiledJustificationCatalog->stretchPolicyIndex("staged_pool")};
   const std::vector<LineToJustify> input{{u"تَحُسُّونَهُم", width, LineJustification::Distribute, LineType::Line}};
   bool preferredHeh = false, regularDecomposition = false;
   layout.setJustificationTraceCallback([&](const auto& trace) {
@@ -796,8 +932,8 @@ void checkLastResortDecomposition(OtLayout& layout) {
     const auto matches = catalog.dfa->match(facts);
     require(std::none_of(matches.begin(), matches.end(), [&](const auto& match) { return match.ruleId == hahRule->id; }), "Ordinary Hah connections and three-glyph compounds must not match two-glyph last-resort decomposition");
   }
-  const int staged = catalog.stretchPolicyIndex("staged_pool_continue");
-  require(staged >= 0, "Missing staged_pool_continue policy");
+  const int staged = catalog.stretchPolicyIndex("staged_pool");
+  require(staged >= 0, "Missing staged_pool policy");
   auto probe = catalog.stretchPolicies.at(staged);
   probe.name = "test.last_resort_only";
   std::erase_if(probe.steps, [](const auto& step) { return step.stage != "DecomposeLastResort"; });
@@ -873,7 +1009,7 @@ void checkLateBaselineSpacing(OtLayout& layout) {
   using namespace digitalkhatt;
   using namespace digitalkhatt::justify;
   auto& catalog = *layout.compiledJustificationCatalog;
-  const int source = catalog.stretchPolicyIndex("staged_pool_continue");
+  const int source = catalog.stretchPolicyIndex("staged_pool");
   require(source >= 0, "Missing stage-continuation stretch policy");
   const auto& steps = catalog.stretchPolicies.at(source).steps;
   const auto preferred = std::find_if(steps.begin(), steps.end(), [](const auto& step) { return step.stage == "PreferredStretch"; });
@@ -964,7 +1100,12 @@ void checkContinuationSyntax() {
   require(driver.parse_string(source("stage Preferred; stage Preferred continue by 1; stage Preferred continue to 9; stage Preferred continue;")), "Parser must accept all three continuation forms");
   const auto& steps = context.justificationDfas.at("test").stretchPolicies.at(0).steps;
   require(steps.size() == 4 && steps[0].continuation.empty() && steps[1].continuation == "by" && steps[1].continuationLimit == 1 && steps[2].continuation == "to" && steps[2].continuationLimit == 9 && steps[3].continuation == "maximum", "Parser must preserve relative, absolute and full continuation modes");
-  for (const auto invalid : {"stage Preferred increment 1;", "stage Preferred continue by 0;", "stage Preferred continue to -1;", "stage Preferred continue 9;"}) {
+  feayy::FeaContext percentContext(nullptr);
+  feayy::Driver percentDriver(percentContext);
+  require(percentDriver.parse_string(source("stage Preferred continue to 50%; stage Preferred continue by 12.5%; stage Preferred continue to 0%; stage Preferred continue to 100 %;")), "Parser must accept integer and decimal percentage continuation, with optional whitespace");
+  const auto& percentages = percentContext.justificationDfas.at("test").stretchPolicies.at(0).steps;
+  require(percentages.size() == 4 && percentages[0].continuation == "to" && percentages[0].continuationLimit == 50 && percentages[1].continuation == "by" && percentages[1].continuationLimit == 12.5 && percentages[2].continuationLimit == 0 && percentages[3].continuationLimit == 100 && std::all_of(percentages.begin(), percentages.end(), [](const auto& step) { return step.continuationPercentage; }), "Parser must preserve percentage units independently from absolute limits");
+  for (const auto invalid : {"stage Preferred increment 1;", "stage Preferred continue by 0;", "stage Preferred continue to -1;", "stage Preferred continue 9;", "stage Preferred continue to -1%;", "stage Preferred continue to 101%;", "stage Preferred continue by 0%;", "stage Preferred continue by 100.1%;", "stage Preferred continue 25%;", "stage Preferred continue to %;", "stage Preferred continue to 25%%;"}) {
     feayy::FeaContext invalidContext(nullptr);
     feayy::Driver invalidDriver(invalidContext);
     require(!invalidDriver.parse_string(source(invalid)), "Parser must reject invalid or removed stage syntax: " + std::string(invalid));
@@ -1251,7 +1392,7 @@ void checkKafNoonExclusion(OtLayout& layout) {
   require(weights(independent, 1) == std::vector<double>{6, 6, 6 * 0.85}, "Choices without decay_group must retain independent per-rule counters");
 
   auto& mutableCatalog = *layout.compiledJustificationCatalog;
-  auto probe = mutableCatalog.stretchPolicies.at(mutableCatalog.stretchPolicyIndex("staged_pool_continue"));
+  auto probe = mutableCatalog.stretchPolicies.at(mutableCatalog.stretchPolicyIndex("staged_pool"));
   const auto preferred = std::find_if(probe.steps.begin(), probe.steps.end(), [](const auto& step) { return step.stage == "PreferredStretch"; });
   require(preferred != probe.steps.end(), "Missing Kaf/Noon preferred stage");
   probe.steps = {*preferred};
@@ -1298,8 +1439,8 @@ void checkPreferredContinuation(OtLayout& layout) {
   using namespace digitalkhatt;
   using namespace digitalkhatt::justify;
   auto& catalog = *layout.compiledJustificationCatalog;
-  require(catalog.stretchPolicyIndex("staged_pool") < 0 && catalog.stretchPolicyIndex("staged_pool_full_shape") < 0, "Obsolete staged comparison policies must not remain selectable");
-  auto probe = catalog.stretchPolicies.at(catalog.stretchPolicyIndex("staged_pool_continue"));
+  require(catalog.stretchPolicyIndex("staged_pool_continue") < 0 && catalog.stretchPolicyIndex("staged_pool_full_shape") < 0, "Obsolete staged policy names must not remain selectable");
+  auto probe = catalog.stretchPolicies.at(catalog.stretchPolicyIndex("staged_pool"));
   const auto preferred = std::find_if(probe.steps.begin(), probe.steps.end(), [](const auto& step) { return step.stage == "PreferredStretch"; });
   require(preferred != probe.steps.end(), "Missing reusable preferred stage");
   auto step = *preferred;
@@ -1352,6 +1493,27 @@ void checkPreferredContinuation(OtLayout& layout) {
     full.continuation = {StageContinuation::Mode::Maximum};
     catalog.stretchPolicies.back().steps = {ordinary, full};
     require(find(run(text), name).parameters.value(axis) == maximum, "Bare continuation must use the action's declared maximum");
+    auto percent = step;
+    percent.continuation = {StageContinuation::Mode::To, 50, true};
+    // These three opportunities all activate at 1, with different full maxima.
+    const double halfRange = 1 + (maximum - 1) / 2;
+    catalog.stretchPolicies.back().steps = {percent};
+    const auto percentageOnly = run(text);
+    require(find(percentageOnly, name).parameters.value(axis) == halfRange, "Percentage targets must use each opportunity's own activation minimum and maximum");
+    catalog.stretchPolicies.back().steps = {ordinary, percent};
+    const auto halfway = run(text);
+    require(find(halfway, name).parameters.value(axis) == std::max(initial, halfRange), "Percentage targets must retain the original range after ordinary preferred allocation");
+    if (text == u"بل") require(find(halfway, "lam.fina").parameters.righttatweel == 1.5, "Percentage continuation must respect the incoming parameter's own half-sized range");
+    catalog.stretchPolicies.back().steps = {ordinary, percent, percent};
+    require(find(run(text), name).parameters.value(axis) == std::max(initial, halfRange), "Repeating a percentage target must not rebase it on the latest accepted minimum");
+    percent.continuation = {StageContinuation::Mode::By, 25, true};
+    catalog.stretchPolicies.back().steps = {ordinary, percent};
+    require(find(run(text), name).parameters.value(axis) == std::min(maximum, initial + (maximum - 1) / 4), "Percentage increments must use the original range rather than the remaining range");
+    catalog.stretchPolicies.back().steps = {ordinary, percent, percent};
+    require(find(run(text), name).parameters.value(axis) == std::min(maximum, initial + (maximum - 1) / 2), "Repeated percentage increments must add equal amounts");
+    percent.continuation = {StageContinuation::Mode::To, 100, true};
+    catalog.stretchPolicies.back().steps = {ordinary, percent};
+    require(find(run(text), name).parameters.value(axis) == maximum, "A 100-percent target must be equivalent to bare continuation");
   }
   // Page 51, line 15: baseline Beh-Sad spacing changes Sad's incoming axis,
   // while the accepted Sad-Yeh opportunity owns its outgoing axis only.
@@ -1496,6 +1658,8 @@ int main(int argc, char** argv) {
     checkSharedGlyphTopAnchor(layout);
     checkFontOwnedGroupAnchors(layout);
     hb_font_destroy(font);
+    checkPreferredAinBehStretching(layout);
+    checkPreferredJoinedStretching(layout);
     checkLamMeemStretching(layout);
     checkHehMeemStretching(layout);
     checkFinalAscendantPrecedence(layout);

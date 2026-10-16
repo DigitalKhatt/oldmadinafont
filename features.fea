@@ -2651,7 +2651,7 @@ table(justdfa) oldmadina.experimental2 {
   linepolicy {
     # These are the font-declared defaults. Runtime callers may explicitly
     # override either named policy for comparison.
-    stretch staged_pool_continue;
+    stretch staged_pool;
     shrink weighted_native;
   }
 
@@ -3239,6 +3239,7 @@ table(justdfa) oldmadina.experimental2 {
       match BehConnection;
       action PreferredKashida;
     }
+
     opportunity PreferredFinalMeemKashida {
       match FinalMeemConnection;
       action PreferredKashida;
@@ -3265,6 +3266,17 @@ table(justdfa) oldmadina.experimental2 {
     }
     opportunity PreferredRehKashida {
       match RehConnection;
+      action PreferredKashida;
+    }
+
+    # Keep Ghain-Feh as a character-specific pair. The generic right-letter
+    # rule matches the shared joining Beh skeleton, including dotted letters.
+    opportunity SecondaryGhFehKashida {
+      match [{ form joins_right chars ["غ"] } { form joins_left chars ["ف"] }];
+      action PreferredKashida;
+    }
+    opportunity RightLetterBehKashida {
+      match [FinalRightKashida { form joins_left glyphs [/^behshape[.]/] }];
       action PreferredKashida;
     }
 
@@ -3450,15 +3462,18 @@ table(justdfa) oldmadina.experimental2 {
       # Prefer Noon's existing terminal score; Kaf remains a fit fallback.
       choose PreferredKafBeforeNoon last all_non_overlapping weight 1 decay 0.9 record KafBody forbid_recorded [KafBody Horizontal] not_adjacent [TerminalNoon];
       choose PreferredBehKashida first selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
+      choose SecondaryGhFehKashida last selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [Horizontal] different_subword [KafBody];
+      choose RightLetterBehKashida last selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [Horizontal] different_subword [KafBody];
       choose PreferredFinalMeemKashida first selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredLamMeemKashida first selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredHehMeemKashida first selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
-      choose PreferredFinalAscendantKashida last selected_only weight 4 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
+      choose PreferredFinalAscendantKashida last selected_only weight 4 decay 1 record Horizontal forbid_recorded [Horizontal] different_subword [KafBody];
       choose PreferredLamLafKashida last selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredMedialLamKashida last selected_only weight 3 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       choose PreferredRehKashida last selected_only weight 6 decay 0.85 record Horizontal forbid_recorded [KafBody Horizontal];
       traversal last_first;
     }
+
     selection CandidateRareTerminal {
       choose RareLamAlternate last selected_only weight 0.5 decay 0.75 record Terminal;
       traversal last_first;
@@ -3701,19 +3716,20 @@ table(justdfa) oldmadina.experimental2 {
     fill_spaces;
   }
 
-  # Allocate preferred lengths first, then continue the same accepted opportunities.
-  stretchpolicy staged_pool_continue {
+  # Allocate staged percentages, then continue the same accepted opportunities.
+  stretchpolicy staged_pool {
     candidate_width advance;    
     cap_spaces 250 250;
-    stage PreferredStretch;    
+    stage PreferredStretch continue to 25%;
     stage DecomposeConnections;
     stage RareTerminalStretch;
     stage DecomposeLastResort;    
-    stage PreferredStretch continue to 6;
-    stage InitialShortStretch;    
-    stage PreferredStretch continue to 9;
+    stage PreferredStretch continue to 50%;
+    stage InitialShortStretch;
+    stage PreferredStretch continue to 70%;
     cap_spaces 400 400;
     stage RemainingStretch;
+    stage PreferredStretch continue to 100%;
     fill_spaces;
   }
 
