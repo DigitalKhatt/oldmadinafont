@@ -1140,6 +1140,30 @@ void checkOpportunitySyntax(OtLayout& layout) {
           "Inline glyph-set, form and position constraints must be ANDed after live coverage resolution");
   const auto& effects = compiled.actionDefinitions.front().effects;
   require(effects.size() == 3 && effects[0].kind == JustEffectKind::Forbid && effects[1].kind == JustEffectKind::Update && effects[2].kind == JustEffectKind::Vary && !effects[2].maximum.empty(), "prepare/range must lower to the existing ordered guard, minimum update and bounded range");
+  const auto parseCatalog = [&](std::string_view declarations) {
+    feayy::FeaContext parsedContext(&layout);
+    feayy::Driver parsedDriver(parsedContext);
+    require(parsedDriver.parse_string(source(declarations)), "Parser must accept named ranges and action arguments");
+    return compileJustificationCatalog(parsedContext.justificationDfas.at("syntax"));
+  };
+  const auto ranged = parseCatalog("actions { action Shared(length, fixedValue) { prepare { forbid $self:righttatweel > 0; } update $self:lefttatweel = length; prepare { update $self:third = fixedValue; } } } opportunities { opportunity Inline { match [Named]; range amount minimum 1 preferred 3 maximum 9; action Shared(amount, 2); } }");
+  const auto oldRanged = parseCatalog("actions { action Shared { prepare { forbid $self:righttatweel > 0; } range $self:lefttatweel minimum 1 preferred 3 maximum 9; prepare { update $self:third = 2; } } } opportunities { opportunity Inline { match [Named]; action Shared; } }");
+  require(ranged.actionDefinitions == oldRanged.actionDefinitions && ranged.attributes == oldRanged.attributes, "Named range calls must compile to the original ordered and independently rounded parameter operations");
+  const auto noArguments = parseCatalog("actions { action Shared() { prepare { update $self:third = 2; } } } opportunities { opportunity Inline { match [Named]; action Shared(); } }");
+  require(noArguments.actionDefinitions.size() == 1 && noArguments.actionDefinitions[0].effects[0].value[0].literal == 2, "Explicit empty action argument lists must preserve legacy behavior");
+  const auto derived = parseCatalog("actions { action Shared(length, scale) { update $self:lefttatweel = length; update $self:righttatweel = prod(scale, length); } } opportunities { opportunity Inline { match [Named]; range amount minimum 1 preferred 2 maximum 5; action Shared(amount, 0.5); } }");
+  const auto& dependent = derived.actionDefinitions[0].effects.back();
+  require(dependent.kind == JustEffectKind::Derive && dependent.driverAttribute == derived.actionDefinitions[0].effects[0].attribute && derived.attributes[dependent.attribute] == "righttatweel", "Proportional action arguments must resolve to a dependent output, not a second independent range");
+  for (const auto invalid : {
+           "actions { action Shared(x, x) { update $self:third = x; } } opportunities { opportunity Inline { match [Named]; range r preferred 2; action Shared(r, r); } }",
+           "actions { action Shared(x) { update $self:third = x; } } opportunities { opportunity Inline { match [Named]; action Shared(); } }",
+           "actions { action Shared(x) { update $self:third = x; } } opportunities { opportunity Inline { match [Named]; action Shared(missing); } }",
+           "actions { action Shared(x) { update $self:third = prod(x, 0.5); } } opportunities { opportunity Inline { match [Named]; range r preferred 2; action Shared(r); } }",
+           "actions { action Shared { prepare { update $self:third = 2; } } } opportunities { opportunity Inline { match [Named]; range r preferred 2; action Shared; } }"}) {
+    bool rejected = false;
+    try { (void)parseCatalog(invalid); } catch (const std::invalid_argument&) { rejected = true; }
+    require(rejected, "Compiler must reject malformed range argument bindings");
+  }
   for (const auto invalid : {
            "rules { rule Inline [Named]; } actions { bind Inline Old; }",
            "opportunities { opportunity Inline { match [Named]; update $self:third = 1; } }",
@@ -1435,6 +1459,47 @@ void checkKafNoonExclusion(OtLayout& layout) {
   mutableCatalog.stretchPolicies.pop_back();
 }
 
+void checkStagedPolicyCleanup(OtLayout& layout) {
+  using namespace digitalkhatt::justify;
+  const auto& catalog = *layout.compiledJustificationCatalog;
+  const auto& actionFor = [&](std::string_view name) -> const JustificationAction& {
+    const auto rule = std::find_if(catalog.rules.begin(), catalog.rules.end(), [&](const auto& value) { return value.name == name; });
+    require(rule != catalog.rules.end(), "Missing cleanup opportunity " + std::string(name));
+    const auto binding = std::find_if(catalog.actions.begin(), catalog.actions.end(), [&](const auto& value) { return value.rule == rule->id; });
+    require(binding != catalog.actions.end(), "Missing cleanup action " + std::string(name));
+    return catalog.actionDefinitions.at(binding->definition);
+  };
+  const auto literal = [](const JustExpr& value, double expected) { return value.size() == 1 && value[0].op == JustExprOp::Literal && value[0].literal == expected; };
+  const auto& terminal = actionFor("PreferredAlternateGroup1");
+  require(terminal.name == "ExpandTerminal" && terminal == actionFor("PreferredNoon"), "Terminal group one and Noon must share the same prepared action and bounds");
+  for (const auto& [name, minimum, preferred, maximum] : std::vector<std::tuple<std::string_view, double, double, double>>{{"PreferredAlternateGroup1", 1, 3, 9}, {"PreferredNoon", 1, 3, 9}, {"PreferredAlternateGroup2", 1, 2.5, 7}, {"RareLamAlternate", 0, 6, 6}}) {
+    const auto& effects = actionFor(name).effects;
+    require(effects.size() == 5 && std::equal(effects.begin(), effects.begin() + 3, terminal.effects.begin()), "All terminal families must share guards and preparation without merging their opportunities");
+    require(effects[3].kind == JustEffectKind::Update && literal(effects[3].value, minimum) && effects[4].kind == JustEffectKind::Vary && literal(effects[4].value, preferred) && (effects[4].maximum.empty() ? maximum == preferred : literal(effects[4].maximum, maximum)), "Shared terminal preparation must preserve each family's distinct range");
+  }
+  for (const auto name : {"CandidateBeforeHah", "PreferredBehKashida", "PreferredFinalMeemKashida", "PreferredLamMeemKashida", "PreferredHehMeemKashida", "PreferredMedialLamKashida", "PreferredRehKashida", "SecondaryGhFehKashida", "RightLetterBehKashida"}) {
+    const auto& effects = actionFor(name).effects;
+    const auto range = std::find_if(effects.begin(), effects.end(), [](const auto& effect) { return effect.kind == JustEffectKind::Vary; });
+    const bool hehMeem = std::string_view(name) == "PreferredHehMeemKashida";
+    require(range != effects.end() && literal(range->value, hehMeem ? 1.5 : 1.75) && literal(range->maximum, hehMeem ? 1.5 : 4), "Pattern-specific Kashida bounds must be constants, retaining the Heh-Meem limit");
+    require(effects.back().kind == JustEffectKind::Derive && std::none_of(effects.back().value.begin(), effects.back().value.end(), [](const auto& node) { return node.op == JustExprOp::Fact; }), "Equal-sided joining opportunities must not retest unrelated ascendant facts");
+  }
+  for (const auto name : {"ContinueBeforeHah", "ContinueSadReh"}) {
+    int ranges = 0;
+    for (const auto& effect : actionFor(name).effects) {
+      if (effect.kind != JustEffectKind::Vary) continue;
+      ++ranges;
+      require(effect.value.size() == 3 && effect.value[0].op == JustExprOp::Attribute && effect.value[1].op == JustExprOp::Literal && effect.value[1].literal == 4 && effect.value[2].op == JustExprOp::Max, "Decomposition continuation must keep max(current, 4), without unrelated pair conditions");
+    }
+    require(ranges == 2, "Decomposition continuation must preserve its two independently resumed axes");
+  }
+  for (const auto name : {"CandidateOther", "CandidateDecomposition"}) {
+    const auto selection = std::find_if(catalog.selections.begin(), catalog.selections.end(), [&](const auto& value) { return value.name == name; });
+    require(selection != catalog.selections.end() && selection->record == "Horizontal" && selection->forbidRecorded == std::vector<std::string>{"KafBody", "Horizontal"}, "Common selection records and exclusions must be declared once");
+    for (const auto& choice : selection->rules) require(choice.record.empty() && choice.forbidRecorded.empty(), "Choices must inherit their common constraints rather than duplicate them");
+  }
+}
+
 void checkPreferredContinuation(OtLayout& layout) {
   using namespace digitalkhatt;
   using namespace digitalkhatt::justify;
@@ -1631,6 +1696,7 @@ int main(int argc, char** argv) {
     layout.useNormAxisValues = false;
     layout.loadLookupFile((fs::absolute(argv[1]).parent_path() / "features.fea").string());
     checkOpportunitySyntax(layout);
+    checkStagedPolicyCleanup(layout);
     auto* font = layout.createFont(1, false);
     FontProvider provider(layout);
     checkShrinkAlefAboveDal(layout, provider, font);
