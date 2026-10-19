@@ -470,8 +470,8 @@
                         0
                     ],
                     "behshape.medi.beforeyeh": [
-                        20,
-                        -197
+                        79,
+                        -79
                     ],
                     "hah.fina": [
                         10,
@@ -1541,6 +1541,10 @@
                         91,
                         -20
                     ],
+                    "meem.isol": [
+                        57,
+                        117
+                    ],
                     "meem.medi.afterseen": [
                         100,
                         20
@@ -1657,6 +1661,10 @@
                         29,
                         9
                     ],
+                    "yehshape.fina.ii.expa": [
+                        319,
+                        59
+                    ],
                     "yehshape.isol": [
                         81,
                         -16
@@ -1711,9 +1719,13 @@
                         4,
                         -274
                     ],
+                    "yehshape.isol": [
+                        -55,
+                        -121
+                    ],
                     "yehshape.isol.expa": [
-                        34,
-                        -276
+                        -64,
+                        96
                     ]
                 }
             }
@@ -1747,6 +1759,10 @@
         "shadda": {
             "shadda": {
                 "baseparameters": {
+                    "behshape.fina": [
+                        79,
+                        -119
+                    ],
                     "behshape.init": [
                         0,
                         -33
@@ -2766,8 +2782,8 @@
                         -154
                     ],
                     "sad.fina": [
-                        320,
-                        40
+                        184,
+                        -137
                     ],
                     "sad.init": [
                         152,
@@ -4464,6 +4480,10 @@
                     "lam.isol": [
                         -69,
                         11
+                    ],
+                    "meem.isol": [
+                        -20,
+                        59
                     ],
                     "noon.isol": [
                         -69,
