@@ -1091,8 +1091,25 @@ Lookup* OldMadina::defaultmarkposition() {
 
   newsubtable = new MarkBaseSubtable(lookup);
   lookup->subtables.push_back(newsubtable);
+  newsubtable->name = "bowl.lowmarks";
+  newsubtable->base = {"hah.isol", "hah.fina", "ain.isol", "ain.fina"};
+  const auto bowlBases = newsubtable->base;
+  // Each lower mark has its own editable base anchor on the four bowls.
+  // The original contextual lookups can still override these defaults.
+  for (const auto& mark : lowmarks) {
+    auto& row = newsubtable->classes[mark];
+    row.mark = {mark};
+    row.basefunction = Defaulbaseanchorforlow(*this, *newsubtable);
+    row.markfunction = Defaullowmarkanchor(*this, *newsubtable);
+  }
+
+  newsubtable = new MarkBaseSubtable(lookup);
+  lookup->subtables.push_back(newsubtable);
   newsubtable->name = "lowmarks";
-  newsubtable->base = {"bases"};
+  for (const auto& base : classes["bases"]) {
+    if (std::find(bowlBases.begin(), bowlBases.end(), base) == bowlBases.end())
+      newsubtable->base.push_back(base);
+  }
   newsubtable->classes["lowmarks"].mark = toStdStringSet(lowmarks);
   newsubtable->classes["lowmarks"].basefunction = Defaulbaseanchorforlow(*this, *newsubtable);
   newsubtable->classes["lowmarks"].markfunction = Defaullowmarkanchor(*this, *newsubtable);

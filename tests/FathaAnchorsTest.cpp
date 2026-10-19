@@ -461,6 +461,60 @@ void checkLocalAnchorsAndExpandedCentering(OtLayout& layout) {
   }
 }
 
+void checkIndependentBowlLowerAnchors(OtLayout& layout, FontProvider& provider, hb_font_t* font) {
+  const std::vector<std::string> bowls{"hah.isol", "hah.fina", "ain.isol", "ain.fina"};
+  const std::vector<std::string> marks{"kasra", "kasratan", "kasratanidgham", "roundedfilledlow", "smalllowmeem"};
+  const auto* lookup = layout.lookups.at(layout.lookupsIndexByName.at("defaultmarkposition"));
+  MarkBaseSubtable* bowl = nullptr;
+  MarkBaseSubtable* generic = nullptr;
+  for (auto* raw : lookup->subtables) {
+    auto* subtable = static_cast<MarkBaseSubtable*>(raw);
+    if (subtable->name == "bowl.lowmarks") bowl = subtable;
+    if (subtable->name == "lowmarks") generic = subtable;
+  }
+  require(bowl && generic && bowl->base == bowls, "Independent lower anchors must cover exactly the four bowl forms");
+  require(bowl->classes.size() == marks.size(), "Every default bowl lower mark needs its own class");
+  std::map<std::pair<std::string, std::string>, Point> anchors;
+  for (const auto& base : bowls) {
+    const auto code = layout.glyphCodePerName.at(base);
+    require(std::find(generic->sortedBaseCodes.begin(), generic->sortedBaseCodes.end(), code) == generic->sortedBaseCodes.end(), "Bowl lower marks must not fall back to the shared class");
+    for (const auto& mark : marks) {
+      require(bowl->classes.at(mark).mark == std::unordered_set<std::string>{mark}, "Bowl lower-mark classes must be singletons");
+      anchors[{base, mark}] = bowl->getBaseAnchor(base, mark, {});
+    }
+  }
+  // Exercise the same baseparameter edits as the GUI, checking every pair.
+  const Point movement(11, -13);
+  const auto nonBowl = generic->getBaseAnchor("behshape.isol", "lowmarks", {});
+  for (const auto& [selected, before] : anchors) {
+    auto& saved = bowl->classes.at(selected.second).baseparameters;
+    const auto original = saved;
+    saved[selected.first] += movement;
+    for (const auto& [key, anchor] : anchors)
+      require(bowl->getBaseAnchor(key.first, key.second, {}) == anchor + (key == selected ? movement : Point{}), "Editing one bowl mark must leave all other marks and bowls unchanged");
+    require(generic->getBaseAnchor("behshape.isol", "lowmarks", {}) == nonBowl, "Bowl edits must leave non-bowl anchors unchanged");
+    saved = original;
+  }
+
+  // Page 168 / line 3 / word 3 ends in an unconnected Hah with Kasra.
+  auto* buffer = digitalkhatt::justify::runtime::shape(u"ٱلْا\u034fٔ\u034fَلْوَاحِ", font, {}, &provider, {}, false);
+  unsigned count = 0;
+  const auto* infos = hb_buffer_get_glyph_infos(buffer, &count);
+  bool checked = false;
+  for (unsigned i = 0; i < count; ++i) {
+    if (infos[i].codepoint != layout.glyphCodePerName.at("kasra")) continue;
+    const auto state = layout.glyphInstanceState(infos[i]);
+    require(state.positioning.has_value(), "Example Kasra must have an editable attachment");
+    const auto& position = *state.positioning;
+    const auto* applied = layout.gposlookups.at(position.lookup_index);
+    require(applied == lookup && applied->subtables.at(position.subtable_index) == bowl && position.base_codepoint == layout.glyphCodePerName.at("hah.isol"), "Example Kasra must use defaultmarkposition::bowl.lowmarks on hah.isol");
+    require(bowl->classNamebyIndex.at(bowl->markCodes.at(infos[i].codepoint)) == "kasra", "Example Kasra must edit its own class");
+    checked = true;
+  }
+  hb_buffer_destroy(buffer);
+  require(checked, "Missing Kasra in the bowl GUI regression");
+}
+
 void checkSharedGlyphTopAnchor(OtLayout& layout) {
   const std::string root = "yehshape.fina.ii.expa";
   const auto code = layout.glyphCodePerName.at(root);
@@ -1721,6 +1775,7 @@ int main(int argc, char** argv) {
     checkShaddaCenterTransition(layout);
     checkExpandedShaddaCentering(layout, provider, font);
     checkLocalAnchorsAndExpandedCentering(layout);
+    checkIndependentBowlLowerAnchors(layout, provider, font);
     checkSharedGlyphTopAnchor(layout);
     checkFontOwnedGroupAnchors(layout);
     hb_font_destroy(font);
