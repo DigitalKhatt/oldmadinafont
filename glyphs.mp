@@ -4534,7 +4534,6 @@ enddefchar;
 defchar(meem.fina,-1,-1,-1,-1);
 %%backgroundimage:images/meem.fina.jpg,-285,-1191,1,0,0,1
 %%beginparams
-z.mark1 = (218,-159);
 
 %%beginpaths
 
@@ -4568,7 +4567,6 @@ fill
 %%beginbody
 
 
-setMarkAnchor(buttonmark,z.mark1);
 
 enddefchar;
 defchar(meem.fina.afterheh,-1,-1,-1,-1);
@@ -6278,7 +6276,6 @@ enddefchar;
 defchar(heh.medi,-1,-1,-1,-1);
 %%backgroundimage:images/heh.medi.jpg,-499.565,-1073.94,1,0,0,1
 %%beginparams
-z.mark1 = (190,-299);
 z1 = (263,98);
 
 %%beginverbatim
@@ -6330,7 +6327,6 @@ fill
 
 z1 = rightanchor + joinvector;
 
-setMarkAnchor(buttonmark,z.mark1);
 
 
 
@@ -6454,7 +6450,6 @@ enddefchar;
 defchar(sad.shape.i,-1,1,-1,-1);
 %%backgroundimage:images/sad.init.jpg,-1055.01,-1136.22,1,0,0,1
 %%beginparams
-z.buttonmark = (502,-89);
 z1 = (389.833,-0.694444);
 
 %%beginverbatim
@@ -6489,12 +6484,10 @@ fill
 
 leftbearing := 0;
 
-setMarkAnchor(buttonmark,z.buttonmark);
 enddefchar;
 defchar(sad.shape.ii,-1,1,-1,-1);
 %%backgroundimage:images/sad.isol.jpg,-321.579,-1097.01,1,0,0,1
 %%beginparams
-z.buttonmark = (501,-79);
 z1 = (398,0);
 
 %%beginverbatim
@@ -6526,7 +6519,6 @@ fill
 
 
 
-setMarkAnchor(buttonmark,z.buttonmark);
 enddefchar;
 defchar(sad.isol,1589,-1,-1,-1);
 %%backgroundimage:images/sad.isol.jpg,-321.836,-1098.44,1,0,0,1
@@ -8669,6 +8661,7 @@ endfor
 enddefchar;
 defchar(sad.isol.expa,-1,-1,-1,-1);
 %%beginparams
+z.lowmarks = (388,-171);
 z.onedotup = (363,370);
 %%beginbody
 
@@ -8696,6 +8689,7 @@ draw pic_ shifted shift_;
 pair leftanchor;
 
 setMarkAnchor(onedotup,z.onedotup);
+setMarkAnchor(lowmarks,z.lowmarks);
 enddefchar;
 defchar(sad.fina.expa,-1,-1,-1,-1);
 %%beginparams
@@ -8882,7 +8876,6 @@ defchar(meem.fina.basmala,-1,-1,-1,-1);
 %%backgroundimage:images/bism.jpg,-4549.31,-1127.73,1.18,0,0,1.18
 %%beginparams
 rightVerticalRatio := 10;
-z.mark1 = (175,-175);
 
 %%beginverbatim
 
@@ -8925,6 +8918,5 @@ fill
 %%beginbody
 leftbearing :=- 50;
 
-setMarkAnchor(buttonmark,z.mark1);
 
 enddefchar;
