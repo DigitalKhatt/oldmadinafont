@@ -596,7 +596,9 @@ void checkFontOwnedGroupAnchors(OtLayout& layout) {
   glyph.anchors[{lookup.name + "_arbitrary_upper_name", GlyphVis::AnchorType::MarkAnchor}] = {Point(77, 88), static_cast<int>(GlyphVis::AnchorType::MarkAnchor)};
   require(subtable.getBaseAnchor(root, "arbitrary_upper_name", {}) == Point(77, 88) + bias, "Lookup/class anchor must win over lookup anchor");
   glyph.anchors[{"arbitrary_upper_name", GlyphVis::AnchorType::MarkAnchor}] = {Point(99, 111), static_cast<int>(GlyphVis::AnchorType::MarkAnchor)};
-  require(subtable.getBaseAnchor(root, "arbitrary_upper_name", {}) == Point(99, 111) + bias, "Explicit class anchor must win over all fallbacks");
+  require(subtable.getBaseAnchor(root, "arbitrary_upper_name", {}) == Point(77, 88) + bias, "Lookup/class anchor must override the shared class anchor");
+  glyph.anchors.erase({lookup.name + "_arbitrary_upper_name", GlyphVis::AnchorType::MarkAnchor});
+  require(subtable.getBaseAnchor(root, "arbitrary_upper_name", {}) == Point(99, 111) + bias, "Shared class anchor must win over lookup and group fallbacks");
   glyph.anchors = saved;
   const auto checkCoverage = [&](std::unordered_set<std::string> expressions, std::unordered_set<std::uint16_t> codes, bool expected) {
     row.mark = std::move(expressions);

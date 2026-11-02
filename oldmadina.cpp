@@ -27,57 +27,8 @@ std::optional<double> OldMadina::markBaselineClearance(hb_codepoint_t mark, cons
   return std::nullopt;
 }
 
-void OldMadina::prepareAnchorResolution() {
-  anchorClassCache_.clear();
-}
-
-std::optional<std::size_t> OldMadina::matchingAnchorClassSize(const MarkBaseSubtable& subtable, std::string_view className, const std::string& anchorName) const {
-  const AnchorClassKey key{&subtable, std::string(className), anchorName};
-  const auto cached = anchorClassCache_.find(key);
-  if (cached != anchorClassCache_.end()) return cached->second;
-  std::optional<std::size_t> size;
-  const auto found = subtable.classes.find(std::get<1>(key));
-  if (found != subtable.classes.end()) {
-    // Numeric coverage is authoritative, as in standard OpenType serialization.
-    auto coverage = found->second.markCodes;
-    bool unresolved = false;
-    if (coverage.empty()) {
-      for (const auto& expression : found->second.mark) {
-        const auto codes = m_layout->classtoUnicode(expression);
-        unresolved |= codes.empty();
-        coverage.insert(codes.begin(), codes.end());
-      }
-    }
-    const auto members = m_layout->classtoUnicode(anchorName);
-    // A positioning class shares one base anchor: every covered mark must fit.
-    const auto belongs = [&](auto code) {
-      if (members.contains(code)) return true;
-      const auto* mark = m_layout->getGlyph(code);
-      // OTF instances inherit membership from their recorded source, including
-      // variants materialized after the font's class coverage was cached.
-      return mark && mark->sourceGlyphCode && members.contains(*mark->sourceGlyphCode);
-    };
-    if (!unresolved && !coverage.empty() && std::all_of(coverage.begin(), coverage.end(), belongs)) size = members.size();
-  }
-  return anchorClassCache_.emplace(key, size).first->second;
-}
-
 std::optional<Point> OldMadina::getAnchor(const GlyphVis& glyph, const MarkBaseSubtable& subtable, std::string_view className, const GlyphParameters&) const {
-  std::optional<Point> result;
-  std::optional<std::size_t> smallestClass;
-  for (const auto& [key, anchor] : glyph.anchors) {
-    if (key.type != GlyphVis::AnchorType::MarkAnchor) continue;
-    // Anchor names are font classes, or singleton glyph groups such as Shadda.
-    // Unknown names are not interpreted as regular expressions.
-    if (!classes.contains(key.name) && !m_layout->glyphCodePerName.contains(key.name)) continue;
-    const auto size = matchingAnchorClassSize(subtable, className, key.name);
-    // Most specific containing class wins; equal sizes use lexical anchor order.
-    if (size && (!smallestClass || *size < *smallestClass)) {
-      result = anchor.anchor;
-      smallestClass = size;
-    }
-  }
-  return result;
+  return resolveMarkClassAnchor(glyph, subtable, className);
 }
 
 class DefaultBaseOfWaqfToMark : public AnchorCalc {
@@ -818,7 +769,7 @@ class MediYehShapeFinaii {
     // Use a matching cursive subtable's transformed anchors, not the raw
     // leftAnchor/rightAnchor coordinates (which do not include tr_).
     // Unmigrated yeh connections still use the explicit ltrcursive anchors.
-    for (const auto* name : {"rtlcursivemedifina", "rtlcursiveinitfina", "ltrcursive"}) {
+    for (const auto* name : {"rtlautocursive", "ltrcursive"}) {
       const auto exit = glyph1->anchors.find({name, GlyphVis::AnchorType::ExitAnchorRTL});
       const auto entry = glyph2->anchors.find({name, GlyphVis::AnchorType::EntryAnchorRTL});
       if (exit != glyph1->anchors.end() && entry != glyph2->anchors.end()) {

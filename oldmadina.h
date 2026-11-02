@@ -20,14 +20,9 @@ class OldMadina : public Automedina {
   bool preserveMarkGposHorizontal(hb_codepoint_t mark, const GlyphParameters& parameters) const override;
   std::optional<double> markBaselineClearance(hb_codepoint_t mark, const GlyphParameters& parameters) const override;
   std::optional<Point> getAnchor(const GlyphVis& glyph, const MarkBaseSubtable& subtable, std::string_view className, const GlyphParameters& parameters) const override;
-  void prepareAnchorResolution() override;
   ~OldMadina() {}
 
  private:
-  // Only membership is cached, never glyph identities or anchor coordinates.
-  using AnchorClassKey = std::tuple<const MarkBaseSubtable*, std::string, std::string>;
-  mutable std::map<AnchorClassKey, std::optional<std::size_t>> anchorClassCache_;
-  std::optional<std::size_t> matchingAnchorClassSize(const MarkBaseSubtable& subtable, std::string_view className, const std::string& anchorName) const;
   Lookup* defaultmarkposition();
   Lookup* defaultwaqfmarktobase();
   Lookup* forsmalllalef();
