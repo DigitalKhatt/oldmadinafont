@@ -16,3 +16,6 @@ ayadigitkern:=40;
 behshape_medi_beforeyeh_y := -126;
 boolean isShrink;isShrink:=true;
 boolean useColoredAya;useColoredAya:=false;
+
+% Reserve an internal code below the auto-assigned glyph range.
+cgj.span.padding := 9000;

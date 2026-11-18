@@ -387,6 +387,7 @@ void OldMadina::addEndOfAyas(std::string ayaName, bool isColored, int maxWidth) 
 OldMadina::OldMadina(OtLayout* layout, MPFont* font, bool extended) : Automedina{layout, font, extended} {
   // m_metafont = layout->m_font;
   classes["marks"] = {
+      "cgj.span.padding",
       "onedotup",
       "onedotdown",
       "twodotsup",

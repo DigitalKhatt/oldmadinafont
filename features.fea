@@ -142,9 +142,10 @@ lookup miscellaneoussubst {
 
     sub tatweel'lookup miscellaneoussubst.l1 [hamzaabove]' cgj';
 
-    sub tatweel'lookup miscellaneoussubst.l1 [smallalef hamzaabove smallhighyeh smallhighnoon];
+    sub tatweel'lookup miscellaneoussubst.l1 [smallalef hamzaabove smallhighyeh smallhighnoon]';
 
     sub yehshape.isol'lookup miscellaneoussubst.l2  cgj hamzaabove;
+    sub yehshape.isol'lookup miscellaneoussubst.l2 hamzaabove;
 
     sub cgj'lookup miscellaneoussubst.l1 [maddahabove smallhighseen smallhighwaw]'; 
     
@@ -265,7 +266,8 @@ lookup requiredligature {
 
   feature rlig;
 
-  lookupflag UseMarkFilteringSet [@joinedmarks];
+  # Keep the substituted hamza in the input sequence for the final alef.
+  lookupflag UseMarkFilteringSet [@joinedmarks hamzaabove.lamalef];
 
   lookup requiredligature.l1 {
     sub lam.init by lam.init.allah;
@@ -1453,9 +1455,32 @@ lookup ainjeemkasra {
 
 #include(output/adjustoverlap.fea);
 
+# Give a base followed by CGJ its own source span before Arabic joining.
+lookup cgj.span.split {
+  feature ccmp;
+  sub alef.isol by alef.isol cgj.span.padding;
+  sub waw.isol by waw.isol cgj.span.padding;
+  sub alefmaksura.isol by alefmaksura.isol cgj.span.padding;
+} cgj.span.split;
+
+# Absorb the padding immediately after the joining forms have been selected.
+lookup cgj.span.merge {
+  feature rlig;
+  lookupflag UseMarkFilteringSet [cgj.span.padding];
+  sub alef.isol cgj.span.padding by alef.isol;
+  sub alef.fina cgj.span.padding by alef.fina;
+  sub waw.isol cgj.span.padding by waw.isol;
+  sub waw.fina cgj.span.padding by waw.fina;
+  sub alefmaksura.isol cgj.span.padding by alefmaksura.isol;
+  sub behshape.init cgj.span.padding by behshape.init;
+  sub behshape.medi cgj.span.padding by behshape.medi;
+  sub yehshape.fina cgj.span.padding by yehshape.fina;
+} cgj.span.merge;
+
 feature ccmp {	
   lookup setdecomp;	
   lookup miscellaneoussubst;
+  lookup cgj.span.split;
 } ccmp;
 
 feature init {
@@ -1470,7 +1495,8 @@ feature fina {
   lookup fina;
 } fina;
 
-feature rlig {	  
+feature rlig {
+  lookup cgj.span.merge;
   lookup requiredligature;	
   lookup otherliga;		
   lookup behshapeseen;  
