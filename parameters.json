@@ -2966,16 +2966,6 @@
                 }
             }
         },
-        "defaultmkmksmalllowmeem": {
-            "smalllowmeem": {
-                "baseparameters": {
-                    "kasra": [
-                        20,
-                        -35
-                    ]
-                }
-            }
-        },
         "defaultmkmktop": {
             "topmarks": {
                 "baseparameters": {
@@ -3014,6 +3004,18 @@
                     "smallhighyeh": [
                         -24,
                         24
+                    ]
+                }
+            }
+        }
+    },
+    "defaultmkmksmalllowmeem": {
+        "subtable1": {
+            "smalllowmeem": {
+                "baseparameters": {
+                    "kasra": [
+                        20,
+                        -35
                     ]
                 }
             }
@@ -4597,7 +4599,7 @@
             }
         }
     },
-    "lowmarkafterwawandreh_auto1": {
+    "lowmarkafterwawandreh.wawhah.base": {
         "subtable1": {
             "parameters": {
                 "hah.isol": [
@@ -4609,7 +4611,7 @@
             }
         }
     },
-    "lowmarkafterwawandreh_auto2": {
+    "lowmarkafterwawandreh.wawhah.dot": {
         "subtable1": {
             "parameters": {
                 "onedotdown": [
@@ -4621,7 +4623,7 @@
             }
         }
     },
-    "lowmarkafterwawandreh_auto3": {
+    "lowmarkafterwawandreh.wawhah.kasra": {
         "subtable1": {
             "parameters": {
                 "kasra": [
@@ -4633,7 +4635,7 @@
             }
         }
     },
-    "lowmarkafterwawandreh_auto4": {
+    "lowmarkafterwawandreh.wawhah.meem": {
         "subtable1": {
             "parameters": {
                 "smalllowmeem": [

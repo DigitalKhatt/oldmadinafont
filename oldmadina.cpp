@@ -1358,16 +1358,6 @@ Lookup* OldMadina::defaultmkmk() {
   subtable->classes["meemiqlab"].mark = {"meemiqlab"};
   // Both sides of this attachment are authored in glyphs.mp.
 
-  subtable = new MarkBaseSubtable(lookup);
-  lookup->subtables.push_back(subtable);
-
-  subtable->name = "defaultmkmksmalllowmeem";
-  subtable->base = {"kasra"};
-
-  subtable->classes["smalllowmeem"].mark = {"smalllowmeem"};
-  subtable->classes["smalllowmeem"].basefunction = Defaultmarkbelowmark(*this, *subtable);
-  subtable->classes["smalllowmeem"].markfunction = Defaullowmarkanchor(*this, *subtable);
-
   // hamzaabove.joined
   // subtable = new MarkBaseSubtable(lookup);
   // lookup->subtables.push_back(subtable);

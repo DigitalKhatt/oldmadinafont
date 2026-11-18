@@ -1135,23 +1135,9 @@ lookup caltmkmk {
 
   pos dal.isol @FathaPosition'lookup caltmkmk.l2 kaf.init.beforelam;
 
-   lookup caltmkmk.l3 {					
-    pos base /^tah/
-    <anchor function defaulbaseanchorfortop> markClass [@FathaPosition] <anchor function defaultopmarkanchor> @fathashadda
-    <anchor function defaulbaseanchorfortop> markClass [damma] <anchor function defaultopmarkanchor> @damma;
-  } caltmkmk.l3;
-
-  pos /^tah/' onedotup' [@FathaPosition damma]'lookup caltmkmk.l3 [meemiqlab];
-
-   lookup caltmkmk.l4 {					
-    pos base /^tah/
-    <anchor function defaulbaseanchorfortop> markClass [@FathaPosition shadda sukun] <anchor function defaultopmarkanchor> @fathashadda
-    <anchor function defaulbaseanchorfortop> markClass [damma] <anchor function defaultopmarkanchor> @damma
-    <anchor function defaulbaseanchorfortop> markClass [fathatan dammatan] <anchor function defaultopmarkanchor> @fathatandammatan
-    <anchor function defaulbaseanchorfortop> markClass [fathatanidgham  dammatanidgham] <anchor function defaultopmarkanchor> @idgham;	
-  } caltmkmk.l4;  
-  
-  pos /^tah/' onedotup' [@FathaPosition damma shadda sukun fathatan dammatan fathatanidgham  dammatanidgham ]'lookup caltmkmk.l4;
+  # Keep the earlier iqlab parent rule from being replaced by the general Tah rule.
+  pos /^tah/' onedotup' [@FathaPosition damma]' [meemiqlab];
+  pos /^tah/' onedotup' [@FathaPosition damma sukun fathatan dammatan fathatanidgham  dammatanidgham ]'lookup caltmkmk.l4;
 
   # hah mkmk
 
@@ -1264,7 +1250,17 @@ lookup lowmarkafterwawandreh {
   } lowmarkafterwawandreh.lowmarks.l6;
 
 
-  pos waw.isol' hah.isol'<0 0 0 0> onedotdown'<0 0 0 0> kasra'<0 0 0 0> smalllowmeem'<0 0 0 0>; 
+  lookup lowmarkafterwawandreh.wawhah.dot {
+    pos onedotdown <0 0 0 0>;
+  } lowmarkafterwawandreh.wawhah.dot;
+
+  lookup lowmarkafterwawandreh.wawhah.kasra {
+    pos kasra <0 0 0 0>;
+  } lowmarkafterwawandreh.wawhah.kasra;
+
+  pos waw.isol' hah.isol'
+    onedotdown'lookup lowmarkafterwawandreh.wawhah.dot
+    kasra'lookup lowmarkafterwawandreh.wawhah.kasra smalllowmeem';
 
 
   pos /waw[.]isol|reh[.]isol/
@@ -1533,7 +1529,20 @@ feature kern {
   lookup meemspacealefhamzabelow;
 } kern;
 
+# Set the Hah origin before its dot and kasra attach.
+lookup positionwawhahbase {
+  feature mark;
+  lookupflag UseMarkFilteringSet [kasra kasratan onedotdown twodotsdown kasratanidgham hamzabelow smalllowmeem];
+
+  lookup lowmarkafterwawandreh.wawhah.base {
+    pos hah.isol <0 0 0 0>;
+  } lowmarkafterwawandreh.wawhah.base;
+
+  pos waw.isol hah.isol'lookup lowmarkafterwawandreh.wawhah.base onedotdown kasra smalllowmeem;
+} positionwawhahbase;
+
 feature mark {
+  lookup positionwawhahbase;
   lookup defaultmarkpositioncpp;
   lookup defaultdotmarks;
   lookup defaultwaqfmarktobase;
@@ -1541,8 +1550,58 @@ feature mark {
   lookup adjustmarks;
 } mark;
 
+# Place Tah's parent marks before their vowels and iqlab attach.
+lookup positiontahmarkparents {
+  feature mkmk;
+
+  lookup caltmkmk.l3 {
+    pos base /^tah/
+    <anchor function defaulbaseanchorfortop> markClass [@FathaPosition] <anchor function defaultopmarkanchor> @fathashadda
+    <anchor function defaulbaseanchorfortop> markClass [damma] <anchor function defaultopmarkanchor> @damma;
+  } caltmkmk.l3;
+
+  lookup caltmkmk.l4 {
+    pos base /^tah/
+    <anchor function defaulbaseanchorfortop> markClass [@FathaPosition shadda sukun] <anchor function defaultopmarkanchor> @fathashadda
+    <anchor function defaulbaseanchorfortop> markClass [damma] <anchor function defaultopmarkanchor> @damma
+    <anchor function defaulbaseanchorfortop> markClass [fathatan dammatan] <anchor function defaultopmarkanchor> @fathatandammatan
+    <anchor function defaulbaseanchorfortop> markClass [fathatanidgham  dammatanidgham] <anchor function defaultopmarkanchor> @idgham;
+  } caltmkmk.l4;
+
+  pos /^tah/' onedotup' [@FathaPosition damma]'lookup caltmkmk.l3 [meemiqlab];
+  pos /^tah/ onedotup shadda'lookup caltmkmk.l4;
+} positiontahmarkparents;
+
+# Let contextual Hah and Heh overrides stand. The default attachment needs
+# the kasra's final position after the lower-mark lookups.
+lookup positionsmalllowmeem {
+  feature mkmk;
+
+  lookup defaultmkmksmalllowmeem {
+    pos mark kasra <anchor function defaultmarkbelowmark>
+      markClass smalllowmeem <anchor function defaullowmarkanchor> @smalllowmeem;
+  } defaultmkmksmalllowmeem;
+
+  pos /^hah.fina/ kasra smalllowmeem';
+  pos /^reh.fina/ (shadda?) @FathaPosition heh.isol (twodotsup?) kasra smalllowmeem';
+  pos smalllowmeem'lookup defaultmkmksmalllowmeem;
+} positionsmalllowmeem;
+
+# Add the saved Meem adjustment after the kasra attachment.
+lookup positionwawhahmeem {
+  feature mkmk;
+  lookupflag UseMarkFilteringSet [kasra kasratan onedotdown twodotsdown kasratanidgham hamzabelow smalllowmeem];
+
+  lookup lowmarkafterwawandreh.wawhah.meem {
+    pos smalllowmeem <0 0 0 0>;
+  } lowmarkafterwawandreh.wawhah.meem;
+
+  pos waw.isol hah.isol onedotdown kasra smalllowmeem'lookup lowmarkafterwawandreh.wawhah.meem;
+} positionwawhahmeem;
+
 feature mkmk {
   lookup defaultmarkdotmarks;
+  lookup positiontahmarkparents;
   lookup defaultmkmk;
   lookup fatha.stretched.mkmk;
   lookup defaultmkmkwaqf;
@@ -1550,6 +1609,8 @@ feature mkmk {
   lookup lowmarkafterwawandreh;    
   lookup adjustmkmk;
   lookup ainjeemkasra;
+  lookup positionsmalllowmeem;
+  lookup positionwawhahmeem;
   #lookup adjustoverlap;
 } mkmk;
 
