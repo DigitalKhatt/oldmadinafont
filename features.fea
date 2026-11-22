@@ -1755,65 +1755,67 @@ feature jdcl { lookup justify.decompose_left; } jdcl;
 feature jdcr { lookup justify.decompose_right; } jdcr;
 feature jdld { lookup justify.decompose_lam_dal; } jdld;
 
-feature cv01 {
-  lookup glyphalternates;
-} cv01;
+if isJustificationProfile {
+  feature cv01 {
+    lookup glyphalternates;
+  } cv01;
 
-# Kaf body deformation. The alternate index is the body-axis value used by
-# the declarative policy, so cv04=1..20 maps directly to third=1..20.
-lookup glyphbodyalternates {
-  feature inherited;
+  # Kaf body deformation. The alternate index is the body-axis value used by
+  # the declarative policy, so cv04=1..20 maps directly to third=1..20.
+  lookup glyphbodyalternates {
+    feature inherited;
 
-  sub kaf.init.ii from [
-    kaf.init.ii params { third 1; }
-    kaf.init.ii params { third 2; }
-    kaf.init.ii params { third 3; }
-    kaf.init.ii params { third 4; }
-    kaf.init.ii params { third 5; }
-    kaf.init.ii params { third 6; }
-    kaf.init.ii params { third 7; }
-    kaf.init.ii params { third 8; }
-    kaf.init.ii params { third 9; }
-    kaf.init.ii params { third 10; }
-    kaf.init.ii params { third 11; }
-    kaf.init.ii params { third 12; }
-    kaf.init.ii params { third 13; }
-    kaf.init.ii params { third 14; }
-    kaf.init.ii params { third 15; }
-    kaf.init.ii params { third 16; }
-    kaf.init.ii params { third 17; }
-    kaf.init.ii params { third 18; }
-    kaf.init.ii params { third 19; }
-    kaf.init.ii params { third 20; }
-  ];
+    sub kaf.init.ii from [
+      kaf.init.ii params { third 1; }
+      kaf.init.ii params { third 2; }
+      kaf.init.ii params { third 3; }
+      kaf.init.ii params { third 4; }
+      kaf.init.ii params { third 5; }
+      kaf.init.ii params { third 6; }
+      kaf.init.ii params { third 7; }
+      kaf.init.ii params { third 8; }
+      kaf.init.ii params { third 9; }
+      kaf.init.ii params { third 10; }
+      kaf.init.ii params { third 11; }
+      kaf.init.ii params { third 12; }
+      kaf.init.ii params { third 13; }
+      kaf.init.ii params { third 14; }
+      kaf.init.ii params { third 15; }
+      kaf.init.ii params { third 16; }
+      kaf.init.ii params { third 17; }
+      kaf.init.ii params { third 18; }
+      kaf.init.ii params { third 19; }
+      kaf.init.ii params { third 20; }
+    ];
 
-  sub kaf.medi.ii from [
-    kaf.medi.ii params { third 1; }
-    kaf.medi.ii params { third 2; }
-    kaf.medi.ii params { third 3; }
-    kaf.medi.ii params { third 4; }
-    kaf.medi.ii params { third 5; }
-    kaf.medi.ii params { third 6; }
-    kaf.medi.ii params { third 7; }
-    kaf.medi.ii params { third 8; }
-    kaf.medi.ii params { third 9; }
-    kaf.medi.ii params { third 10; }
-    kaf.medi.ii params { third 11; }
-    kaf.medi.ii params { third 12; }
-    kaf.medi.ii params { third 13; }
-    kaf.medi.ii params { third 14; }
-    kaf.medi.ii params { third 15; }
-    kaf.medi.ii params { third 16; }
-    kaf.medi.ii params { third 17; }
-    kaf.medi.ii params { third 18; }
-    kaf.medi.ii params { third 19; }
-    kaf.medi.ii params { third 20; }
-  ];
-} glyphbodyalternates;
+    sub kaf.medi.ii from [
+      kaf.medi.ii params { third 1; }
+      kaf.medi.ii params { third 2; }
+      kaf.medi.ii params { third 3; }
+      kaf.medi.ii params { third 4; }
+      kaf.medi.ii params { third 5; }
+      kaf.medi.ii params { third 6; }
+      kaf.medi.ii params { third 7; }
+      kaf.medi.ii params { third 8; }
+      kaf.medi.ii params { third 9; }
+      kaf.medi.ii params { third 10; }
+      kaf.medi.ii params { third 11; }
+      kaf.medi.ii params { third 12; }
+      kaf.medi.ii params { third 13; }
+      kaf.medi.ii params { third 14; }
+      kaf.medi.ii params { third 15; }
+      kaf.medi.ii params { third 16; }
+      kaf.medi.ii params { third 17; }
+      kaf.medi.ii params { third 18; }
+      kaf.medi.ii params { third 19; }
+      kaf.medi.ii params { third 20; }
+    ];
+  } glyphbodyalternates;
 
-feature cv04 {
-  lookup glyphbodyalternates;
-} cv04;
+  feature cv04 {
+    lookup glyphbodyalternates;
+  } cv04;
+}
 
 #if isShrink
 

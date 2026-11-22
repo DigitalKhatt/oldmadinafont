@@ -19,6 +19,7 @@
 #include "FeaParser/feaast.h"
 #include "JustificationShaping.h"
 #include "digitalkhatt/justify/declpolicy/DeclPolicyJustifier.h"
+#include "digitalkhatt/project/FontProfile.h"
 #include "../fathamarkpositions.h"
 
 namespace {
@@ -1750,7 +1751,20 @@ int main(int argc, char** argv) {
     initializeFont(mpFont, fs::absolute(argv[1]), fs::absolute(argv[2]));
     OtLayout layout(&mpFont, true, false);
     layout.useNormAxisValues = false;
-    layout.loadLookupFile((fs::absolute(argv[1]).parent_path() / "features.fea").string());
+    const auto features = (fs::absolute(argv[1]).parent_path() / "features.fea").string();
+    layout.loadLookupFile(features);
+    {
+      using namespace digitalkhatt::project;
+      const ScopedFontProfile profile(mpFont, FontProfile::Portable);
+      OtLayout portableLayout(&mpFont, false, false);
+      require(!mpFont.boolVariable("isShrink"), "Portable must set isShrink to false");
+      portableLayout.loadLookupFile(features);
+      require(std::none_of(portableLayout.allFeatures.begin(), portableLayout.allFeatures.end(),
+                           [](const auto& feature) { return feature.first.starts_with("sk"); }),
+              "Portable must omit all shrink features");
+    }
+    require(mpFont.boolVariable("isShrink") && layout.allFeatures.contains("sk03"),
+            "Portable export must restore the live Justification shrink setting");
     checkOpportunitySyntax(layout);
     checkStagedPolicyCleanup(layout);
     auto* font = layout.createFont(1, false);

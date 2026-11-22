@@ -14,6 +14,7 @@
 #include <format>
 
 #include "digitalkhatt/core/Regex16.h"
+#include "digitalkhatt/project/FontProfile.h"
 
 using namespace std;
 
@@ -385,6 +386,7 @@ void OldMadina::addEndOfAyas(std::string ayaName, bool isColored, int maxWidth) 
 }
 
 OldMadina::OldMadina(OtLayout* layout, MPFont* font, bool extended) : Automedina{layout, font, extended} {
+  digitalkhatt::project::initializeFontProfile(*font);
   // m_metafont = layout->m_font;
   classes["marks"] = {
       "cgj.span.padding",
