@@ -1762,6 +1762,9 @@ int main(int argc, char** argv) {
       require(std::none_of(portableLayout.allFeatures.begin(), portableLayout.allFeatures.end(),
                            [](const auto& feature) { return feature.first.starts_with("sk"); }),
               "Portable must omit all shrink features");
+      require(!portableLayout.lookupsIndexByName.contains("forwawfea.add3") &&
+                  portableLayout.lookupsIndexByName.contains("othercalt.l2"),
+              "Old Madina Portable keeps the referenced othercalt lookup and omits the unused add3 generator");
     }
     require(mpFont.boolVariable("isShrink") && layout.allFeatures.contains("sk03"),
             "Portable export must restore the live Justification shrink setting");
